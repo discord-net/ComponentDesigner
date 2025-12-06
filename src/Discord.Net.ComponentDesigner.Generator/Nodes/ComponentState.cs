@@ -34,7 +34,7 @@ public class ComponentState
             );
 
         CXGraph.Node? node = null;
-        
+
         if (attribute?.Value is CXValue.Element element)
         {
             node = OwningNode?.AttributeNodes
@@ -67,7 +67,7 @@ public class ComponentState
             GetProperty(properties[0]).ReportPropertyConfigurationDiagnostics(context, this, optional: false);
             return;
         }
-        
+
         for (var i = 0; i < properties.Length; i++)
         {
             if (GetProperty(properties[i]).IsSpecified) return;
@@ -79,7 +79,7 @@ public class ComponentState
         {
             if (i == properties.Length - 1)
                 sb.Append(" or ");
-            
+
             if (i is not 0) sb.Append('\'');
 
             sb.Append(properties[i].Name);
@@ -94,7 +94,7 @@ public class ComponentState
             sb.ToString()
         );
     }
-    
+
     public bool TryGetChildGraphNode(ICXNode node, out CXGraph.Node childNode)
     {
         foreach (var child in Children)
@@ -105,11 +105,11 @@ public class ComponentState
                 return true;
             }
         }
-        
+
         childNode = null!;
         return false;
     }
-    
+
     public void SubstitutePropertyValue(ComponentProperty property, CXValue value)
     {
         if (!_properties.TryGetValue(property, out var existing))
@@ -135,8 +135,8 @@ public class ComponentState
 
             var propertyValue = GetProperty(property);
 
-            if(propertyValue.CanOmitFromSource) continue;
-            
+            if (propertyValue.CanOmitFromSource) continue;
+
             var prefix = asInitializers
                 ? $"{property.DotnetPropertyName} = "
                 : $"{property.DotnetParameterName}: ";
@@ -165,7 +165,10 @@ public class ComponentState
               """;
     }
 
-    public string RenderChildren(IComponentContext context, Func<CXGraph.Node, bool>? predicate = null)
+    public string RenderChildren(
+        IComponentContext context,
+        Func<CXGraph.Node, bool>? predicate = null
+    )
     {
         if (OwningNode is null || !HasChildren) return string.Empty;
 

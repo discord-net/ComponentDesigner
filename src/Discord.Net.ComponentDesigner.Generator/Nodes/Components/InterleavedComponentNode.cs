@@ -40,7 +40,12 @@ public static class InterleavedKindExtensions
     }
 }
 
-public sealed class InterleavedComponentNode : ComponentNode, IDynamicComponentNode
+public sealed class InterleavedState : ComponentState
+{
+    public required int InterpolationId { get; init; }
+}
+
+public sealed class InterleavedComponentNode : ComponentNode<InterleavedState>, IDynamicComponentNode
 {
     public InterleavedKind Kind { get; }
     public ITypeSymbol Symbol { get; }
@@ -302,16 +307,31 @@ public sealed class InterleavedComponentNode : ComponentNode, IDynamicComponentN
         }
     }
 
-    public override ComponentState? Create(ComponentStateInitializationContext context)
+    public override InterleavedState? CreateState(ComponentStateInitializationContext context)
     {
-        if (context.Node is not CXValue.Interpolation interpolation) return null;
+        int id;
 
-        return base.Create(context);
+        switch (context.Node)
+        {
+            case CXValue.Interpolation interpolation:
+                id = interpolation.Document.GetInterpolationIndex(interpolation.Token);
+                break;
+            case CXToken { Kind: CXTokenKind.Interpolation } token:
+                id = token.Document!.GetInterpolationIndex(token);
+                break;
+            default: return null;
+        }
+
+        return new InterleavedState()
+        {
+            InterpolationId = id,
+            Source = context.Node
+        };
     }
 
 
     // TODO: extrapolate the kind to correct buidler conversion
-    public override string Render(ComponentState state, IComponentContext context)
+    public override string Render(InterleavedState state, IComponentContext context)
         => context.GetDesignerValue(
             (CXValue.Interpolation)state.Source,
             context.KnownTypes.IMessageComponentBuilderType!.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)

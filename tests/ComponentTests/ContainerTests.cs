@@ -6,6 +6,56 @@ namespace UnitTests.ComponentTests;
 public sealed class ContainerTests : BaseComponentTest
 {
     [Fact]
+    public void ContainerWithInterpolatedChildren()
+    {
+        Graph(
+            """
+            <container>
+                {a}
+                <separator />
+                {b}
+                {c}
+            </container>
+            """,
+            pretext:
+            // values don't matter
+            """
+            CXMessageComponent a = null!;
+            CXMessageComponent b = null!;
+            CXMessageComponent c = null;
+            """
+        );
+        {
+            Node<ContainerComponentNode>();
+            {
+                Node<InterleavedComponentNode>();
+                Node<SeparatorComponentNode>();
+                Node<InterleavedComponentNode>();
+                Node<InterleavedComponentNode>();
+            }
+            
+            Validate(hasErrors: false);
+
+            Renders(
+                """
+                new global::Discord.ContainerBuilder()
+                {
+                    Components =
+                    [
+                        ..designer.GetValue<global::Discord.CXMessageComponent>(0).Builders,
+                        new global::Discord.SeparatorBuilder(),
+                        ..designer.GetValue<global::Discord.CXMessageComponent>(1).Builders,
+                        ..designer.GetValue<global::Discord.CXMessageComponent>(2).Builders
+                    ]
+                }
+                """
+            );
+
+            EOF();
+        }
+    }
+    
+    [Fact]
     public void EmptyContainer()
     {
         Graph(

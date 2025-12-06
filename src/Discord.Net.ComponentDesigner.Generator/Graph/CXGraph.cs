@@ -73,7 +73,7 @@ public readonly struct CXGraph
             diagnostics,
             parseResult
         );
-        
+
         foreach (var cxNode in document.RootNodes)
         {
             rootNodes.AddRange(
@@ -103,7 +103,7 @@ public readonly struct CXGraph
             diagnostics,
             null
         );
-        
+
         var rootNodes = manager.Document
             .RootNodes
             .SelectMany(x =>
@@ -154,7 +154,7 @@ public readonly struct CXGraph
         public Node AddToMap(ICXNode? node, Node graphNode)
         {
             if (node is null) return graphNode;
-            
+
             return Map[node] = graphNode;
         }
     }
@@ -175,36 +175,27 @@ public readonly struct CXGraph
             case CXValue.Interpolation interpolation:
             {
                 var info = context.Manager.InterpolationInfos[interpolation.InterpolationIndex];
-
-                if (
-                    InterleavedComponentNode.TryCreate(
-                        info.Symbol,
-                        context.Compilation,
-                        out var inner
-                    )
-                )
+                return FromInterpolation(cxNode, info);
+            }
+            case CXValue.Multipart multipart:
+                var parts = new List<Node>();
+                foreach (var token in multipart.Tokens)
                 {
-                    var state = inner.Create(new(interpolation, context.Options, []));
-
-                    if (state is null) return [];
-
-                    return
-                    [
-                        context.AddToMap(
-                            interpolation,
-                            new(
-                                inner,
-                                state,
-                                [],
-                                [],
-                                parent
+                    if (token.InterpolationIndex is { } index)
+                        parts.AddRange(FromInterpolation(token, context.Manager.InterpolationInfos[index]));
+                    else
+                    {
+                        context.Diagnostics.Add(
+                            Diagnostic.Create(
+                                CX.Diagnostics.UnknownComponent,
+                                GetLocation(context.Manager, cxNode),
+                                token.Kind
                             )
-                        )
-                    ];
+                        );
+                    }
                 }
 
-                return [];
-            }
+                return parts;
             case CXElement element:
             {
                 if (element.IsFragment)
@@ -256,72 +247,48 @@ public readonly struct CXGraph
                             parent
                         )
                     );
-
-                // var context = new ComponentGraphInitializationContext(element, parent, manager.Options);
-                //
-                // componentNode.AddGraphNode(context);
-                //
-                // var result = new List<Node>();
-                //
-                // foreach (var initialization in context.Initializations)
-                // {
-                //     var state = initialization.State;
-                //
-                //     var nodeChildren = new List<Node>();
-                //     var attributeNodes = new List<Node>();
-                //
-                //     var node = map[state.Source] = state.OwningNode = new(
-                //         initialization.Node,
-                //         state,
-                //         nodeChildren,
-                //         attributeNodes,
-                //         parent
-                //     );
-                //
-                //     if (state.Source is CXElement { Attributes: { Count: > 0 } attributes })
-                //     {
-                //         foreach (var attribute in attributes)
-                //         {
-                //             if (attribute.Value is CXValue.Element nestedElement)
-                //             {
-                //                 attributeNodes.AddRange(
-                //                     CreateNodes(
-                //                         manager,
-                //                         nestedElement.Value,
-                //                         node,
-                //                         reusedNodes,
-                //                         oldGraph,
-                //                         map,
-                //                         diagnostics,
-                //                         incrementalParseResult
-                //                     )
-                //                 );
-                //             }
-                //         }
-                //     }
-                //
-                //     nodeChildren.AddRange(
-                //         initialization
-                //             .Children
-                //             .SelectMany(x => CreateNodes(
-                //                     manager,
-                //                     x,
-                //                     node,
-                //                     reusedNodes,
-                //                     oldGraph,
-                //                     map,
-                //                     diagnostics,
-                //                     incrementalParseResult
-                //                 )
-                //             )
-                //     );
-                //
-                //     result.Add(node);
-                // }
-
-                // return result;
             }
-            default: return [];
+            default:
+                context.Diagnostics.Add(
+                    Diagnostic.Create(
+                        CX.Diagnostics.UnknownComponent,
+                        GetLocation(context.Manager, cxNode),
+                        cxNode.GetType()
+                    )
+                );
+                return [];
+        }
+
+        IEnumerable<Node> FromInterpolation(ICXNode node, DesignerInterpolationInfo info)
+        {
+            if (
+                InterleavedComponentNode.TryCreate(
+                    info.Symbol,
+                    context.Compilation,
+                    out var inner
+                )
+            )
+            {
+                var state = inner.Create(new(node, context.Options, []));
+
+                if (state is null) return [];
+
+                return
+                [
+                    context.AddToMap(
+                        node,
+                        new(
+                            inner,
+                            state,
+                            [],
+                            [],
+                            parent
+                        )
+                    )
+                ];
+            }
+
+            return [];
         }
     }
 

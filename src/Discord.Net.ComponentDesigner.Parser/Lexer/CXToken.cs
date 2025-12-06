@@ -16,6 +16,9 @@ public sealed record CXToken(
     params IReadOnlyList<CXDiagnostic> Diagnostics
 ) : ICXNode
 {
+    public int? InterpolationIndex
+        => Document is null || Kind is not CXTokenKind.Interpolation ? null : Document.GetInterpolationIndex(this); 
+    
     public int Width => LeadingTrivia.Length + Value.Length + TrailingTrivia.Length;
     
     public int Offset
