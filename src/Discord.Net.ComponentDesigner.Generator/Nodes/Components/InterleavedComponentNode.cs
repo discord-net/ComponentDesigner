@@ -333,7 +333,7 @@ public sealed class InterleavedComponentNode : ComponentNode<InterleavedState>, 
     // TODO: extrapolate the kind to correct buidler conversion
     public override string Render(InterleavedState state, IComponentContext context)
         => context.GetDesignerValue(
-            (CXValue.Interpolation)state.Source,
+            state.InterpolationId,
             context.KnownTypes.IMessageComponentBuilderType!.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
         );
 }
