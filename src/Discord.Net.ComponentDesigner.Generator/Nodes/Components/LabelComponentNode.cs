@@ -25,6 +25,13 @@ public sealed class LabelComponentNode : ComponentNode<LabelComponentState>
     public override bool HasChildren => true;
 
     public override IReadOnlyList<ComponentProperty> Properties { get; }
+    
+    private static readonly ComponentRenderingOptions ChildRenderingOptions = new(
+        TypingContext: new(
+            CanSplat: false,
+            ConformingType: ComponentBuilderKind.IMessageComponentBuilder
+        )
+    );
 
     public LabelComponentNode()
     {
@@ -131,7 +138,7 @@ public sealed class LabelComponentNode : ComponentNode<LabelComponentState>
         }
 
         var labelChild = state.GetProperty(Component).Node;
-        
+
         if (labelChild is not null && !IsValidLabelChild(labelChild.Inner))
         {
             context.AddDiagnostic(
@@ -147,13 +154,18 @@ public sealed class LabelComponentNode : ComponentNode<LabelComponentState>
             or TextInputComponentNode
             or FileUploadComponentNode;
 
-    public override string Render(LabelComponentState state, IComponentContext context)
+    public override string Render(
+        LabelComponentState state,
+        IComponentContext context,
+        ComponentRenderingOptions options
+    )
     {
         var props = string.Join(
             $",{Environment.NewLine}",
             [
                 state.RenderProperties(this, context),
-                state.Children.FirstOrDefault()?.Render(context)
+                state.Children.FirstOrDefault()
+                    ?.Render(context, options: ChildRenderingOptions)
                     .PrefixIfSome("component: ")
             ]
         );

@@ -26,6 +26,8 @@ public interface IComponentContext
 
     DesignerInterpolationInfo GetInterpolationInfo(int index);
     DesignerInterpolationInfo GetInterpolationInfo(CXToken token);
+    
+    ComponentTypingContext RootTypingContext { get; }
 }
 
 public static class ComponentContextExtensions

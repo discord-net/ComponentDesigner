@@ -71,10 +71,8 @@ public sealed class ProviderComponentNode : ComponentNode
 
     
 
-    public override string Render(
-        ComponentState state,
-        IComponentContext context
-    ) =>
+    public override string Render(ComponentState state,
+        IComponentContext context, ComponentRenderingOptions options) =>
         $"{_providerSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}.Render({CreateProviderState(state, context)})";
 
 

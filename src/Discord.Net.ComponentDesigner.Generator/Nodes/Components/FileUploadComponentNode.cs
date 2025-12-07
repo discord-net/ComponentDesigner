@@ -67,7 +67,7 @@ public sealed class FileUploadComponentNode : ComponentNode
         }
     }
 
-    public override string Render(ComponentState state, IComponentContext context)
+    public override string Render(ComponentState state, IComponentContext context, ComponentRenderingOptions options)
         => $"""
             new {context.KnownTypes.FileUploadComponentBuilderType!.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}({
                 state.RenderProperties(this, context)

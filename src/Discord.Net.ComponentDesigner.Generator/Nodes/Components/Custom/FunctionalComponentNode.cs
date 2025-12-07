@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Discord.CX.Parser;
 using Microsoft.CodeAnalysis;
@@ -14,28 +15,29 @@ public sealed class FunctionalComponentNodeState : ComponentState
 
 public class FunctionalComponentNode : ComponentNode<FunctionalComponentNodeState>, IDynamicComponentNode
 {
-    public override bool HasChildren => _childrenParameter is not null;
+    public override bool HasChildren => ChildrenParameter is not null;
 
-    public override string Name => $"<functional {_method.ToDisplayString()}>";
+    public override string Name => $"<functional {Method.ToDisplayString()}>";
 
     public override IReadOnlyList<ComponentProperty> Properties { get; }
 
-    private readonly IMethodSymbol _method;
-    private readonly InterleavedKind _kind;
-    private readonly IParameterSymbol? _childrenParameter;
+    public IMethodSymbol Method { get; }
+    public ComponentBuilderKind Kind { get; }
+    public IParameterSymbol? ChildrenParameter { get; }
+    
     private readonly ComponentChildrenAdapter? _adapter;
 
     private FunctionalComponentNode(
         IMethodSymbol method,
-        InterleavedKind kind,
+        ComponentBuilderKind kind,
         IReadOnlyList<ComponentProperty> properties,
         IParameterSymbol? childrenParameter,
         Compilation compilation
     )
     {
-        _method = method;
-        _kind = kind;
-        _childrenParameter = childrenParameter;
+        Method = method;
+        Kind = kind;
+        ChildrenParameter = childrenParameter;
         Properties = properties;
 
         _adapter = childrenParameter is not null
@@ -48,7 +50,7 @@ public class FunctionalComponentNode : ComponentNode<FunctionalComponentNodeStat
             : null;
     }
 
-    public static FunctionalComponentNode Create(IMethodSymbol method, InterleavedKind kind, Compilation compilation)
+    public static FunctionalComponentNode Create(IMethodSymbol method, ComponentBuilderKind kind, Compilation compilation)
     {
         var properties = new List<ComponentProperty>();
         IParameterSymbol? childrenParameter = null;
@@ -100,26 +102,75 @@ public class FunctionalComponentNode : ComponentNode<FunctionalComponentNodeStat
         };
 
     private string MethodReference =>
-        $"{_method.ContainingType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}.{_method.Name}";
+        $"{Method.ContainingType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}.{Method.Name}";
 
-    public override string Render(FunctionalComponentNodeState state, IComponentContext context)
-        => InterleavedComponentNode.ExtrapolateKindToBuilders(
-            _kind,
-            $"{MethodReference}({
-                string
-                    .Join(
-                        ", ",
-                        ((string[])
-                        [
-                            state.RenderProperties(this, context),
-                            (_adapter?.ChildrenRenderer(context, state, state.Children) ?? string.Empty)
-                            .PrefixIfSome($"{_childrenParameter?.Name}: ")
-                        ])
-                        .Where(x => !string.IsNullOrWhiteSpace(x))
-                    )
-                    .WithNewlinePadding(4)
-                    .PrefixIfSome(4)
-                    .WrapIfSome("\n")
-            })"
+    public override string Render(
+        FunctionalComponentNodeState state,
+        IComponentContext context,
+        ComponentRenderingOptions options
+    )
+    {
+        var source = $"{MethodReference}({
+            string
+                .Join(
+                    ", ",
+                    ((string[])
+                    [
+                        state.RenderProperties(this, context),
+                        (_adapter?.ChildrenRenderer(context, state, state.Children) ?? string.Empty)
+                        .PrefixIfSome($"{ChildrenParameter?.Name}: ")
+                    ])
+                    .Where(x => !string.IsNullOrWhiteSpace(x))
+                )
+                .WithNewlinePadding(4)
+                .PrefixIfSome(4)
+                .WrapIfSome("\n")
+        })";
+        
+        var typingContext = options.TypingContext;
+
+        if (typingContext is null)
+        {
+            if (state.IsRootNode)
+            {
+                typingContext = context.RootTypingContext;
+            }
+            else
+            {
+                /*
+                 * TODO: unknown typing context may imply a bug where a parent component isn't supplying their
+                 * required typing information
+                 */
+
+                Debug.Fail("Unknown typing context in functional node");
+                typingContext = context.RootTypingContext;
+            }
+        }
+
+        var value = ComponentBuilderKindUtils.Convert(
+            source,
+            Kind,
+            typingContext.Value.ConformingType,
+            typingContext.Value.CanSplat
         );
+
+        if (value is null)
+        {
+            /*
+             * we've failed to convert, this case implies that whatever the type of this interleaved node is, it doesn't
+             * conform to the current constraints
+             */
+
+            context.AddDiagnostic(
+                Diagnostics.InvalidInterleavedComponentInCurrentContext,
+                state.Source,
+                Method.ReturnType.ToDisplayString(),
+                typingContext.Value.ConformingType
+            );
+            
+            return string.Empty;
+        }
+
+        return value;
+    }
 }

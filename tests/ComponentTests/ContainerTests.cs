@@ -42,10 +42,10 @@ public sealed class ContainerTests : BaseComponentTest
                 {
                     Components =
                     [
-                        designer.GetValue<global::Discord.IMessageComponentBuilder>(0),
+                        ..designer.GetValue<global::Discord.CXMessageComponent>(0).Builders,
                         new global::Discord.SeparatorBuilder(),
-                        designer.GetValue<global::Discord.IMessageComponentBuilder>(1),
-                        designer.GetValue<global::Discord.IMessageComponentBuilder>(2)
+                        ..designer.GetValue<global::Discord.CXMessageComponent>(1).Builders,
+                        ..designer.GetValue<global::Discord.CXMessageComponent>(2).Builders
                     ]
                 }
                 """

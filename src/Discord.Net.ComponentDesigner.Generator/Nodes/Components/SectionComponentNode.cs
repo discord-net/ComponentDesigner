@@ -16,6 +16,20 @@ public sealed class SectionComponentNode : ComponentNode
     public ComponentProperty Accessory { get; }
     public override IReadOnlyList<ComponentProperty> Properties { get; }
 
+    private static readonly ComponentRenderingOptions ChildrenRenderingOptions = new(
+        TypingContext: new(
+            CanSplat: true,
+            ConformingType: ComponentBuilderKind.CollectionOfIMessageComponentBuilders
+        )
+    );
+    
+    private static readonly ComponentRenderingOptions AccessoryRenderingOptions = new(
+        TypingContext: new(
+            CanSplat: false,
+            ConformingType: ComponentBuilderKind.IMessageComponentBuilder
+        )
+    );
+    
     public SectionComponentNode()
     {
         Properties =
@@ -24,7 +38,7 @@ public sealed class SectionComponentNode : ComponentNode
             Accessory = new(
                 "accessory",
                 isOptional: true,
-                renderer: Renderers.ComponentAsProperty
+                renderer: Renderers.ComponentAsProperty(AccessoryRenderingOptions)
             )
         ];
     }
@@ -116,7 +130,7 @@ public sealed class SectionComponentNode : ComponentNode
             => node is TextDisplayComponentNode or IDynamicComponentNode;
     }
 
-    public override string Render(ComponentState state, IComponentContext context)
+    public override string Render(ComponentState state, IComponentContext context, ComponentRenderingOptions options)
     {
         var accessoryPropertyValue = state.GetProperty(Accessory);
 
@@ -193,6 +207,6 @@ public sealed class AccessoryComponentNode : ComponentNode
     private static bool IsAllowedChild(ComponentNode node)
         => node is ButtonComponentNode or ThumbnailComponentNode;
 
-    public override string Render(ComponentState state, IComponentContext context)
+    public override string Render(ComponentState state, IComponentContext context, ComponentRenderingOptions options)
         => state.RenderChildren(context);
 }

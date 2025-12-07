@@ -98,7 +98,7 @@ public sealed class TextInputComponentNode : ComponentNode
         Validators.Range(context, state, MinLength, MaxLength);
     }
 
-    public override string Render(ComponentState state, IComponentContext context)
+    public override string Render(ComponentState state, IComponentContext context, ComponentRenderingOptions options)
         => $"""
             new {context.KnownTypes.TextInputBuilderType!.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}({
                 state.RenderProperties(this, context)

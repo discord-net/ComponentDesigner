@@ -73,18 +73,28 @@ public static class Renderers
         return false;
     }
 
+    public static PropertyRenderer ComponentAsProperty(ComponentRenderingOptions options)
+        => (context, propertyValue) => ComponentAsProperty(context, propertyValue, options);
+
     public static string ComponentAsProperty(IComponentContext context, IComponentPropertyValue propertyValue)
+        => ComponentAsProperty(context, propertyValue, ComponentRenderingOptions.Default);
+
+    private static string ComponentAsProperty(
+        IComponentContext context,
+        IComponentPropertyValue propertyValue,
+        ComponentRenderingOptions options
+    )
     {
         switch (propertyValue.Value)
         {
             case CXValue.Element when propertyValue.Node is not null:
-                return propertyValue.Node.Render(context);
+                return propertyValue.Node.Render(context, options);
             case CXValue.Interpolation interpolation:
                 // ensure its a component builder
                 var info = context.GetInterpolationInfo(interpolation);
 
                 if (
-                    !InterleavedComponentNode.IsValidInterleavedType(
+                    !ComponentBuilderKindUtils.IsValidComponentBuilderType(
                         info.Symbol,
                         context.Compilation,
                         out var interleavedKind
@@ -106,25 +116,27 @@ public static class Renderers
                     info.Symbol!.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
                 );
 
-
                 // ensure we can convert it to a builder
+                var target = options.TypingContext?.ConformingType ?? ComponentBuilderKind.IMessageComponentBuilder;
+                
                 if (
-                    !InterleavedComponentNode.TryConvert(
+                    !ComponentBuilderKindUtils.TryConvert(
                         source,
                         interleavedKind,
-                        InterleavedKind.IMessageComponentBuilder,
-                        out var converted
+                        target,
+                        out var converted,
+                        spreadCollections: options.TypingContext?.CanSplat is true
                     )
                 )
                 {
                     source = interleavedKind switch
                     {
-                        InterleavedKind.CXMessageComponent => $"{source}.Builders.First()",
-                        InterleavedKind.MessageComponent => $"{source}.Components.First().ToBuilder()",
-                        InterleavedKind.CollectionOfCXComponents => $"{source}.First().Builders.First()",
-                        InterleavedKind.CollectionOfIMessageComponentBuilders => $"{source}.First()",
-                        InterleavedKind.CollectionOfIMessageComponents => $"{source}.First().ToBuilder()",
-                        InterleavedKind.CollectionOfMessageComponents =>
+                        ComponentBuilderKind.CXMessageComponent => $"{source}.Builders.First()",
+                        ComponentBuilderKind.MessageComponent => $"{source}.Components.First().ToBuilder()",
+                        ComponentBuilderKind.CollectionOfCXComponents => $"{source}.First().Builders.First()",
+                        ComponentBuilderKind.CollectionOfIMessageComponentBuilders => $"{source}.First()",
+                        ComponentBuilderKind.CollectionOfIMessageComponents => $"{source}.First().ToBuilder()",
+                        ComponentBuilderKind.CollectionOfMessageComponents =>
                             $"{source}.First().Components.First().ToBuilder",
                         _ => string.Empty
                     };
@@ -400,7 +412,7 @@ public static class Renderers
             }
 
             uint hexColor;
-            
+
             if (info.Constant.Value is string str)
             {
                 if (TryGetColorPreset(context, str, out var preset))
@@ -413,7 +425,7 @@ public static class Renderers
             {
                 return $"new {qualifiedColor}({hexColor})";
             }
-            
+
             if (
                 context.Compilation.HasImplicitConversion(
                     info.Symbol,
@@ -423,7 +435,7 @@ public static class Renderers
             {
                 return $"new {qualifiedColor}({context.GetDesignerValue(info, "uint")})";
             }
-            
+
             context.AddDiagnostic(
                 Diagnostics.FallbackToRuntimeValueParsing,
                 owner,
@@ -504,13 +516,13 @@ public static class Renderers
 
                 if (IsLoneInterpolatedLiteral(context, stringLiteral, out var info))
                     return FromInterpolation(stringLiteral, info);
-                
+
                 context.AddDiagnostic(
                     Diagnostics.FallbackToRuntimeValueParsing,
                     stringLiteral,
                     "ulong.Parse"
                 );
-                
+
                 return UseParseMethod(RenderStringLiteral(stringLiteral));
 
             default: return "default";
@@ -522,7 +534,7 @@ public static class Renderers
 
             if (info.Constant is { HasValue: true, Value: ulong ul })
                 return ul.ToString();
-            
+
             if (
                 info.Symbol is not null &&
                 context.Compilation.HasImplicitConversion(info.Symbol, targetType)
@@ -536,7 +548,7 @@ public static class Renderers
                 owner,
                 "ulong.Parse"
             );
-            
+
             return UseParseMethod(context.GetDesignerValue(info));
         }
 
@@ -549,7 +561,7 @@ public static class Renderers
                 owner,
                 "ulong.Parse"
             );
-            
+
             return UseParseMethod(ToCSharpString(text));
         }
 
@@ -676,10 +688,8 @@ public static class Renderers
         sb.Append(quotes);
 
         return sb.ToString();
-
-        
     }
-    
+
     public static int GetInterpolationDollarRequirement(string part)
     {
         var result = 0;

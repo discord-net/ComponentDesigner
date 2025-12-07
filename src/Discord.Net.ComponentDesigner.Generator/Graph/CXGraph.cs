@@ -409,13 +409,13 @@ public readonly struct CXGraph
             Inner.UpdateState(ref _state, context);
         }
 
-        public string Render(IComponentContext context)
+        public string Render(IComponentContext context, ComponentRenderingOptions options = default)
         {
             if (_render is not null) return _render;
 
             using (context.CreateDiagnosticScope(_diagnostics))
             {
-                return _render = Inner.Render(State, context);
+                return _render = Inner.Render(State, context, options);
             }
         }
 

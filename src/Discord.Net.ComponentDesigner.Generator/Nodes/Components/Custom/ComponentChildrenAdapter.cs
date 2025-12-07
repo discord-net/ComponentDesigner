@@ -23,11 +23,11 @@ public sealed class ComponentChildrenAdapter
     public bool IsCollectionType
         => _collectionInnerTypeSymbol is not null;
 
-    public bool IsCX => _interleavedKind is not InterleavedKind.None;
+    public bool IsCX => _componentBuilderKind is not ComponentBuilderKind.None;
 
     private readonly ITypeSymbol _targetSymbol;
     private readonly ITypeSymbol? _collectionInnerTypeSymbol;
-    private readonly InterleavedKind _interleavedKind;
+    private readonly ComponentBuilderKind _componentBuilderKind;
     private readonly ComponentNode _owner;
 
     public abstract record ComponentChild(ICXNode Node)
@@ -45,7 +45,7 @@ public sealed class ComponentChildrenAdapter
     public ComponentChildrenAdapter(
         ITypeSymbol targetSymbol,
         ITypeSymbol? collectionInnerTypeSymbol,
-        InterleavedKind interleavedKind,
+        ComponentBuilderKind componentBuilderKind,
         bool isOptional,
         ComponentNode owner
     )
@@ -53,10 +53,10 @@ public sealed class ComponentChildrenAdapter
         IsOptional = isOptional;
         _targetSymbol = targetSymbol;
         _collectionInnerTypeSymbol = collectionInnerTypeSymbol;
-        _interleavedKind = interleavedKind;
+        _componentBuilderKind = componentBuilderKind;
         _owner = owner;
 
-        ChildrenRenderer = interleavedKind is not InterleavedKind.None
+        ChildrenRenderer = componentBuilderKind is not ComponentBuilderKind.None
             ? RenderComponent
             : RenderNonComponent;
     }
@@ -79,7 +79,7 @@ public sealed class ComponentChildrenAdapter
             )
             ?.TypeArguments[0];
 
-        InterleavedComponentNode.IsValidInterleavedType(inner ?? target, compilation, out var kind);
+        ComponentBuilderKindUtils.IsValidComponentBuilderType(inner ?? target, compilation, out var kind);
 
         return new(
             target,
@@ -141,9 +141,9 @@ public sealed class ComponentChildrenAdapter
         IReadOnlyList<ComponentChild> children
     )
     {
-        if (_interleavedKind is InterleavedKind.None) return string.Empty;
+        if (_componentBuilderKind is ComponentBuilderKind.None) return string.Empty;
 
-        var cardinalityOfMany = IsCollectionType || _interleavedKind.SupportsCardinalityOfMany();
+        var cardinalityOfMany = IsCollectionType || _componentBuilderKind.SupportsCardinalityOfMany();
 
         if (!cardinalityOfMany)
         {
@@ -161,7 +161,7 @@ public sealed class ComponentChildrenAdapter
                     );
                     return string.Empty;
                 case 1:
-                    return RenderComponentInner(_interleavedKind, context, children[0], state);
+                    return RenderComponentInner(_componentBuilderKind, context, children[0], state);
                 default:
                     // too many children
                     var lower = children[1].Node.Span.Start;
@@ -191,7 +191,7 @@ public sealed class ComponentChildrenAdapter
                 return string.Empty;
             }
 
-            return RenderChildrenAsCollection(_interleavedKind);
+            return RenderChildrenAsCollection(_componentBuilderKind);
         }
         else
         {
@@ -204,11 +204,11 @@ public sealed class ComponentChildrenAdapter
              * Since CX renders to the builders, we'll do the same, and wrap the construction manually
              */
 
-            var typeName = _interleavedKind switch
+            var typeName = _componentBuilderKind switch
             {
-                InterleavedKind.CXMessageComponent => "global::Discord.CXMessageComponent",
-                InterleavedKind.MessageComponent => "global::Discord.MessageComponent",
-                _ => throw new ArgumentOutOfRangeException(nameof(_interleavedKind))
+                ComponentBuilderKind.CXMessageComponent => "global::Discord.CXMessageComponent",
+                ComponentBuilderKind.MessageComponent => "global::Discord.MessageComponent",
+                _ => throw new ArgumentOutOfRangeException(nameof(_componentBuilderKind))
             };
 
             if (children.Count is 0)
@@ -224,14 +224,14 @@ public sealed class ComponentChildrenAdapter
                 return string.Empty;
             }
 
-            var components = RenderChildrenAsCollection(InterleavedKind.IMessageComponentBuilder);
+            var components = RenderChildrenAsCollection(ComponentBuilderKind.IMessageComponentBuilder);
 
             if (components == string.Empty) return string.Empty;
 
             return $"new {typeName}({components})";
         }
 
-        string RenderChildrenAsCollection(InterleavedKind kind)
+        string RenderChildrenAsCollection(ComponentBuilderKind kind)
         {
             var parts = new List<string>();
 
@@ -264,7 +264,7 @@ public sealed class ComponentChildrenAdapter
     }
 
     private string RenderComponentInner(
-        InterleavedKind kind,
+        ComponentBuilderKind kind,
         IComponentContext context,
         ComponentChild child,
         ComponentState state,
@@ -285,12 +285,12 @@ public sealed class ComponentChildrenAdapter
                 var info = context.GetInterpolationInfo(token);
 
                 if (
-                    !InterleavedComponentNode.IsValidInterleavedType(
+                    !ComponentBuilderKindUtils.IsValidComponentBuilderType(
                         info.Symbol,
                         context.Compilation,
                         out var interpolationKind
                     ) ||
-                    !InterleavedComponentNode.TryConvert(
+                    !ComponentBuilderKindUtils.TryConvert(
                         context.GetDesignerValue(
                             info,
                             info.Symbol!.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
@@ -323,9 +323,9 @@ public sealed class ComponentChildrenAdapter
                 var builder = childNode.Render(context);
 
                 if (
-                    !InterleavedComponentNode.TryConvert(
+                    !ComponentBuilderKindUtils.TryConvert(
                         builder,
-                        InterleavedKind.IMessageComponentBuilder,
+                        ComponentBuilderKind.IMessageComponentBuilder,
                         kind,
                         out converted,
                         spreadCollections

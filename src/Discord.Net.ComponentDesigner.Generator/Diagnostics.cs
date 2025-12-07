@@ -495,5 +495,12 @@ public static partial class Diagnostics
         true
     );
 
-
+    public static readonly DiagnosticDescriptor InvalidInterleavedComponentInCurrentContext = new(
+        "DC0055",
+        "Invalid interpolated component",
+        "'{0}' cannot be used in an expected context of '{1}'",
+        "Components",
+        DiagnosticSeverity.Error,
+        true
+    );
 }

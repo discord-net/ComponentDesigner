@@ -24,7 +24,11 @@ public sealed class SelectMenuInterpolatedOption
         IsBuilder = isBuilder;
     }
 
-    public string Render(SelectMenuComponentNode.SelectState state, IComponentContext context)
+    public string Render(
+        SelectMenuComponentNode.SelectState state,
+        IComponentContext context,
+        ComponentRenderingOptions options
+    )
     {
         var source = context.GetDesignerValue(
             InterpolationId,
@@ -85,7 +89,7 @@ public sealed class SelectMenuInterpolatedOption
         var symbol = info.Symbol;
 
         bool isCollection;
-        
+
         // ReSharper disable once AssignmentInConditionalExpression
         if (isCollection = symbol.TryGetEnumerableType(out var innerSymbol))
             symbol = innerSymbol;

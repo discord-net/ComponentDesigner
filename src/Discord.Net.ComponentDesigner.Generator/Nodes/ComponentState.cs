@@ -19,6 +19,8 @@ public class ComponentState
 
     public bool IsElement => Source is CXElement;
 
+    public bool IsRootNode => OwningNode?.Parent is null;
+
     private readonly Dictionary<ComponentProperty, ComponentPropertyValue> _properties = [];
 
     public ComponentPropertyValue GetProperty(ComponentProperty property)
@@ -167,7 +169,8 @@ public class ComponentState
 
     public string RenderChildren(
         IComponentContext context,
-        Func<CXGraph.Node, bool>? predicate = null
+        Func<CXGraph.Node, bool>? predicate = null,
+        ComponentRenderingOptions options = default
     )
     {
         if (OwningNode is null || !HasChildren) return string.Empty;
@@ -178,7 +181,7 @@ public class ComponentState
 
         return string.Join(
             $",{Environment.NewLine}",
-            children.Select(x => x.Render(context))
+            children.Select(x => x.Render(context, options))
         );
     }
 }

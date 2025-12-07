@@ -21,6 +21,13 @@ public class ActionRowComponentNode : ComponentNode
 
     public override IReadOnlyList<ComponentProperty> Properties { get; }
 
+    private static readonly ComponentRenderingOptions ChildRenderingOptions = new(
+        TypingContext: new(
+            CanSplat: true,
+            ConformingType: ComponentBuilderKind.CollectionOfIMessageComponentBuilders
+        )
+    );
+
     public ActionRowComponentNode()
     {
         Properties =
@@ -63,7 +70,7 @@ public class ActionRowComponentNode : ComponentNode
                         extra.State.Source
                     );
                 }
-                
+
                 break;
             case SelectMenuComponentNode:
                 foreach (var rest in state.Children.Skip(1))
@@ -101,17 +108,21 @@ public class ActionRowComponentNode : ComponentNode
             or SelectMenuComponentNode
             or IDynamicComponentNode;
 
-    public override string Render(ComponentState state, IComponentContext context)
+    public override string Render(
+        ComponentState state,
+        IComponentContext context,
+        ComponentRenderingOptions options
+    )
     {
         var props = state.RenderProperties(this, context, asInitializers: true);
-        var children = state.RenderChildren(context);
+        var children = state.RenderChildren(context, options: ChildRenderingOptions);
 
         var init = new StringBuilder(props);
 
         if (!string.IsNullOrWhiteSpace(children))
         {
             if (!string.IsNullOrWhiteSpace(props)) init.Append(',').AppendLine();
-            
+
             init.Append(
                 $"""
                  Components =
@@ -133,35 +144,11 @@ public class ActionRowComponentNode : ComponentNode
               }}
               """;
     }
-    //         => $$"""
-//              new {{context.KnownTypes.ActionRowBuilderType!.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}}(){{
-//                 $"{
-//                     state
-//                         .RenderProperties(this, context, asInitializers: true)
-//                         .PostfixIfSome(Environment.NewLine)
-//                 }{
-//                     state
-//                         .RenderChildren(context)
-//                         .Map(x =>
-//                             $"""
-//                              Components =
-//                              [
-//                                  {x.WithNewlinePadding(4)}
-//                              ]
-//                              """
-//                         )
-//                 }"
-//                     .TrimEnd()
-//                     .WithNewlinePadding(4)
-//                     .PrefixIfSome($"{Environment.NewLine}{{{Environment.NewLine}".Postfix(4))
-//                     .PostfixIfSome($"{Environment.NewLine}}}")
-//             }}
-//              """;
 }
 
 public sealed class AutoActionRowComponentNode : ActionRowComponentNode
 {
-    public static readonly AutoActionRowComponentNode Instance = new ();
+    public static readonly AutoActionRowComponentNode Instance = new();
     protected override bool IsUserAccessible => false;
 
     public override ComponentState? Create(ComponentStateInitializationContext context)

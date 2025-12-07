@@ -133,6 +133,8 @@ public abstract class BaseRendererTest : BaseTestWithDiagnostics
         public bool HasErrors => GlobalDiagnostics.Any(x => x.Severity is DiagnosticSeverity.Error);
 
         public IReadOnlyList<Diagnostic> GlobalDiagnostics => _globalDiagnostics;
+        
+        public ComponentTypingContext RootTypingContext => ComponentTypingContext.Default;
 
         public List<Diagnostic> AllDiagnostics { get; }
         private readonly List<Diagnostic> _globalDiagnostics;

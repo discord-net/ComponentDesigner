@@ -36,7 +36,7 @@ public sealed class FileComponentNode : ComponentNode
         ];
     }
 
-    public override string Render(ComponentState state, IComponentContext context)
+    public override string Render(ComponentState state, IComponentContext context, ComponentRenderingOptions options)
         => $"""
             new {context.KnownTypes.FileComponentBuilderType!.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}({
                 state.RenderProperties(this, context)

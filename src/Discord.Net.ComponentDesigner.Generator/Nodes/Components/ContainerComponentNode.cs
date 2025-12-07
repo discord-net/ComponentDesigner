@@ -18,6 +18,13 @@ public sealed class ContainerComponentNode : ComponentNode
 
     public override IReadOnlyList<ComponentProperty> Properties { get; }
 
+    private static readonly ComponentRenderingOptions ChildRenderingOptions = new(
+        TypingContext: new(
+            CanSplat: true,
+            ConformingType: ComponentBuilderKind.CollectionOfIMessageComponentBuilders
+        )
+    );
+    
     public ContainerComponentNode()
     {
         Properties =
@@ -66,10 +73,10 @@ public sealed class ContainerComponentNode : ComponentNode
             or SeparatorComponentNode
             or FileComponentNode;
 
-    public override string Render(ComponentState state, IComponentContext context)
+    public override string Render(ComponentState state, IComponentContext context, ComponentRenderingOptions options)
     {
         var props = state.RenderProperties(this, context, asInitializers: true);
-        var children = state.RenderChildren(context);
+        var children = state.RenderChildren(context, options: ChildRenderingOptions);
 
         var init = new StringBuilder(props);
 

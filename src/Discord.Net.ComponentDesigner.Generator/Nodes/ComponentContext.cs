@@ -4,6 +4,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
 using System.Collections.Generic;
 using System.Linq;
+using Discord.CX.Nodes.Components;
 
 namespace Discord.CX.Nodes;
 
@@ -29,14 +30,18 @@ public sealed class ComponentContext : IComponentContext
 
     public List<Diagnostic> GlobalDiagnostics { get; init; } = [];
 
+    public ComponentTypingContext RootTypingContext { get; }
+    
     private readonly CXGraph _graph;
 
     private DiagnosticScope _scope;
 
-    public ComponentContext(CXGraph graph)
+    public ComponentContext(CXGraph graph, ComponentTypingContext? typingContext = null)
     {
         _graph = graph;
         _scope = new(GlobalDiagnostics, null, this);
+        
+        RootTypingContext = typingContext ?? ComponentTypingContext.Default;
     }
 
     public IDisposable CreateDiagnosticScope(List<Diagnostic> bag)

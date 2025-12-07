@@ -10,10 +10,22 @@ using Microsoft.CodeAnalysis;
 
 namespace Discord.CX.Nodes;
 
+public delegate string ComponentNodeRenderer<in TState>(
+    TState state,
+    IComponentContext context,
+    ComponentRenderingOptions options = default
+) where TState : ComponentState;
+
+public delegate string ComponentNodeRenderer(
+    ComponentState state,
+    IComponentContext context,
+    ComponentRenderingOptions options = default
+);
+
 public abstract class ComponentNode<TState> : ComponentNode
     where TState : ComponentState
 {
-    public abstract string Render(TState state, IComponentContext context);
+    public abstract string Render(TState state, IComponentContext context, ComponentRenderingOptions options);
 
     public virtual void UpdateState(ref TState state, IComponentContext context)
     {
@@ -27,8 +39,11 @@ public abstract class ComponentNode<TState> : ComponentNode
     public sealed override ComponentState? Create(ComponentStateInitializationContext context)
         => CreateState(context);
 
-    public sealed override string Render(ComponentState state, IComponentContext context)
-        => Render((TState)state, context);
+    public sealed override string Render(
+        ComponentState state,
+        IComponentContext context,
+        ComponentRenderingOptions options
+    ) => Render((TState)state, context, options);
 
     public virtual void Validate(TState state, IComponentContext context)
     {
@@ -39,15 +54,10 @@ public abstract class ComponentNode<TState> : ComponentNode
         => Validate((TState)state, context);
 }
 
-public delegate string ComponentNodeRenderer<in TState>(TState state, IComponentContext context)
-    where TState : ComponentState;
-
-public delegate string ComponentNodeRenderer(ComponentState state, IComponentContext context);
-
 public abstract class ComponentNode
 {
     protected virtual bool IsUserAccessible => true;
-    
+
     public abstract string Name { get; }
     public virtual IReadOnlyList<string> Aliases { get; } = [];
 
@@ -115,7 +125,11 @@ public abstract class ComponentNode
         return false;
     }
 
-    public abstract string Render(ComponentState state, IComponentContext context);
+    public abstract string Render(
+        ComponentState state,
+        IComponentContext context,
+        ComponentRenderingOptions options
+    );
 
     public virtual void UpdateState(ref ComponentState state, IComponentContext context)
     {
@@ -209,7 +223,7 @@ public abstract class ComponentNode
                     continue;
 
                 if (
-                    !InterleavedComponentNode.IsValidInterleavedType(
+                    !ComponentBuilderKindUtils.IsValidComponentBuilderType(
                         methodSymbol.ReturnType,
                         cxSemanticModel.Compilation,
                         out var kind

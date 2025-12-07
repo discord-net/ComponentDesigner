@@ -300,7 +300,8 @@ public sealed class ButtonComponentNode : ComponentNode<ButtonComponentState>
         base.Validate(state, context);
     }
 
-    public override string Render(ButtonComponentState state, IComponentContext context)
+    public override string Render(ButtonComponentState state, IComponentContext context,
+        ComponentRenderingOptions options)
     {
         string style;
 

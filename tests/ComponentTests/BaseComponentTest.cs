@@ -7,7 +7,7 @@ namespace UnitTests.ComponentTests;
 public abstract class BaseComponentTest : BaseTestWithDiagnostics
 {
     protected CXGraph CurrentGraph => _graph!.Value;
-    
+
     private CXGraph? _graph;
     private ComponentContext? _context;
     private IEnumerator<CXGraph.Node>? _nodeEnumerator;
@@ -16,27 +16,38 @@ public abstract class BaseComponentTest : BaseTestWithDiagnostics
         string cx,
         string? pretext = null,
         bool allowParsingErrors = false,
-        GeneratorOptions? options = null
+        GeneratorOptions? options = null,
+        string? additionalMethods = null,
+        string testClassName = "TestClass",
+        string testFuncName = "Run"
     )
     {
-        if(_graph is not null) EOF();
+        if (_graph is not null) EOF();
 
         _graph = null;
         _context = null;
         _nodeEnumerator = null;
-        
+
         ClearDiagnostics();
-        
+
         var source =
-            $""""
-             using Discord;
-             {pretext}
-             ComponentDesigner.cx(
-                 $"""
-                  {cx.WithNewlinePadding(5)}
-                  """
-             );
-             """";
+            $$""""
+              using Discord;
+
+              public class {{testClassName}}
+              {
+                  public void {{testFuncName}}()
+                  {
+                      {{pretext}}
+                      ComponentDesigner.cx(
+                          $"""
+                           {{cx.WithNewlinePadding(5)}}
+                           """
+                      );
+                  }
+                  {{additionalMethods?.WithNewlinePadding(4)}}
+              }
+              """";
 
         var target = Targets.FromSource(source);
 
@@ -79,7 +90,7 @@ public abstract class BaseComponentTest : BaseTestWithDiagnostics
             Assert.Equal(hasErrors.Value, _graph.Value.HasErrors);
 
         AssertEmptyDiagnostics();
-        
+
         PushDiagnostics([.._context.GlobalDiagnostics, .._graph.Value.Diagnostics]);
     }
 

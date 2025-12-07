@@ -113,14 +113,14 @@ public sealed class SelectMenuComponentNode : ComponentNode
     {
         if (
             !context.Options.EnableAutoRows ||
-            context.ParentGraphNode is  null ||
+            context.ParentGraphNode is null ||
             context.ParentGraphNode.Inner is AutoActionRowComponentNode
         )
         {
             base.AddGraphNode(context);
             return;
         }
-        
+
         context.Push(AutoActionRowComponentNode.Instance, children: [(CXNode)context.CXNode]);
     }
 
@@ -334,7 +334,7 @@ public sealed class SelectMenuComponentNode : ComponentNode
     private static bool IsValidStringSelectChild(ComponentNode node)
         => node is IDynamicComponentNode or SelectMenuOptionComponentNode;
 
-    public override string Render(ComponentState state, IComponentContext context)
+    public override string Render(ComponentState state, IComponentContext context, ComponentRenderingOptions options)
     {
         if (state is not SelectState selectState) return string.Empty;
 
@@ -427,7 +427,7 @@ public sealed class SelectMenuComponentNode : ComponentNode
                             : null;
 
                         if (ReferenceEquals(element, child?.State.Source))
-                            yield return (_, context) => child.Render(context);
+                            yield return (_, context, options) => child.Render(context, options);
 
                         break;
 
