@@ -5,7 +5,7 @@ namespace Sandbox.Examples.Spyfall;
 
 public class PackExample
 {
-    public static MessageComponent CreatePackInfo(
+    public static CXMessageComponent CreatePackInfo(
         Pack pack,
         int locationPage
     ) => cx(
@@ -20,7 +20,7 @@ public class PackExample
          """
     );
 
-    public static MessageComponent PageControls(Pack pack, int page)
+    public static CXMessageComponent PageControls(Pack pack, int page)
         => cx(
             $"""
             <row>
@@ -42,7 +42,7 @@ public class PackExample
             """
         );
 
-    public static MessageComponent Locations(IReadOnlyList<Location> locations, int page)
+    public static CXMessageComponent Locations(IReadOnlyList<Location> locations, int page)
     {
         const int packLocationsPerPage = 3;
 
@@ -67,7 +67,7 @@ public class PackExample
         );
     }
 
-    public static MessageComponent LocationListItem(Location location, int index, int pageLower)
+    public static CXMessageComponent LocationListItem(Location location, int index, int pageLower)
     {
         var content = cx(
             $"""
@@ -130,7 +130,7 @@ public class PackExample
         );
     }
 
-    public static MessageComponent PackHeader(Pack pack)
+    public static CXMessageComponent PackHeader(Pack pack)
     {
         var packHeaderText = cx(
             $"""

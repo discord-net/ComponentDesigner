@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using Discord.Net.ComponentDesignerGenerator.Utils;
 using Microsoft.CodeAnalysis;
 
 namespace Discord.CX.Nodes.Components;
@@ -64,43 +65,15 @@ public static class ComponentBuilderKindUtils
             current = enumerableType.TypeArguments[0];
         }
 
-        if (
-            compilation.HasImplicitConversion(
-                current,
-                compilation.GetKnownTypes().CXMessageComponentType
-            )
-        )
-        {
-            kind |= ComponentBuilderKind.CXMessageComponent;
-        }
-        else if (
-            compilation.HasImplicitConversion(
-                current,
-                compilation.GetKnownTypes().IMessageComponentBuilderType
-            )
-        )
-        {
+        if (current.IsInTypeTree(compilation.GetKnownTypes().MessageComponentType))
+            kind |= ComponentBuilderKind.MessageComponent;
+        else if (current.IsInTypeTree(compilation.GetKnownTypes().IMessageComponentBuilderType))
             kind |= ComponentBuilderKind.IMessageComponentBuilder;
-        }
-        else if (
-            compilation.HasImplicitConversion(
-                current,
-                compilation.GetKnownTypes().IMessageComponentType
-            )
-        )
-        {
+        else if(current.IsInTypeTree(compilation.GetKnownTypes().IMessageComponentType))
             kind |= ComponentBuilderKind.IMessageComponent;
-        }
-        else if (
-            compilation.HasImplicitConversion(
-                current,
-                compilation.GetKnownTypes().MessageComponentType
-            )
-        )
-        {
-            kind |= ComponentBuilderKind.IMessageComponent;
-        }
-
+        else if (current.IsInTypeTree(compilation.GetKnownTypes().CXMessageComponentType))
+            kind |= ComponentBuilderKind.CXMessageComponent;
+        
         return (kind & ComponentBuilderKind.ComponentMask) is not 0;
     }
     
