@@ -126,7 +126,7 @@ public sealed class MediaGalleryComponentNode : ComponentNode<MediaGalleryCompon
         Unsupported = 0,
         Uri = 1,
         String = 2,
-        UnfurledMediaItem = 3,
+        UnfurledMediaItem = 4,
         EnumerableOf = 1 << 3,
         
         EnumerableOfUri = Uri | EnumerableOf,
@@ -358,10 +358,10 @@ public sealed class MediaGalleryComponentNode : ComponentNode<MediaGalleryCompon
         ref int pointer,
         MediaGalleryState state,
         IComponentContext context,
-        out Func<MediaGalleryState, IComponentContext, Result<string>> renderer
+        out Func<MediaGalleryState, IComponentContext, Result<string>>? renderer
     )
     {
-        renderer = null!;
+        renderer = null;
 
         if (pointer >= state.Interpolations.Count)
             return false;
@@ -402,7 +402,7 @@ public sealed class MediaGalleryComponentNode : ComponentNode<MediaGalleryCompon
                 InterpolationType.Uri or InterpolationType.String => 
                     $"new {unfurledMediaType}(x)",
                 InterpolationType.UnfurledMediaItem => "x",
-                _ => throw new InvalidOperationException($"Unsupported enumerable base type: {baseType}")
+                _ => throw new InvalidOperationException($"Unsupported enumerable base type: {nameof(baseType)}")
             };
 
             return $"""
@@ -418,7 +418,7 @@ public sealed class MediaGalleryComponentNode : ComponentNode<MediaGalleryCompon
             InterpolationType.Uri or InterpolationType.String => 
                 $"new {unfurledMediaType}({designerValue})",
             InterpolationType.UnfurledMediaItem => designerValue,
-            _ => throw new InvalidOperationException($"Unsupported type: {baseType}")
+            _ => throw new InvalidOperationException($"Unsupported type: {nameof(baseType)}")
         };
 
         return $"""
