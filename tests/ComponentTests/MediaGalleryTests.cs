@@ -186,10 +186,10 @@ public sealed class MediaGalleryTests(ITestOutputHelper output) : BaseComponentT
                     Items =
                     [
                         new global::Discord.MediaGalleryItemProperties(
-                            media: new global::Discord.UnfurledMediaItemProperties(designer.GetValue<global::System.Uri>(0))
+                            media: new global::Discord.UnfurledMediaItemProperties(designer.GetValue<global::System.Uri>(0).ToString())
                         ),
                         new global::Discord.MediaGalleryItemProperties(
-                            media: new global::Discord.UnfurledMediaItemProperties(designer.GetValue<global::System.Uri>(1))
+                            media: new global::Discord.UnfurledMediaItemProperties(designer.GetValue<global::System.Uri>(1).ToString())
                         )
                     ]
                 }
@@ -259,7 +259,7 @@ public sealed class MediaGalleryTests(ITestOutputHelper output) : BaseComponentT
                     Items =
                     [
                         new global::Discord.MediaGalleryItemProperties(
-                            media: new global::Discord.UnfurledMediaItemProperties(designer.GetValue<global::System.Uri>(0))
+                            media: new global::Discord.UnfurledMediaItemProperties(designer.GetValue<global::System.Uri>(0).ToString())
                         )
                     ]
                 }

@@ -399,7 +399,9 @@ public sealed class MediaGalleryComponentNode : ComponentNode<MediaGalleryCompon
             // For enumerables, use Select to map each element
             var innerWrapping = baseType switch
             {
-                InterpolationType.Uri or InterpolationType.String => 
+                InterpolationType.Uri => 
+                    $"new {unfurledMediaType}(x.ToString())",
+                InterpolationType.String => 
                     $"new {unfurledMediaType}(x)",
                 InterpolationType.UnfurledMediaItem => "x",
                 _ => throw new InvalidOperationException($"Unsupported enumerable base type: {nameof(baseType)}")
@@ -415,7 +417,9 @@ public sealed class MediaGalleryComponentNode : ComponentNode<MediaGalleryCompon
         // Single item types
         var mediaWrapping = baseType switch
         {
-            InterpolationType.Uri or InterpolationType.String => 
+            InterpolationType.Uri => 
+                $"new {unfurledMediaType}({designerValue}.ToString())",
+            InterpolationType.String => 
                 $"new {unfurledMediaType}({designerValue})",
             InterpolationType.UnfurledMediaItem => designerValue,
             _ => throw new InvalidOperationException($"Unsupported type: {nameof(baseType)}")
