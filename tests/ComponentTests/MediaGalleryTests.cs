@@ -158,4 +158,45 @@ public sealed class MediaGalleryTests(ITestOutputHelper output) : BaseComponentT
             EOF();
         }
     }
+
+    [Fact]
+    public void GalleryWithUriInterpolation()
+    {
+        Graph(
+            """
+            <gallery>
+                {url1}
+                {url2}
+            </gallery>
+            """,
+            pretext: """
+            Uri url1 = new Uri("https://example.com/image1.png");
+            Uri url2 = new Uri("https://example.com/image2.png");
+            """
+        );
+        {
+            Node<MediaGalleryComponentNode>();
+
+            Validate(hasErrors: false);
+
+            Renders(
+                """
+                new global::Discord.MediaGalleryBuilder()
+                {
+                    Items =
+                    [
+                        new global::Discord.MediaGalleryItemProperties(
+                            media: new global::Discord.UnfurledMediaItemProperties(designer.GetValue<global::System.Uri>(0))
+                        ),
+                        new global::Discord.MediaGalleryItemProperties(
+                            media: new global::Discord.UnfurledMediaItemProperties(designer.GetValue<global::System.Uri>(1))
+                        )
+                    ]
+                }
+                """
+            );
+
+            EOF();
+        }
+    }
 }
