@@ -13,8 +13,9 @@ public sealed class MediaGalleryComponentNode : ComponentNode<MediaGalleryCompon
 {
     public sealed class MediaGalleryState : ComponentState
     {
-        // Store Uri interpolations with their position index in the source children
-        public List<(int ChildIndex, int InterpolationIndex, DesignerInterpolationInfo Info)> UriInterpolations { get; } = [];
+        // Store interpolations with their position index in the source children
+        // Info is not stored - it's retrieved from context during Validate/Render
+        public required EquatableArray<(int ChildIndex, int InterpolationIndex)> Interpolations { get; init; }
     }
 
     public override string Name => "media-gallery";
@@ -37,27 +38,29 @@ public sealed class MediaGalleryComponentNode : ComponentNode<MediaGalleryCompon
     {
         if (context.Node is not CXElement element) return null;
 
-        var state = new MediaGalleryState { Source = element };
-
         // Add children for normal processing (media-gallery-item elements)
         context.AddChildren(element.Children);
 
-        // Extract Uri interpolations from children for later processing, tracking their position
+        // Extract interpolations from children for later processing, tracking their position
+        var interpolations = new List<(int ChildIndex, int InterpolationIndex)>();
         for (int i = 0; i < element.Children.Count; i++)
         {
-            ExtractUriInterpolations(element.Children[i], i, state, context);
+            ExtractInterpolations(element.Children[i], i, interpolations);
         }
 
-        return state;
+        return new MediaGalleryState 
+        { 
+            Source = element,
+            Interpolations = [..interpolations]
+        };
     }
 
-    private void ExtractUriInterpolations(CXNode node, int childIndex, MediaGalleryState state, ComponentStateInitializationContext context)
+    private void ExtractInterpolations(CXNode node, int childIndex, List<(int ChildIndex, int InterpolationIndex)> interpolations)
     {
-        // Note: We can't access IComponentContext here, so we defer the actual type checking to validation/rendering
-        // For now, just mark potential interpolations with their position
+        // Extract all interpolations regardless of type - type checking happens during validation/rendering
         if (node is CXValue.Interpolation interpolation)
         {
-            state.UriInterpolations.Add((childIndex, interpolation.InterpolationIndex, default!));
+            interpolations.Add((childIndex, interpolation.InterpolationIndex));
         }
         else if (node is CXValue.Multipart multipart)
         {
@@ -65,7 +68,7 @@ public sealed class MediaGalleryComponentNode : ComponentNode<MediaGalleryCompon
             {
                 if (token.InterpolationIndex is { } index)
                 {
-                    state.UriInterpolations.Add((childIndex, index, default!));
+                    interpolations.Add((childIndex, index));
                 }
             }
         }
@@ -86,6 +89,87 @@ public sealed class MediaGalleryComponentNode : ComponentNode<MediaGalleryCompon
 
         return SymbolEqualityComparer.Default.Equals(symbol, uriType) ||
                compilation.HasImplicitConversion(symbol, uriType);
+    }
+
+    private static bool IsStringType(ITypeSymbol? symbol, Compilation compilation)
+    {
+        if (symbol is null) return false;
+        
+        var knownTypes = compilation.GetKnownTypes();
+        var stringType = knownTypes.StringType;
+        
+        return SymbolEqualityComparer.Default.Equals(symbol, stringType) ||
+               compilation.HasImplicitConversion(symbol, stringType);
+    }
+
+    private static bool IsUnfurledMediaItemType(ITypeSymbol? symbol, Compilation compilation)
+    {
+        if (symbol is null) return false;
+        
+        var knownTypes = compilation.GetKnownTypes();
+        var unfurledType = knownTypes.UnfurledMediaItemPropertiesType;
+        if (unfurledType is null) return false;
+        
+        return SymbolEqualityComparer.Default.Equals(symbol, unfurledType) ||
+               compilation.HasImplicitConversion(symbol, unfurledType);
+    }
+
+    private static bool IsEnumerableOfSupportedType(ITypeSymbol? symbol, Compilation compilation, out ITypeSymbol? elementType)
+    {
+        elementType = null;
+        if (symbol is null) return false;
+
+        // Check if the type implements IEnumerable<T>
+        var enumerableType = symbol
+            .AllInterfaces
+            .FirstOrDefault(i => 
+                i.IsGenericType && 
+                i.OriginalDefinition.SpecialType == SpecialType.System_Collections_Generic_IEnumerable_T);
+
+        if (enumerableType is null) return false;
+
+        elementType = enumerableType.TypeArguments.FirstOrDefault();
+        if (elementType is null) return false;
+
+        // Check if T is one of the supported types
+        return IsUriType(elementType, compilation) ||
+               IsStringType(elementType, compilation) ||
+               IsUnfurledMediaItemType(elementType, compilation);
+    }
+
+    private enum InterpolationType
+    {
+        Uri,
+        String,
+        UnfurledMediaItem,
+        EnumerableOfUri,
+        EnumerableOfString,
+        EnumerableOfUnfurledMediaItem,
+        Unsupported
+    }
+
+    private static InterpolationType GetInterpolationType(ITypeSymbol? symbol, Compilation compilation)
+    {
+        if (symbol is null) return InterpolationType.Unsupported;
+
+        if (IsEnumerableOfSupportedType(symbol, compilation, out var elementType))
+        {
+            if (IsUriType(elementType, compilation))
+                return InterpolationType.EnumerableOfUri;
+            if (IsStringType(elementType, compilation))
+                return InterpolationType.EnumerableOfString;
+            if (IsUnfurledMediaItemType(elementType, compilation))
+                return InterpolationType.EnumerableOfUnfurledMediaItem;
+        }
+
+        if (IsUriType(symbol, compilation))
+            return InterpolationType.Uri;
+        if (IsStringType(symbol, compilation))
+            return InterpolationType.String;
+        if (IsUnfurledMediaItemType(symbol, compilation))
+            return InterpolationType.UnfurledMediaItem;
+
+        return InterpolationType.Unsupported;
     }
 
     private static bool IsValidChild(ComponentNode node)
@@ -109,18 +193,30 @@ public sealed class MediaGalleryComponentNode : ComponentNode<MediaGalleryCompon
             else validItemCount++;
         }
 
-        // Update and count Uri interpolations from state
-        for (int i = 0; i < state.UriInterpolations.Count; i++)
+        // Count interpolations based on their type
+        foreach (var (childIndex, index) in state.Interpolations)
         {
-            var (childIndex, index, _) = state.UriInterpolations[i];
             var info = context.GetInterpolationInfo(index);
+            var interpType = GetInterpolationType(info.Symbol, context.Compilation);
             
-            // Update the info in the state for later use in rendering
-            state.UriInterpolations[i] = (childIndex, index, info);
-            
-            if (IsUriType(info.Symbol, context.Compilation))
+            // Count items based on interpolation type
+            switch (interpType)
             {
-                validItemCount++;
+                case InterpolationType.Uri:
+                case InterpolationType.String:
+                case InterpolationType.UnfurledMediaItem:
+                    validItemCount++;
+                    break;
+                case InterpolationType.EnumerableOfUri:
+                case InterpolationType.EnumerableOfString:
+                case InterpolationType.EnumerableOfUnfurledMediaItem:
+                    // For enumerables, we can't know the count at compile time
+                    // So we count it as 1 for validation purposes (could be 0 or more at runtime)
+                    validItemCount++;
+                    break;
+                case InterpolationType.Unsupported:
+                    // Unsupported type - will be ignored during rendering
+                    break;
             }
         }
 
@@ -151,7 +247,7 @@ public sealed class MediaGalleryComponentNode : ComponentNode<MediaGalleryCompon
             }
             else
             {
-                // If Uri interpolations caused the overflow, report on the whole gallery
+                // If interpolations caused the overflow, report on the whole gallery
                 diagnostics.Add(
                     Diagnostics.TooManyItemsInMediaGallery,
                     state.Source
@@ -224,16 +320,19 @@ public sealed class MediaGalleryComponentNode : ComponentNode<MediaGalleryCompon
             }
             else
             {
-                // Check if this is a Uri interpolation
-                var uriInterpolations = state.UriInterpolations
+                // Check if there are interpolations at this position
+                var interpolationsAtPosition = state.Interpolations
                     .Where(x => x.ChildIndex == i)
                     .ToList();
                 
-                foreach (var (_, index, info) in uriInterpolations)
+                foreach (var (_, index) in interpolationsAtPosition)
                 {
-                    if (IsUriType(info.Symbol, context.Compilation))
+                    var info = context.GetInterpolationInfo(index);
+                    var interpType = GetInterpolationType(info.Symbol, context.Compilation);
+                    
+                    if (interpType != InterpolationType.Unsupported)
                     {
-                        results.Add(RenderMediaGalleryItemForUri(context, index, info));
+                        results.Add(RenderInterpolation(context, index, info, interpType));
                     }
                 }
             }
@@ -244,18 +343,57 @@ public sealed class MediaGalleryComponentNode : ComponentNode<MediaGalleryCompon
             .Map(x => string.Join($",{Environment.NewLine}", x));
     }
 
-    private string RenderMediaGalleryItemForUri(IComponentContext context, int interpolationIndex, DesignerInterpolationInfo info)
+    private string RenderInterpolation(IComponentContext context, int interpolationIndex, DesignerInterpolationInfo info, InterpolationType type)
     {
-        var renderedUri = context.GetDesignerValue(
-            interpolationIndex,
-            info.Symbol!.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
-        );
-        
-        return $"""
-            new {context.KnownTypes.MediaGalleryItemPropertiesType!.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}(
-                media: new {context.KnownTypes.UnfurledMediaItemPropertiesType!.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}({renderedUri})
-            )
-            """;
+        var typeStr = info.Symbol!.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+        var designerValue = context.GetDesignerValue(interpolationIndex, typeStr);
+
+        var mediaGalleryItemType = context.KnownTypes.MediaGalleryItemPropertiesType!.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+        var unfurledMediaType = context.KnownTypes.UnfurledMediaItemPropertiesType!.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+
+        switch (type)
+        {
+            case InterpolationType.Uri:
+                return $"""
+                    new {mediaGalleryItemType}(
+                        media: new {unfurledMediaType}({designerValue})
+                    )
+                    """;
+
+            case InterpolationType.String:
+                return $"""
+                    new {mediaGalleryItemType}(
+                        media: new {unfurledMediaType}({designerValue})
+                    )
+                    """;
+
+            case InterpolationType.UnfurledMediaItem:
+                return $"""
+                    new {mediaGalleryItemType}(
+                        media: {designerValue}
+                    )
+                    """;
+
+            case InterpolationType.EnumerableOfUri:
+            case InterpolationType.EnumerableOfString:
+                // For enumerables of Uri or string, we need to map each element to UnfurledMediaItemProperties
+                return $"""
+                    ..{designerValue}.Select(x => new {mediaGalleryItemType}(
+                        media: new {unfurledMediaType}(x)
+                    ))
+                    """;
+
+            case InterpolationType.EnumerableOfUnfurledMediaItem:
+                // For enumerables of UnfurledMediaItem, we can use them directly
+                return $"""
+                    ..{designerValue}.Select(x => new {mediaGalleryItemType}(
+                        media: x
+                    ))
+                    """;
+
+            default:
+                return string.Empty;
+        }
     }
 }
 

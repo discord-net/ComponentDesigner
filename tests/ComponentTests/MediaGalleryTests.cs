@@ -355,4 +355,198 @@ public sealed class MediaGalleryTests(ITestOutputHelper output) : BaseComponentT
             EOF();
         }
     }
+
+    [Fact]
+    public void GalleryWithStringInterpolation()
+    {
+        Graph(
+            """
+            <gallery>
+                {url1}
+                {url2}
+            </gallery>
+            """,
+            pretext: """
+            string url1 = "https://example.com/image1.png";
+            string url2 = "https://example.com/image2.png";
+            """
+        );
+        {
+            Node<MediaGalleryComponentNode>();
+
+            Validate(hasErrors: false);
+
+            Renders(
+                """
+                new global::Discord.MediaGalleryBuilder()
+                {
+                    Items =
+                    [
+                        new global::Discord.MediaGalleryItemProperties(
+                            media: new global::Discord.UnfurledMediaItemProperties(designer.GetValue<string>(0))
+                        ),
+                        new global::Discord.MediaGalleryItemProperties(
+                            media: new global::Discord.UnfurledMediaItemProperties(designer.GetValue<string>(1))
+                        )
+                    ]
+                }
+                """
+            );
+
+            EOF();
+        }
+    }
+
+    [Fact]
+    public void GalleryWithUnfurledMediaItemInterpolation()
+    {
+        Graph(
+            """
+            <gallery>
+                {item}
+            </gallery>
+            """,
+            pretext: """
+            Discord.UnfurledMediaItemProperties item = new Discord.UnfurledMediaItemProperties("https://example.com/image.png");
+            """
+        );
+        {
+            Node<MediaGalleryComponentNode>();
+
+            Validate(hasErrors: false);
+
+            Renders(
+                """
+                new global::Discord.MediaGalleryBuilder()
+                {
+                    Items =
+                    [
+                        new global::Discord.MediaGalleryItemProperties(
+                            media: designer.GetValue<global::Discord.UnfurledMediaItemProperties>(0)
+                        )
+                    ]
+                }
+                """
+            );
+
+            EOF();
+        }
+    }
+
+    [Fact]
+    public void GalleryWithEnumerableOfUris()
+    {
+        Graph(
+            """
+            <gallery>
+                {urls}
+            </gallery>
+            """,
+            pretext: """
+            System.Collections.Generic.List<System.Uri> urls = new System.Collections.Generic.List<System.Uri> { 
+                new System.Uri("https://example.com/1.png"),
+                new System.Uri("https://example.com/2.png")
+            };
+            """
+        );
+        {
+            Node<MediaGalleryComponentNode>();
+
+            Validate(hasErrors: false);
+
+            // Just verify it renders successfully
+            Renders();
+
+            EOF();
+        }
+    }
+
+    [Fact]
+    public void GalleryWithEnumerableOfStrings()
+    {
+        Graph(
+            """
+            <gallery>
+                {urls}
+            </gallery>
+            """,
+            pretext: """
+            System.Collections.Generic.List<string> urls = new System.Collections.Generic.List<string> { 
+                "https://example.com/1.png",
+                "https://example.com/2.png"
+            };
+            """
+        );
+        {
+            Node<MediaGalleryComponentNode>();
+
+            Validate(hasErrors: false);
+
+            // Just verify it renders successfully
+            Renders();
+
+            EOF();
+        }
+    }
+
+    [Fact]
+    public void GalleryWithEnumerableOfUnfurledMediaItems()
+    {
+        Graph(
+            """
+            <gallery>
+                {items}
+            </gallery>
+            """,
+            pretext: """
+            System.Collections.Generic.List<Discord.UnfurledMediaItemProperties> items = new System.Collections.Generic.List<Discord.UnfurledMediaItemProperties> { 
+                new Discord.UnfurledMediaItemProperties("https://example.com/1.png"),
+                new Discord.UnfurledMediaItemProperties("https://example.com/2.png")
+            };
+            """
+        );
+        {
+            Node<MediaGalleryComponentNode>();
+
+            Validate(hasErrors: false);
+
+            // Just verify it renders successfully
+            Renders();
+
+            EOF();
+        }
+    }
+
+    [Fact]
+    public void GalleryMixingAllTypes()
+    {
+        Graph(
+            """
+            <gallery>
+                <item url="https://static.example.com/1.png" />
+                {uriValue}
+                {stringValue}
+                {unfurledValue}
+            </gallery>
+            """,
+            pretext: """
+            System.Uri uriValue = new System.Uri("https://example.com/2.png");
+            string stringValue = "https://example.com/3.png";
+            Discord.UnfurledMediaItemProperties unfurledValue = new Discord.UnfurledMediaItemProperties("https://example.com/4.png");
+            """
+        );
+        {
+            Node<MediaGalleryComponentNode>();
+            {
+                Node<MediaGalleryItemComponentNode>();
+            }
+
+            Validate(hasErrors: false);
+
+            // Just verify it renders successfully
+            Renders();
+
+            EOF();
+        }
+    }
 }
