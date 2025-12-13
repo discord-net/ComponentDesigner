@@ -109,15 +109,24 @@ public sealed class MediaGalleryComponentNode : ComponentNode
 
     private int CountUriInterpolations(CXNode node, IComponentContext context)
     {
+        var count = 0;
+        ProcessUriInterpolations(node, context, (index, info) => count++);
+        return count;
+    }
+
+    private void ProcessUriInterpolations(CXNode node, IComponentContext context, Action<int, DesignerInterpolationInfo> action)
+    {
         if (node is CXValue.Interpolation interpolation)
         {
             var info = context.GetInterpolationInfo(interpolation.InterpolationIndex);
-            return IsUriType(info.Symbol, context.Compilation) ? 1 : 0;
+            if (IsUriType(info.Symbol, context.Compilation))
+            {
+                action(interpolation.InterpolationIndex, info);
+            }
         }
         else if (node is CXValue.Multipart multipart)
         {
-            // Count each Uri interpolation in the multipart
-            var count = 0;
+            // Process each Uri interpolation in the multipart
             foreach (var token in multipart.Tokens)
             {
                 if (token.InterpolationIndex is { } index)
@@ -125,14 +134,11 @@ public sealed class MediaGalleryComponentNode : ComponentNode
                     var info = context.GetInterpolationInfo(index);
                     if (IsUriType(info.Symbol, context.Compilation))
                     {
-                        count++;
+                        action(index, info);
                     }
                 }
             }
-            return count;
         }
-
-        return 0;
     }
 
     public override Result<string> Render(
@@ -199,51 +205,24 @@ public sealed class MediaGalleryComponentNode : ComponentNode
 
     private void RenderUriInterpolations(CXNode node, IComponentContext context, List<Result<string>> results)
     {
-        if (node is CXValue.Interpolation interpolation)
+        ProcessUriInterpolations(node, context, (index, info) =>
         {
-            var info = context.GetInterpolationInfo(interpolation.InterpolationIndex);
-            if (IsUriType(info.Symbol, context.Compilation))
-            {
-                var renderedUri = context.GetDesignerValue(
-                    interpolation.InterpolationIndex,
-                    info.Symbol!.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
-                );
-                
-                results.Add(
-                    $"""
-                    new {context.KnownTypes.MediaGalleryItemPropertiesType!.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}(
-                        media: new {context.KnownTypes.UnfurledMediaItemPropertiesType!.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}({renderedUri})
-                    )
-                    """
-                );
-            }
-        }
-        else if (node is CXValue.Multipart multipart)
-        {
-            // Render each Uri interpolation in the multipart
-            foreach (var token in multipart.Tokens)
-            {
-                if (token.InterpolationIndex is { } index)
-                {
-                    var info = context.GetInterpolationInfo(index);
-                    if (IsUriType(info.Symbol, context.Compilation))
-                    {
-                        var renderedUri = context.GetDesignerValue(
-                            index,
-                            info.Symbol!.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
-                        );
-                        
-                        results.Add(
-                            $"""
-                            new {context.KnownTypes.MediaGalleryItemPropertiesType!.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}(
-                                media: new {context.KnownTypes.UnfurledMediaItemPropertiesType!.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}({renderedUri})
-                            )
-                            """
-                        );
-                    }
-                }
-            }
-        }
+            results.Add(RenderMediaGalleryItemForUri(context, index, info));
+        });
+    }
+
+    private string RenderMediaGalleryItemForUri(IComponentContext context, int interpolationIndex, DesignerInterpolationInfo info)
+    {
+        var renderedUri = context.GetDesignerValue(
+            interpolationIndex,
+            info.Symbol!.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
+        );
+        
+        return $"""
+            new {context.KnownTypes.MediaGalleryItemPropertiesType!.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}(
+                media: new {context.KnownTypes.UnfurledMediaItemPropertiesType!.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}({renderedUri})
+            )
+            """;
     }
 }
 
