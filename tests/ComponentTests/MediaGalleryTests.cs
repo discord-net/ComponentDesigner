@@ -549,4 +549,79 @@ public sealed class MediaGalleryTests(ITestOutputHelper output) : BaseComponentT
             EOF();
         }
     }
+
+    [Fact]
+    public void GalleryWithIEnumerableOfUris()
+    {
+        Graph(
+            """
+            <gallery>
+                {urls}
+            </gallery>
+            """,
+            pretext: """
+            System.Collections.Generic.IEnumerable<System.Uri> urls = System.Linq.Enumerable.Empty<System.Uri>();
+            """
+        );
+        {
+            Node<MediaGalleryComponentNode>();
+
+            Validate(hasErrors: false);
+
+            // Just verify it renders successfully
+            Renders();
+
+            EOF();
+        }
+    }
+
+    [Fact]
+    public void GalleryWithIEnumerableOfStrings()
+    {
+        Graph(
+            """
+            <gallery>
+                {urls}
+            </gallery>
+            """,
+            pretext: """
+            System.Collections.Generic.IEnumerable<string> urls = System.Linq.Enumerable.Empty<string>();
+            """
+        );
+        {
+            Node<MediaGalleryComponentNode>();
+
+            Validate(hasErrors: false);
+
+            // Just verify it renders successfully
+            Renders();
+
+            EOF();
+        }
+    }
+
+    [Fact]
+    public void GalleryWithIEnumerableOfUnfurledMediaItems()
+    {
+        Graph(
+            """
+            <gallery>
+                {items}
+            </gallery>
+            """,
+            pretext: """
+            System.Collections.Generic.IEnumerable<Discord.UnfurledMediaItemProperties> items = System.Linq.Enumerable.Empty<Discord.UnfurledMediaItemProperties>();
+            """
+        );
+        {
+            Node<MediaGalleryComponentNode>();
+
+            Validate(hasErrors: false);
+
+            // Just verify it renders successfully
+            Renders();
+
+            EOF();
+        }
+    }
 }
