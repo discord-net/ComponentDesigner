@@ -9,8 +9,14 @@ using SymbolDisplayFormat = Microsoft.CodeAnalysis.SymbolDisplayFormat;
 
 namespace Discord.CX.Nodes.Components;
 
-public sealed class MediaGalleryComponentNode : ComponentNode
+public sealed class MediaGalleryComponentNode : ComponentNode<MediaGalleryComponentNode.MediaGalleryState>
 {
+    public sealed class MediaGalleryState : ComponentState
+    {
+        // Store Uri interpolations with their position index in the source children
+        public List<(int ChildIndex, int InterpolationIndex, DesignerInterpolationInfo Info)> UriInterpolations { get; } = [];
+    }
+
     public override string Name => "media-gallery";
 
     public override IReadOnlyList<string> Aliases { get; } = ["gallery"];
@@ -27,30 +33,73 @@ public sealed class MediaGalleryComponentNode : ComponentNode
         ];
     }
 
+    public override MediaGalleryState? CreateState(ComponentStateInitializationContext context)
+    {
+        if (context.Node is not CXElement element) return null;
+
+        var state = new MediaGalleryState { Source = element };
+
+        // Add children for normal processing (media-gallery-item elements)
+        context.AddChildren(element.Children);
+
+        // Extract Uri interpolations from children for later processing, tracking their position
+        for (int i = 0; i < element.Children.Count; i++)
+        {
+            ExtractUriInterpolations(element.Children[i], i, state, context);
+        }
+
+        return state;
+    }
+
+    private void ExtractUriInterpolations(CXNode node, int childIndex, MediaGalleryState state, ComponentStateInitializationContext context)
+    {
+        // Note: We can't access IComponentContext here, so we defer the actual type checking to validation/rendering
+        // For now, just mark potential interpolations with their position
+        if (node is CXValue.Interpolation interpolation)
+        {
+            state.UriInterpolations.Add((childIndex, interpolation.InterpolationIndex, default!));
+        }
+        else if (node is CXValue.Multipart multipart)
+        {
+            foreach (var token in multipart.Tokens)
+            {
+                if (token.InterpolationIndex is { } index)
+                {
+                    state.UriInterpolations.Add((childIndex, index, default!));
+                }
+            }
+        }
+    }
+
     private static bool IsUriType(ITypeSymbol? symbol, Compilation compilation)
     {
         if (symbol is null) return false;
         
-        // Check if the symbol's fully qualified name is System.Uri
-        var fullName = symbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-        if (fullName == "global::System.Uri")
-            return true;
-        
-        var uriType = compilation.GetTypeByMetadataName("System.Uri");
-        if (uriType is null) return false;
+        var knownTypes = compilation.GetKnownTypes();
+        var uriType = knownTypes.UriType;
+        if (uriType is null)
+        {
+            // Fallback: Check if the symbol's fully qualified name is System.Uri
+            var fullName = symbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+            return fullName == "global::System.Uri";
+        }
 
         return SymbolEqualityComparer.Default.Equals(symbol, uriType) ||
                compilation.HasImplicitConversion(symbol, uriType);
     }
 
-    public override void Validate(ComponentState state, IComponentContext context, IList<DiagnosticInfo> diagnostics)
+    private static bool IsValidChild(ComponentNode node)
+        => node is IDynamicComponentNode
+            or MediaGalleryItemComponentNode;
+
+    public override void Validate(MediaGalleryState state, IComponentContext context, IList<DiagnosticInfo> diagnostics)
     {
         var validItemCount = 0;
         
         // Count valid children from the graph
         foreach (var child in state.Children)
         {
-            if (child.Inner is not (IDynamicComponentNode or MediaGalleryItemComponentNode))
+            if (!IsValidChild(child.Inner))
             {
                 diagnostics.Add(
                     Diagnostics.InvalidMediaGalleryChild(child.Inner.Name),
@@ -60,12 +109,18 @@ public sealed class MediaGalleryComponentNode : ComponentNode
             else validItemCount++;
         }
 
-        // Also count valid Uri interpolations from source that didn't create graph nodes
-        if (state.Source is CXElement element)
+        // Update and count Uri interpolations from state
+        for (int i = 0; i < state.UriInterpolations.Count; i++)
         {
-            foreach (var sourceChild in element.Children)
+            var (childIndex, index, _) = state.UriInterpolations[i];
+            var info = context.GetInterpolationInfo(index);
+            
+            // Update the info in the state for later use in rendering
+            state.UriInterpolations[i] = (childIndex, index, info);
+            
+            if (IsUriType(info.Symbol, context.Compilation))
             {
-                validItemCount += CountUriInterpolations(sourceChild, context);
+                validItemCount++;
             }
         }
 
@@ -79,7 +134,7 @@ public sealed class MediaGalleryComponentNode : ComponentNode
         else if (validItemCount > Constants.MAX_MEDIA_ITEMS)
         {
             // Report the error on items beyond the limit
-            var graphValidChildren = state.Children.Where(x => x.Inner is (IDynamicComponentNode or MediaGalleryItemComponentNode)).ToArray();
+            var graphValidChildren = state.Children.Where(x => IsValidChild(x.Inner)).ToArray();
             
             if (graphValidChildren.Length > Constants.MAX_MEDIA_ITEMS)
             {
@@ -107,42 +162,8 @@ public sealed class MediaGalleryComponentNode : ComponentNode
         base.Validate(state, context, diagnostics);
     }
 
-    private int CountUriInterpolations(CXNode node, IComponentContext context)
-    {
-        var count = 0;
-        ProcessUriInterpolations(node, context, (index, info) => count++);
-        return count;
-    }
-
-    private void ProcessUriInterpolations(CXNode node, IComponentContext context, Action<int, DesignerInterpolationInfo> action)
-    {
-        if (node is CXValue.Interpolation interpolation)
-        {
-            var info = context.GetInterpolationInfo(interpolation.InterpolationIndex);
-            if (IsUriType(info.Symbol, context.Compilation))
-            {
-                action(interpolation.InterpolationIndex, info);
-            }
-        }
-        else if (node is CXValue.Multipart multipart)
-        {
-            // Process each Uri interpolation in the multipart
-            foreach (var token in multipart.Tokens)
-            {
-                if (token.InterpolationIndex is { } index)
-                {
-                    var info = context.GetInterpolationInfo(index);
-                    if (IsUriType(info.Symbol, context.Compilation))
-                    {
-                        action(index, info);
-                    }
-                }
-            }
-        }
-    }
-
     public override Result<string> Render(
-        ComponentState state,
+        MediaGalleryState state,
         IComponentContext context,
         ComponentRenderingOptions options
     ) => state
@@ -177,38 +198,50 @@ public sealed class MediaGalleryComponentNode : ComponentNode
         });
 
     private Result<string> RenderChildrenWithUriWrapping(
-        ComponentState state,
+        MediaGalleryState state,
         IComponentContext context
     )
     {
+        if (state.Source is not CXElement element) 
+            return string.Empty;
+
         var results = new List<Result<string>>();
+        var graphChildIndex = 0;
 
-        // Render graph node children normally
-        foreach (var child in state.Children)
+        // Render items in source order
+        for (int i = 0; i < element.Children.Count; i++)
         {
-            results.Add(child.Render(context));
-        }
-
-        // Also process source children to find Uri interpolations that didn't create graph nodes
-        if (state.Source is CXElement element)
-        {
-            foreach (var sourceChild in element.Children)
+            var sourceChild = element.Children[i];
+            
+            // Check if this source child created a graph node
+            var isGraphChild = sourceChild is CXElement;
+            
+            if (isGraphChild && graphChildIndex < state.Children.Count)
             {
-                RenderUriInterpolations(sourceChild, context, results);
+                // Render the graph child
+                results.Add(state.Children[graphChildIndex].Render(context));
+                graphChildIndex++;
+            }
+            else
+            {
+                // Check if this is a Uri interpolation
+                var uriInterpolations = state.UriInterpolations
+                    .Where(x => x.ChildIndex == i)
+                    .ToList();
+                
+                foreach (var (_, index, info) in uriInterpolations)
+                {
+                    if (IsUriType(info.Symbol, context.Compilation))
+                    {
+                        results.Add(RenderMediaGalleryItemForUri(context, index, info));
+                    }
+                }
             }
         }
 
         return results
             .FlattenAll()
             .Map(x => string.Join($",{Environment.NewLine}", x));
-    }
-
-    private void RenderUriInterpolations(CXNode node, IComponentContext context, List<Result<string>> results)
-    {
-        ProcessUriInterpolations(node, context, (index, info) =>
-        {
-            results.Add(RenderMediaGalleryItemForUri(context, index, info));
-        });
     }
 
     private string RenderMediaGalleryItemForUri(IComponentContext context, int interpolationIndex, DesignerInterpolationInfo info)
