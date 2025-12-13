@@ -170,8 +170,8 @@ public sealed class MediaGalleryTests(ITestOutputHelper output) : BaseComponentT
             </gallery>
             """,
             pretext: """
-            Uri url1 = new Uri("https://example.com/image1.png");
-            Uri url2 = new Uri("https://example.com/image2.png");
+            System.Uri url1 = new System.Uri("https://example.com/image1.png");
+            System.Uri url2 = new System.Uri("https://example.com/image2.png");
             """
         );
         {

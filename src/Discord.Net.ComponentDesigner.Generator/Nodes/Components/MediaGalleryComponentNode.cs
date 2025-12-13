@@ -31,6 +31,11 @@ public sealed class MediaGalleryComponentNode : ComponentNode
     {
         if (symbol is null) return false;
         
+        // Check if the symbol's fully qualified name is System.Uri
+        var fullName = symbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+        if (fullName == "global::System.Uri")
+            return true;
+        
         var uriType = compilation.GetTypeByMetadataName("System.Uri");
         if (uriType is null) return false;
 
