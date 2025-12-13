@@ -226,8 +226,8 @@ public sealed class MediaGalleryTests(ITestOutputHelper output) : BaseComponentT
 
             Validate(hasErrors: false);
 
-            // Just verify it renders successfully - the order should be item1, url2, item3, url4
-            // but verifying exact string match is brittle due to whitespace/formatting
+            // Verify it renders successfully - just check compilation, not exact output
+            // The order should be: item1, url2 (index 0), item3, url4 (index 1)
             Renders();
 
             EOF();
@@ -305,6 +305,47 @@ public sealed class MediaGalleryTests(ITestOutputHelper output) : BaseComponentT
             Node<MediaGalleryComponentNode>();
 
             Validate(hasErrors: false);
+
+            Renders(
+                """
+                new global::Discord.MediaGalleryBuilder()
+                {
+                    Items =
+                    [
+                        new global::Discord.MediaGalleryItemProperties(
+                            media: new global::Discord.UnfurledMediaItemProperties(designer.GetValue<global::System.Uri>(0).ToString())
+                        ),
+                        new global::Discord.MediaGalleryItemProperties(
+                            media: new global::Discord.UnfurledMediaItemProperties(designer.GetValue<global::System.Uri>(1).ToString())
+                        ),
+                        new global::Discord.MediaGalleryItemProperties(
+                            media: new global::Discord.UnfurledMediaItemProperties(designer.GetValue<global::System.Uri>(2).ToString())
+                        ),
+                        new global::Discord.MediaGalleryItemProperties(
+                            media: new global::Discord.UnfurledMediaItemProperties(designer.GetValue<global::System.Uri>(3).ToString())
+                        ),
+                        new global::Discord.MediaGalleryItemProperties(
+                            media: new global::Discord.UnfurledMediaItemProperties(designer.GetValue<global::System.Uri>(4).ToString())
+                        ),
+                        new global::Discord.MediaGalleryItemProperties(
+                            media: new global::Discord.UnfurledMediaItemProperties(designer.GetValue<global::System.Uri>(5).ToString())
+                        ),
+                        new global::Discord.MediaGalleryItemProperties(
+                            media: new global::Discord.UnfurledMediaItemProperties(designer.GetValue<global::System.Uri>(6).ToString())
+                        ),
+                        new global::Discord.MediaGalleryItemProperties(
+                            media: new global::Discord.UnfurledMediaItemProperties(designer.GetValue<global::System.Uri>(7).ToString())
+                        ),
+                        new global::Discord.MediaGalleryItemProperties(
+                            media: new global::Discord.UnfurledMediaItemProperties(designer.GetValue<global::System.Uri>(8).ToString())
+                        ),
+                        new global::Discord.MediaGalleryItemProperties(
+                            media: new global::Discord.UnfurledMediaItemProperties(designer.GetValue<global::System.Uri>(9).ToString())
+                        )
+                    ]
+                }
+                """
+            );
 
             EOF();
         }
@@ -454,8 +495,19 @@ public sealed class MediaGalleryTests(ITestOutputHelper output) : BaseComponentT
 
             Validate(hasErrors: false);
 
-            // Just verify it renders successfully
-            Renders();
+            Renders(
+                """
+                new global::Discord.MediaGalleryBuilder()
+                {
+                    Items =
+                    [
+                        ..designer.GetValue<global::System.Collections.Generic.List<global::System.Uri>>(0).Select(x => new global::Discord.MediaGalleryItemProperties(
+                            media: new global::Discord.UnfurledMediaItemProperties(x.ToString())
+                        ))
+                    ]
+                }
+                """
+            );
 
             EOF();
         }
@@ -482,8 +534,19 @@ public sealed class MediaGalleryTests(ITestOutputHelper output) : BaseComponentT
 
             Validate(hasErrors: false);
 
-            // Just verify it renders successfully
-            Renders();
+            Renders(
+                """
+                new global::Discord.MediaGalleryBuilder()
+                {
+                    Items =
+                    [
+                        ..designer.GetValue<global::System.Collections.Generic.List<string>>(0).Select(x => new global::Discord.MediaGalleryItemProperties(
+                            media: new global::Discord.UnfurledMediaItemProperties(x)
+                        ))
+                    ]
+                }
+                """
+            );
 
             EOF();
         }
@@ -510,8 +573,19 @@ public sealed class MediaGalleryTests(ITestOutputHelper output) : BaseComponentT
 
             Validate(hasErrors: false);
 
-            // Just verify it renders successfully
-            Renders();
+            Renders(
+                """
+                new global::Discord.MediaGalleryBuilder()
+                {
+                    Items =
+                    [
+                        ..designer.GetValue<global::System.Collections.Generic.List<global::Discord.UnfurledMediaItemProperties>>(0).Select(x => new global::Discord.MediaGalleryItemProperties(
+                            media: x
+                        ))
+                    ]
+                }
+                """
+            );
 
             EOF();
         }
@@ -543,8 +617,28 @@ public sealed class MediaGalleryTests(ITestOutputHelper output) : BaseComponentT
 
             Validate(hasErrors: false);
 
-            // Just verify it renders successfully
-            Renders();
+            Renders(
+                """
+                new global::Discord.MediaGalleryBuilder()
+                {
+                    Items =
+                    [
+                        new global::Discord.MediaGalleryItemProperties(
+                            media: new global::Discord.UnfurledMediaItemProperties("https://static.example.com/1.png")
+                        ),
+                        new global::Discord.MediaGalleryItemProperties(
+                            media: new global::Discord.UnfurledMediaItemProperties(designer.GetValue<global::System.Uri>(0).ToString())
+                        ),
+                        new global::Discord.MediaGalleryItemProperties(
+                            media: new global::Discord.UnfurledMediaItemProperties(designer.GetValue<string>(1))
+                        ),
+                        new global::Discord.MediaGalleryItemProperties(
+                            media: designer.GetValue<global::Discord.UnfurledMediaItemProperties>(2)
+                        )
+                    ]
+                }
+                """
+            );
 
             EOF();
         }
@@ -568,8 +662,19 @@ public sealed class MediaGalleryTests(ITestOutputHelper output) : BaseComponentT
 
             Validate(hasErrors: false);
 
-            // Just verify it renders successfully
-            Renders();
+            Renders(
+                """
+                new global::Discord.MediaGalleryBuilder()
+                {
+                    Items =
+                    [
+                        ..designer.GetValue<global::System.Collections.Generic.IEnumerable<global::System.Uri>>(0).Select(x => new global::Discord.MediaGalleryItemProperties(
+                            media: new global::Discord.UnfurledMediaItemProperties(x.ToString())
+                        ))
+                    ]
+                }
+                """
+            );
 
             EOF();
         }
@@ -593,8 +698,19 @@ public sealed class MediaGalleryTests(ITestOutputHelper output) : BaseComponentT
 
             Validate(hasErrors: false);
 
-            // Just verify it renders successfully
-            Renders();
+            Renders(
+                """
+                new global::Discord.MediaGalleryBuilder()
+                {
+                    Items =
+                    [
+                        ..designer.GetValue<global::System.Collections.Generic.IEnumerable<string>>(0).Select(x => new global::Discord.MediaGalleryItemProperties(
+                            media: new global::Discord.UnfurledMediaItemProperties(x)
+                        ))
+                    ]
+                }
+                """
+            );
 
             EOF();
         }
@@ -618,8 +734,19 @@ public sealed class MediaGalleryTests(ITestOutputHelper output) : BaseComponentT
 
             Validate(hasErrors: false);
 
-            // Just verify it renders successfully
-            Renders();
+            Renders(
+                """
+                new global::Discord.MediaGalleryBuilder()
+                {
+                    Items =
+                    [
+                        ..designer.GetValue<global::System.Collections.Generic.IEnumerable<global::Discord.UnfurledMediaItemProperties>>(0).Select(x => new global::Discord.MediaGalleryItemProperties(
+                            media: x
+                        ))
+                    ]
+                }
+                """
+            );
 
             EOF();
         }

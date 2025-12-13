@@ -288,10 +288,21 @@ A Media Gallery allows you to display media attachments in an organized format.
 
 #### Valid children
 - [Media Gallery Item](#media-gallery-item)
+- Interpolations of supported types (automatically converted to unfurled media items):
+  - `Uri` - Converted to string using `.ToString()`
+  - `string` - Used directly as URL
+  - `UnfurledMediaItemProperties` - Used directly
+  - `IEnumerable<Uri>` - Each element converted to unfurled media item
+  - `IEnumerable<string>` - Each element converted to unfurled media item
+  - `IEnumerable<UnfurledMediaItemProperties>` - Each element used directly
 
 ```html
 <media-gallery id={123}>
-    ...
+    <item url="https://example.com/1.png" />
+    {myUri}
+    {myStringUrl}
+    {myUnfurledItem}
+    {myUriCollection}
 </media-gallery>
 ```
 
