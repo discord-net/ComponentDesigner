@@ -354,13 +354,8 @@ public sealed class MediaGalleryComponentNode : ComponentNode<MediaGalleryCompon
         switch (type)
         {
             case InterpolationType.Uri:
-                return $"""
-                    new {mediaGalleryItemType}(
-                        media: new {unfurledMediaType}({designerValue})
-                    )
-                    """;
-
             case InterpolationType.String:
+                // Uri and string are both wrapped in UnfurledMediaItemProperties
                 return $"""
                     new {mediaGalleryItemType}(
                         media: new {unfurledMediaType}({designerValue})
