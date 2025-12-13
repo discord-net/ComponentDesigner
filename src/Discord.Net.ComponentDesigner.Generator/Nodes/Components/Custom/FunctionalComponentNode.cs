@@ -114,7 +114,7 @@ public class FunctionalComponentNode : ComponentNode<FunctionalComponentNodeStat
         .Combine(
             (
                 _adapter?.ChildrenRenderer(context, state, state.Children)
-                    .Map(x => $"{ChildrenParameter?.Name}: ")
+                    .Map(x => $"{ChildrenParameter?.Name}: {x}")
             )
             .Or(string.Empty)
         )
@@ -128,6 +128,7 @@ public class FunctionalComponentNode : ComponentNode<FunctionalComponentNodeStat
             var source = $"{MethodReference}({
                 args.WithNewlinePadding(4)
                     .PrefixIfSome(4)
+                    .WrapIfSome(Environment.NewLine)
             })";
 
             var typingContext = options.TypingContext;
