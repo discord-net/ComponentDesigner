@@ -226,9 +226,28 @@ public sealed class MediaGalleryTests(ITestOutputHelper output) : BaseComponentT
 
             Validate(hasErrors: false);
 
-            // Verify it renders successfully - just check compilation, not exact output
-            // The order should be: item1, url2 (index 0), item3, url4 (index 1)
-            Renders();
+            Renders(
+                """
+                new global::Discord.MediaGalleryBuilder()
+                {
+                    Items =
+                    [
+                        new global::Discord.MediaGalleryItemProperties(
+                            media: new global::Discord.UnfurledMediaItemProperties("https://example.com/image1.png")
+                        ),
+                        new global::Discord.MediaGalleryItemProperties(
+                            media: new global::Discord.UnfurledMediaItemProperties(designer.GetValue<global::System.Uri>(0).ToString())
+                        ),
+                        new global::Discord.MediaGalleryItemProperties(
+                            media: new global::Discord.UnfurledMediaItemProperties("https://example.com/image3.png")
+                        ),
+                        new global::Discord.MediaGalleryItemProperties(
+                            media: new global::Discord.UnfurledMediaItemProperties(designer.GetValue<global::System.Uri>(0).ToString())
+                        )
+                    ]
+                }
+                """
+            );
 
             EOF();
         }
