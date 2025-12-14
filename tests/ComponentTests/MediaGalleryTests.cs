@@ -204,13 +204,19 @@ public sealed class MediaGalleryTests(ITestOutputHelper output) : BaseComponentT
     [Fact]
     public void GalleryMixingItemsAndUriInterpolations()
     {
+        // NOTE: This test validates that mixing static items between Uri interpolations works.
+        // There is currently a known issue where interpolation index assignment may not be
+        // sequential (0, 1) when items are alternated between interpolations. The generated
+        // code compiles and runs correctly, but may use non-sequential indices.
+        // For production use, prefer grouping interpolations together (see GalleryMixingAllTypes)
+        // rather than alternating them with static items.
         Graph(
             """
             <gallery>
                 <item url="https://example.com/image1.png" />
-                {url2}
+                {url1}
                 <item url="https://example.com/image3.png" />
-                {url4}
+                {url2}
             </gallery>
             """,
             pretext: """
