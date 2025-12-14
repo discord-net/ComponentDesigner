@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
+using Discord.CX.Util;
 
 namespace Discord.CX.Parser;
 
@@ -354,6 +355,24 @@ public abstract partial class CXNode : ICXNode
 
         _descendants = null;
     }
+
+    public bool Equals(CXNode? other)
+    {
+        if (other is null) return false;
+
+        if (ReferenceEquals(this, other)) return true;
+
+        return _slots.SequenceEqual(other._slots);
+    }
+
+    public bool Equals(ICXNode other)
+        => other is CXNode node && Equals(node);
+
+    public override bool Equals(object? obj)
+        => obj is CXNode node && Equals(node);
+
+    public override int GetHashCode()
+        => _slots.Aggregate(0, Hash.Combine);
 
     public override string ToString() => ToString(false, false);
     public string ToFullString() => ToString(true, true);

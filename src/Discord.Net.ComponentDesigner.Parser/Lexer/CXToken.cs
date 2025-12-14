@@ -136,15 +136,13 @@ public sealed record CXToken(
 
         if (ReferenceEquals(this, other)) return true;
 
-        return
-            Kind == other.Kind &&
-            Span.Equals(other.Span) &&
-            LeadingTrivia.Equals(other.LeadingTrivia) &&
-            TrailingTrivia.Equals(other.TrailingTrivia) &&
-            Flags == other.Flags &&
-            Diagnostics.SequenceEqual(other.Diagnostics);
+        return Kind == other.Kind &&
+               Value == other.Value;
     }
 
+    public bool Equals(ICXNode other)
+        => other is CXToken token && Equals(token);
+    
     public override int GetHashCode()
     {
         unchecked

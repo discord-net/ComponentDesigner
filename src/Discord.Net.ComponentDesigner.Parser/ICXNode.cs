@@ -1,9 +1,10 @@
-﻿using Microsoft.CodeAnalysis.Text;
+﻿using System;
+using Microsoft.CodeAnalysis.Text;
 using System.Collections.Generic;
 
 namespace Discord.CX.Parser;
 
-public interface ICXNode
+public interface ICXNode : IEquatable<ICXNode>
 {
     TextSpan FullSpan { get; }
     TextSpan Span { get; }
@@ -28,5 +29,4 @@ public interface ICXNode
     void ResetCachedState();
 
     string ToString(bool includeLeadingTrivia, bool includeTrailingTrivia);
-    
 }

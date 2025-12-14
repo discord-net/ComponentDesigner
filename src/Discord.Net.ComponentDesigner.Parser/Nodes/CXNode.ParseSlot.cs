@@ -19,10 +19,10 @@ partial class CXNode
         }
 
         public static bool operator ==(ParseSlot slot, ICXNode node)
-            => slot.Value == node;
+            => slot.Value.Equals(node);
 
         public static bool operator !=(ParseSlot slot, ICXNode node)
-            => slot.Value != node;
+            => !slot.Value.Equals(node);
 
         public bool Equals(ParseSlot other)
             => Equals(Value, other.Value);
