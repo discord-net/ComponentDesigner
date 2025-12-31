@@ -96,18 +96,18 @@ public sealed class SelectMenuComponentNode : ComponentNode
             CustomId = new(
                 "customId",
                 isOptional: false,
-                renderer: Renderers.String
+                renderer: CXValueGenerator.String
             ),
             Placeholder = new(
                 "placeholder",
                 isOptional: true,
-                renderer: Renderers.String
+                renderer: CXValueGenerator.String
             ),
             MinValues = new(
                 "minValues",
                 isOptional: true,
                 aliases: ["min"],
-                renderer: Renderers.Integer,
+                renderer: CXValueGenerator.Integer,
                 validators:
                 [
                     Validators.IntRange(
@@ -120,7 +120,7 @@ public sealed class SelectMenuComponentNode : ComponentNode
                 "maxValues",
                 isOptional: true,
                 aliases: ["max"],
-                renderer: Renderers.Integer,
+                renderer: CXValueGenerator.Integer,
                 validators:
                 [
                     Validators.IntRange(
@@ -132,12 +132,12 @@ public sealed class SelectMenuComponentNode : ComponentNode
             Required = new(
                 "required",
                 isOptional: true,
-                renderer: Renderers.Boolean
+                renderer: CXValueGenerator.Boolean
             ),
             Disabled = new(
                 "disabled",
                 isOptional: true,
-                renderer: Renderers.Boolean,
+                renderer: CXValueGenerator.Boolean,
                 dotnetParameterName: "isDisabled"
             )
         ];

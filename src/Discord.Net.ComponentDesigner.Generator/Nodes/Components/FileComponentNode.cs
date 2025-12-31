@@ -25,13 +25,13 @@ public sealed class FileComponentNode : ComponentNode
             Url = new(
                 "url",
                 aliases: ["media"],
-                renderer: Renderers.UnfurledMediaItem,
+                renderer: CXValueGenerator.UnfurledMediaItem,
                 dotnetParameterName: "media"
             ),
             Spoiler = new(
                 "spoiler",
                 isOptional: true,
-                renderer: Renderers.Boolean,
+                renderer: CXValueGenerator.Boolean,
                 dotnetParameterName: "isSpoiler"
             )
         ];

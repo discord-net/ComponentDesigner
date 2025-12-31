@@ -9,7 +9,7 @@ public interface IComponentPropertyValue
     
     CXValue? Value { get; }
     
-    GraphNode? Node { get; }
+    GraphNode? GraphNode { get; }
     
     bool IsSpecified { get; }
     

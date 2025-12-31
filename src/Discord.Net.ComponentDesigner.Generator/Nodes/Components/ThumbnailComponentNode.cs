@@ -24,18 +24,18 @@ public sealed class ThumbnailComponentNode : ComponentNode
             Media = new(
                 "media",
                 aliases: ["href", "url"],
-                renderer: Renderers.UnfurledMediaItem
+                renderer: CXValueGenerator.UnfurledMediaItem
             ),
             Description = new(
                 "description",
                 isOptional: true,
-                renderer: Renderers.String,
+                renderer: CXValueGenerator.String,
                 validators: [Validators.StringRange(upper: Constants.THUMBNAIL_DESCRIPTION_MAX_LENGTH)]
             ),
             Spoiler = new(
                 "spoiler",
                 isOptional: true,
-                renderer: Renderers.Boolean,
+                renderer: CXValueGenerator.Boolean,
                 dotnetParameterName: "isSpoiler",
                 requiresValue: false
             )

@@ -12,13 +12,13 @@ public sealed class BooleanTests(ITestOutputHelper output) : BaseRendererTest(ou
     {
         AssertRenders(
             "'true'",
-            Renderers.Boolean,
+            CXValueGenerator.Boolean,
             "true"
         );
         
         AssertRenders(
             "'false'",
-            Renderers.Boolean,
+            CXValueGenerator.Boolean,
             "false"
         );
     }
@@ -28,13 +28,13 @@ public sealed class BooleanTests(ITestOutputHelper output) : BaseRendererTest(ou
     {
         AssertRenders(
             "'tRUe'",
-            Renderers.Boolean,
+            CXValueGenerator.Boolean,
             "true"
         );
         
         AssertRenders(
             "'FALSE'",
-            Renderers.Boolean,
+            CXValueGenerator.Boolean,
             "false"
         );
     }
@@ -44,7 +44,7 @@ public sealed class BooleanTests(ITestOutputHelper output) : BaseRendererTest(ou
     {
         AssertRenders(
             cx: null,
-            Renderers.Boolean,
+            CXValueGenerator.Boolean,
             "true",
             requiresValue: false
         );
@@ -55,7 +55,7 @@ public sealed class BooleanTests(ITestOutputHelper output) : BaseRendererTest(ou
     {
         AssertRenders(
             "'blah'",
-            Renderers.Boolean,
+            CXValueGenerator.Boolean,
             null
         );
         {
@@ -70,7 +70,7 @@ public sealed class BooleanTests(ITestOutputHelper output) : BaseRendererTest(ou
     {
         AssertRenders(
             "'{Interp}'",
-            Renderers.Boolean,
+            CXValueGenerator.Boolean,
             "false",
             interpolations:
             [

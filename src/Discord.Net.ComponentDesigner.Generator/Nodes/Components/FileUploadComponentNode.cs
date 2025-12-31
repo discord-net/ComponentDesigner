@@ -18,14 +18,14 @@ public sealed class FileUploadComponentNode : ComponentNode
             ComponentProperty.Id,
             new(
                 "customId",
-                renderer: Renderers.String,
+                renderer: CXValueGenerator.String,
                 validators: [Validators.StringRange(upper: Constants.CUSTOM_ID_MAX_LENGTH)]
             ),
             new(
                 "min",
                 isOptional: true,
                 aliases: ["minValues"],
-                renderer: Renderers.Integer,
+                renderer: CXValueGenerator.Integer,
                 validators:
                 [
                     Validators.IntRange(Constants.FILE_UPLOAD_MIN_VALUES_LOWER, Constants.FILE_UPLOAD_MIN_VALUES_UPPER)
@@ -35,7 +35,7 @@ public sealed class FileUploadComponentNode : ComponentNode
                 "max",
                 isOptional: true,
                 aliases: ["maxValues"],
-                renderer: Renderers.Integer,
+                renderer: CXValueGenerator.Integer,
                 validators:
                 [
                     Validators.IntRange(Constants.FILE_UPLOAD_MAX_VALUES_LOWER, Constants.FILE_UPLOAD_MAX_VALUES_UPPER)
@@ -44,7 +44,7 @@ public sealed class FileUploadComponentNode : ComponentNode
             new(
                 "required",
                 isOptional: true,
-                renderer: Renderers.Boolean
+                renderer: CXValueGenerator.Boolean
             )
         ];
     }

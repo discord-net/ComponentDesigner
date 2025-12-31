@@ -32,7 +32,7 @@ public class TextDisplayComponentNode : ComponentNode<TextDisplayState>
             ComponentProperty.Id,
             Content = new(
                 "content",
-                renderer: Renderers.String,
+                renderer: CXValueGenerator.String,
                 isOptional: true
             )
         ];

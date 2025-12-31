@@ -12,13 +12,13 @@ public sealed class IntegerTests(ITestOutputHelper output) : BaseRendererTest(ou
     {
         AssertRenders(
             "'123'",
-            Renderers.Integer,
+            CXValueGenerator.Integer,
             "123"
         );
 
         AssertRenders(
             "'-456'",
-            Renderers.Integer,
+            CXValueGenerator.Integer,
             "-456"
         );
     }
@@ -28,7 +28,7 @@ public sealed class IntegerTests(ITestOutputHelper output) : BaseRendererTest(ou
     {
         AssertRenders(
             $"'{uint.MaxValue}'",
-            Renderers.Integer,
+            CXValueGenerator.Integer,
             $"int.Parse(\"{uint.MaxValue}\")"
         );
         {
@@ -43,7 +43,7 @@ public sealed class IntegerTests(ITestOutputHelper output) : BaseRendererTest(ou
     {
         AssertRenders(
             "'{Interp}'",
-            Renderers.Integer,
+            CXValueGenerator.Integer,
             "123",
             interpolations:
             [

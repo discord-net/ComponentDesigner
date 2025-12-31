@@ -12,7 +12,7 @@ public sealed class UnfurledMediaItemTests(ITestOutputHelper output) : BaseRende
             """
             'https://example.com'
             """,
-            Renderers.UnfurledMediaItem,
+            CXValueGenerator.UnfurledMediaItem,
             """
             new global::Discord.UnfurledMediaItemProperties("https://example.com")
             """

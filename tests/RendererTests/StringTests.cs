@@ -13,13 +13,13 @@ public sealed class StringTests(ITestOutputHelper output) : BaseRendererTest(out
     {
         AssertRenders(
             "\"Hello, World!\"",
-            Renderers.String,
+            CXValueGenerator.String,
             "\"Hello, World!\""
         );
         
         AssertRenders(
             "\'Hello, World!\'",
-            Renderers.String,
+            CXValueGenerator.String,
             "\"Hello, World!\""
         );
     }
@@ -32,7 +32,7 @@ public sealed class StringTests(ITestOutputHelper output) : BaseRendererTest(out
             "Hello,
             World!"
             """,
-            Renderers.String,
+            CXValueGenerator.String,
             // the empty line above the string literal is expected
             """"
             
@@ -55,7 +55,7 @@ public sealed class StringTests(ITestOutputHelper output) : BaseRendererTest(out
 
             breaks"
             """,
-            Renderers.String,
+            CXValueGenerator.String,
             """"
 
             """
@@ -80,7 +80,7 @@ public sealed class StringTests(ITestOutputHelper output) : BaseRendererTest(out
             """
             'Hello, {World}!'
             """,
-            Renderers.String,
+            CXValueGenerator.String,
             """
             $"Hello, {designer.GetValueAsString(0)}!"
             """,
@@ -103,7 +103,7 @@ public sealed class StringTests(ITestOutputHelper output) : BaseRendererTest(out
         
         AssertRenders(
             builder.StringBuilder.ToString(),
-            Renderers.String,
+            CXValueGenerator.String,
             """"
             
             $"""

@@ -28,7 +28,7 @@ public sealed class SelectMenuOptionComponentNode : ComponentNode
         [
             Label = new(
                 "label",
-                renderer: Renderers.String,
+                renderer: CXValueGenerator.String,
                 validators:
                 [
                     Validators.StringRange(upper: Constants.STRING_SELECT_OPTION_LABEL_MAX_LENGTH)
@@ -36,7 +36,7 @@ public sealed class SelectMenuOptionComponentNode : ComponentNode
             ),
             Value = new(
                 "value",
-                renderer: Renderers.String,
+                renderer: CXValueGenerator.String,
                 validators:
                 [
                     Validators.StringRange(upper: Constants.STRING_SELECT_OPTION_VALUE_MAX_LENGTH)
@@ -45,7 +45,7 @@ public sealed class SelectMenuOptionComponentNode : ComponentNode
             Description = new(
                 "description",
                 isOptional: true,
-                renderer: Renderers.String,
+                renderer: CXValueGenerator.String,
                 validators:
                 [
                     Validators.StringRange(upper: Constants.STRING_SELECT_OPTION_DESCRIPTION_MAX_LENGTH)
@@ -54,12 +54,12 @@ public sealed class SelectMenuOptionComponentNode : ComponentNode
             Emoji = new(
                 "emoji",
                 isOptional: true,
-                renderer: Renderers.Emoji
+                renderer: CXValueGenerator.Emoji
             ),
             Default = new(
                 "default",
                 isOptional: true,
-                renderer: Renderers.Boolean,
+                renderer: CXValueGenerator.Boolean,
                 dotnetParameterName: "isDefault",
                 requiresValue: false
             )

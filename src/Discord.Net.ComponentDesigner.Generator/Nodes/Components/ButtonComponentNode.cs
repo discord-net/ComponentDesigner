@@ -21,11 +21,12 @@ public sealed record ButtonComponentState(
 
         return InferredKind == other.InferredKind && base.Equals(other);
     }
-    
+
 
     public override int GetHashCode()
         => Hash.Combine(InferredKind, base.GetHashCode());
 }
+
 public enum ButtonKind
 {
     Default,
@@ -44,7 +45,7 @@ public sealed class ButtonComponentNode : ComponentNode<ButtonComponentState>
         "link",
         "premium"
     ];
-    
+
     public const string BUTTON_STYLE_ENUM = "Discord.ButtonStyle";
     public const int BUTTON_STYLE_LINK_VALUE = 5;
     public const int BUTTON_STYLE_PREMIUM_VALUE = 6;
@@ -72,43 +73,43 @@ public sealed class ButtonComponentNode : ComponentNode<ButtonComponentState>
             Style = new ComponentProperty(
                 "style",
                 isOptional: true,
-                renderer: Renderers.RenderEnum(BUTTON_STYLE_ENUM)
+                renderer: CXValueGenerator.Enum(BUTTON_STYLE_ENUM)
             ),
             Label = new ComponentProperty(
                 "label",
                 isOptional: true,
                 validators: [Validators.StringRange(upper: Constants.BUTTON_MAX_LABEL_LENGTH)],
-                renderer: Renderers.String
+                renderer: CXValueGenerator.String
             ),
             Emoji = new ComponentProperty(
                 "emoji",
                 isOptional: true,
                 aliases: ["emote"],
-                renderer: Renderers.Emoji,
+                renderer: CXValueGenerator.Emoji,
                 dotnetParameterName: "emote"
             ),
             CustomId = new(
                 "customId",
                 isOptional: true,
                 validators: [Validators.StringRange(upper: Constants.CUSTOM_ID_MAX_LENGTH)],
-                renderer: Renderers.String
+                renderer: CXValueGenerator.String
             ),
             SkuId = new(
                 "skuId",
                 aliases: ["sku"],
                 isOptional: true,
-                renderer: Renderers.Snowflake
+                renderer: CXValueGenerator.Snowflake
             ),
             Url = new(
                 "url",
                 isOptional: true,
                 validators: [Validators.StringRange(upper: Constants.BUTTON_URL_MAX_LENGTH)],
-                renderer: Renderers.String
+                renderer: CXValueGenerator.String
             ),
             Disabled = new(
                 "disabled",
                 isOptional: true,
-                renderer: Renderers.Boolean,
+                renderer: CXValueGenerator.Boolean,
                 dotnetParameterName: "isDisabled"
             )
         ];
@@ -116,7 +117,7 @@ public sealed class ButtonComponentNode : ComponentNode<ButtonComponentState>
 
     public override void AddGraphNode(ComponentGraphInitializationContext context)
     {
-        if(!AutoActionRowComponentNode.AddPossibleAutoRowNode(this, context))
+        if (!AutoActionRowComponentNode.AddPossibleAutoRowNode(this, context))
             base.AddGraphNode(context);
     }
 
@@ -134,13 +135,13 @@ public sealed class ButtonComponentNode : ComponentNode<ButtonComponentState>
 
         if (element.Children.Count > 0 && element.Children[0] is CXValue value)
             state.SubstitutePropertyValue(Label, value);
-        
+
         return state with
         {
             InferredKind = InferButtonKind(context.GraphContext, state, diagnostics)
         };
     }
-    
+
 
     private ButtonKind? InferButtonKind(
         IComponentContext context,
@@ -182,11 +183,12 @@ public sealed class ButtonComponentNode : ComponentNode<ButtonComponentState>
                     case var invalid when !ValidButtonStyles.Contains(invalid.ToLowerInvariant()):
                         return null;
                 }
+
                 break;
         }
 
         return ButtonKind.Default;
-        
+
         ButtonKind FromInterpolation(DesignerInterpolationInfo info)
         {
             var constant = info.Constant;
@@ -216,7 +218,7 @@ public sealed class ButtonComponentNode : ComponentNode<ButtonComponentState>
             return ButtonKind.Default;
         }
     }
-    
+
 
     public override void Validate(
         ButtonComponentState state,
@@ -306,7 +308,11 @@ public sealed class ButtonComponentNode : ComponentNode<ButtonComponentState>
 
             style = stylePropertyValue.Value is null
                 ? $"global::{BUTTON_STYLE_ENUM}.Primary"
-                : Style.Renderer(context, stylePropertyValue, PropertyRenderingOptions.Default);
+                : Style.Renderer(
+                    context,
+                    new CXValueGeneratorTarget.ComponentProperty(stylePropertyValue),
+                    CXValueGeneratorOptions.Default
+                );
         }
 
         return style

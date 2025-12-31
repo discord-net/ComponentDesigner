@@ -42,7 +42,19 @@ public static class ComponentContextExtensions
 
     public static string GetDesignerValue(
         this IComponentContext context,
+        CXValue.Interpolation interpolation,
+        ITypeSymbol? type
+    ) => context.GetDesignerValue(interpolation.InterpolationIndex, type?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
+    
+    public static string GetDesignerValue(
+        this IComponentContext context,
         DesignerInterpolationInfo interpolation,
         string? type = null
     ) => context.GetDesignerValue(interpolation.Id, type);
+    
+    public static string GetDesignerValue(
+        this IComponentContext context,
+        DesignerInterpolationInfo interpolation,
+        ITypeSymbol? type
+    ) => context.GetDesignerValue(interpolation.Id, type?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
 }

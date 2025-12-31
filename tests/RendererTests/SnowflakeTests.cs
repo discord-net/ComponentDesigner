@@ -12,13 +12,13 @@ public sealed class SnowflakeTests(ITestOutputHelper output) : BaseRendererTest(
     {
         AssertRenders(
             "'123'",
-            Renderers.Snowflake,
+            CXValueGenerator.Snowflake,
             "123"
         );
         
         AssertRenders(
             $"'{ulong.MaxValue}'",
-            Renderers.Snowflake,
+            CXValueGenerator.Snowflake,
             $"{ulong.MaxValue}"
         );
     }
@@ -28,7 +28,7 @@ public sealed class SnowflakeTests(ITestOutputHelper output) : BaseRendererTest(
     {
         AssertRenders(
             "'-1'",
-            Renderers.Snowflake,
+            CXValueGenerator.Snowflake,
             "ulong.Parse(\"-1\")"
         );
         {
@@ -38,7 +38,7 @@ public sealed class SnowflakeTests(ITestOutputHelper output) : BaseRendererTest(
         
         AssertRenders(
             $"'18446744073709551616'",
-            Renderers.Snowflake,
+            CXValueGenerator.Snowflake,
             "ulong.Parse(\"18446744073709551616\")"
         );
         {
@@ -52,7 +52,7 @@ public sealed class SnowflakeTests(ITestOutputHelper output) : BaseRendererTest(
     {
         AssertRenders(
             "'{Interp}'",
-            Renderers.Snowflake,
+            CXValueGenerator.Snowflake,
             "123",
             interpolations:
             [

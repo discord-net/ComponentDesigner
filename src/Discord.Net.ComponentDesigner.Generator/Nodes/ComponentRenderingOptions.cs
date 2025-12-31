@@ -5,7 +5,4 @@ public readonly record struct ComponentRenderingOptions(
 )
 {
     public static readonly ComponentRenderingOptions Default = new();
-    
-    public PropertyRenderingOptions ToPropertyOptions()
-        => new(TypingContext: TypingContext);
 }

@@ -1,10 +1,21 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using Microsoft.CodeAnalysis;
 
 namespace Discord.CX;
 
 public static class TypeUtils
 {
+    public static bool IsNumericType(this Type type)
+        => type == typeof(byte) ||
+           type == typeof(sbyte) ||
+           type == typeof(ushort) ||
+           type == typeof(short) ||
+           type == typeof(uint) ||
+           type == typeof(int) ||
+           type == typeof(ulong) ||
+           type == typeof(long);
+    
     public static bool IsInTypeTree(this ITypeSymbol symbol, ITypeSymbol? other)
     {
         if (other is null) return false;

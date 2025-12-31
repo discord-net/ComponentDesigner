@@ -111,13 +111,7 @@ public sealed class SeparatorTests(ITestOutputHelper output) : BaseComponentTest
 
             Validate();
 
-            Renders(
-                """
-                new global::Discord.SeparatorBuilder(
-                    spacing: global::System.Enum.Parse<global::Discord.SeparatorSpacingSize>("abc")
-                )
-                """
-            );
+            Renders();
 
             Diagnostic(
                 Diagnostics.InvalidEnumVariant("abc", "Discord.SeparatorSpacingSize"),

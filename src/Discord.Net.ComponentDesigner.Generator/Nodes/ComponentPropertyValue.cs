@@ -9,7 +9,7 @@ public sealed record ComponentPropertyValue(
     ComponentProperty Property,
     CXAttribute? Attribute,
     TextSpan SourceSpan,
-    GraphNode? Node = null
+    GraphNode? GraphNode = null
 ) : IComponentPropertyValue
 {
     public TextSpan Span

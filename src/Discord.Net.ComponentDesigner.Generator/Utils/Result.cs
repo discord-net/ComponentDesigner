@@ -57,6 +57,12 @@ public readonly struct Result<T> : IEquatable<Result<T>>
         Diagnostics = diagnostics;
     }
 
+    public Result<T> AddDiagnostics(params ReadOnlySpan<DiagnosticInfo> diagnostics)
+        => new(_result, HasResult, [..Diagnostics, ..diagnostics]);
+    
+    public Result<T> AddDiagnostics(DiagnosticInfo diagnostic)
+        => new(_result, HasResult, [..Diagnostics, diagnostic]);
+
     public T? GetValueOrDefault(T? defaultValue = default)
         => HasResult ? Value : defaultValue;
     

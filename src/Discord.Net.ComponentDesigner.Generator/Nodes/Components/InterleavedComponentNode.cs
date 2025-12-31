@@ -9,8 +9,6 @@ using SymbolDisplayFormat = Microsoft.CodeAnalysis.SymbolDisplayFormat;
 
 namespace Discord.CX.Nodes.Components;
 
-using static ComponentBuilderKindUtils;
-
 public sealed record InterleavedState(
     GraphNode GraphNode,
     ICXNode Source,
@@ -55,7 +53,7 @@ public sealed class InterleavedComponentNode : ComponentNode<InterleavedState>, 
         out InterleavedComponentNode node
     )
     {
-        if (IsValidComponentBuilderType(symbol, compilation, out var kind))
+        if (ComponentBuilderKind.IsValidComponentBuilderType(symbol, compilation, out var kind))
         {
             node = new(kind, symbol!);
             return true;
@@ -120,7 +118,7 @@ public sealed class InterleavedComponentNode : ComponentNode<InterleavedState>, 
             }
         }
 
-        var value = Convert(
+        var value = ComponentBuilderKind.Convert(
             designerValue,
             Kind,
             typingContext.Value.ConformingType,

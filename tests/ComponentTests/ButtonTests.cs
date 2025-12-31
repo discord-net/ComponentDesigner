@@ -374,15 +374,7 @@ public sealed class ButtonTests(ITestOutputHelper output) : BaseComponentTest(ou
             
             Validate();
 
-            Renders(
-                """
-                new global::Discord.ButtonBuilder(
-                    style: global::System.Enum.Parse<global::Discord.ButtonStyle>("invalid"),
-                    label: "button",
-                    customId: "button"
-                )
-                """
-            );
+            Renders();
             
             Diagnostic(
                 Diagnostics.InvalidEnumVariant("invalid", "Discord.ButtonStyle"),

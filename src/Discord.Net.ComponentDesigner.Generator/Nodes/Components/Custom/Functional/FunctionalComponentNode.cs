@@ -153,7 +153,7 @@ public sealed class FunctionalComponentNode :
                 continue;
             }
 
-            if (!ComponentBuilderKindUtils.IsValidComponentBuilderType(method.ReturnType, context.Compilation))
+            if (!ComponentBuilderKind.IsValidComponentBuilderType(method.ReturnType, context.Compilation))
             {
                 results.Add(new(candidate, SearchResultKind.InvalidComponentReturnKind));
                 continue;
@@ -243,7 +243,7 @@ public sealed class FunctionalComponentNode :
     )
     {
         if (
-            !ComponentBuilderKindUtils.IsValidComponentBuilderType(
+            !ComponentBuilderKind.IsValidComponentBuilderType(
                 methodSymbol.ReturnType,
                 compilation,
                 out var returnKind
@@ -283,7 +283,7 @@ public sealed class FunctionalComponentNode :
                         .Equals(x.AttributeClass, SymbolEqualityComparer.Default)
                 );
 
-            PropertyRenderer renderer;
+            CXValueGeneratorDelegate renderer;
 
             if (childParameterAttribute is not null && childrenParameter is null)
             {
@@ -298,7 +298,7 @@ public sealed class FunctionalComponentNode :
             }
             else
             {
-                renderer = Renderers.CreateRenderer(
+                renderer = CXValueGenerator.GetGeneratorForType(
                     compilation,
                     parameter.Type
                 );
@@ -344,7 +344,7 @@ public sealed class FunctionalComponentNode :
         return state;
     }
 
-    private static PropertyRenderer CreateChildrenRenderer(
+    private static CXValueGeneratorDelegate CreateChildrenRenderer(
         Compilation compilation,
         ITypeSymbol childrenType,
         CXElement source,
@@ -355,16 +355,16 @@ public sealed class FunctionalComponentNode :
     {
         childValue = null;
 
-        if (ComponentBuilderKindUtils.IsValidComponentBuilderType(childrenType, compilation, out var kind))
+        if (ComponentBuilderKind.IsValidComponentBuilderType(childrenType, compilation, out var kind))
         {
             childrenKind = kind;
-            return Renderers.DefaultRenderer;
+            return CXValueGenerator.Default;
         }
 
         childrenKind = null;
 
         // extract a single value, if any
-        if (source.Children.Count is 0) return Renderers.DefaultRenderer;
+        if (source.Children.Count is 0) return CXValueGenerator.Default;
 
         if (source.Children[0] is not CXValue value)
         {
@@ -373,7 +373,7 @@ public sealed class FunctionalComponentNode :
                 source.Children[0]
             );
 
-            return Renderers.DefaultRenderer;
+            return CXValueGenerator.Default;
         }
 
         childValue = value;
@@ -390,13 +390,13 @@ public sealed class FunctionalComponentNode :
             );
         }
 
-        return Renderers.CreateRenderer(compilation, childrenType);
+        return CXValueGenerator.GetGeneratorForType(compilation, childrenType);
     }
 
     private static Result<string> RenderElementChildren(
         FunctionalComponentState state,
         IComponentContext context,
-        PropertyRenderingOptions options
+        CXValueGeneratorOptions options
     )
     {
         if (state.Source.Children.Count is 0 || state.ChildrenComponentKind is null or ComponentBuilderKind.None)
@@ -477,7 +477,7 @@ public sealed class FunctionalComponentNode :
             => (context, options) =>
             {
                 if (
-                    !ComponentBuilderKindUtils.IsValidComponentBuilderType(
+                    !ComponentBuilderKind.IsValidComponentBuilderType(
                         info.Symbol,
                         context.Compilation,
                         out var kind
@@ -492,13 +492,11 @@ public sealed class FunctionalComponentNode :
 
                 var source = context.GetDesignerValue(info, info.Symbol!.ToDisplayString());
 
-                return ComponentBuilderKindUtils
-                    .Conform(
-                        source,
-                        kind,
-                        options.TypingContext ?? context.RootTypingContext,
-                        node
-                    );
+                return kind.Conform(
+                    source,
+                    options.TypingContext ?? context.RootTypingContext,
+                    node
+                );
             };
     }
 
@@ -636,7 +634,7 @@ public sealed class FunctionalComponentNode :
         )
         .Combine(
             state.HasComponentChildren
-                ? RenderElementChildren(state, context, options.ToPropertyOptions())
+                ? RenderElementChildren(state, context, options)
                     .Map(x => $"{state.ChildrenParameter.Name}: {x}")
                 : string.Empty
         )
@@ -652,11 +650,10 @@ public sealed class FunctionalComponentNode :
                 props += tuple.Right;
             }
 
-            return ComponentBuilderKindUtils.Conform(
+            return state.ReturnKind.Conform(
                 $"{state.MethodReference}({
                     props.WithNewlinePadding(4).PrefixIfSome(4).WrapIfSome(Environment.NewLine)
                 })",
-                state.ReturnKind,
                 options.TypingContext ?? context.RootTypingContext,
                 state.Source
             );

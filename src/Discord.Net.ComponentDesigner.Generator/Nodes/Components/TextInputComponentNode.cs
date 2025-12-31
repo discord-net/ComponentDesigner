@@ -32,18 +32,18 @@ public sealed class TextInputComponentNode : ComponentNode
             CustomId = new(
                 "customId",
                 isOptional: false,
-                renderer: Renderers.String
+                renderer: CXValueGenerator.String
             ),
             Style = new(
                 "style",
                 isOptional: true,
-                renderer: Renderers.RenderEnum(LIBRARY_TEXT_INPUT_STYLE_ENUM)
+                renderer: CXValueGenerator.Enum(LIBRARY_TEXT_INPUT_STYLE_ENUM)
             ),
             MinLength = new(
                 "minLength",
                 aliases: ["min"],
                 isOptional: true,
-                renderer: Renderers.Integer,
+                renderer: CXValueGenerator.Integer,
                 validators:
                 [
                     Validators.IntRange(
@@ -56,7 +56,7 @@ public sealed class TextInputComponentNode : ComponentNode
                 "maxLength",
                 aliases: ["max"],
                 isOptional: true,
-                renderer: Renderers.Integer,
+                renderer: CXValueGenerator.Integer,
                 validators:
                 [
                     Validators.IntRange(
@@ -68,13 +68,13 @@ public sealed class TextInputComponentNode : ComponentNode
             Required = new(
                 "required",
                 isOptional: true,
-                renderer: Renderers.Boolean,
+                renderer: CXValueGenerator.Boolean,
                 requiresValue: false
             ),
             Value = new(
                 "value",
                 isOptional: true,
-                renderer: Renderers.String,
+                renderer: CXValueGenerator.String,
                 validators:
                 [
                     Validators.StringRange(upper: Constants.TEXT_INPUT_VALUE_MAX_LENGTH)
@@ -83,7 +83,7 @@ public sealed class TextInputComponentNode : ComponentNode
             Placeholder = new(
                 "placeholder",
                 isOptional: true,
-                renderer: Renderers.String,
+                renderer: CXValueGenerator.String,
                 validators:
                 [
                     Validators.StringRange(upper: Constants.TEXT_INPUT_PLACEHOLDER_MAX_LENGTH)

@@ -12,13 +12,13 @@ public sealed class ColorTests(ITestOutputHelper output) : BaseRendererTest(outp
     {
         AssertRenders(
             "'red'",
-            Renderers.Color,
+            CXValueGenerator.Color,
             "global::Discord.Color.Red"
         );
         
         AssertRenders(
             "'blue'",
-            Renderers.Color,
+            CXValueGenerator.Color,
             "global::Discord.Color.Blue"
         );
     }
@@ -28,7 +28,7 @@ public sealed class ColorTests(ITestOutputHelper output) : BaseRendererTest(outp
     {
         AssertRenders(
             "'blah'",
-            Renderers.Color,
+            CXValueGenerator.Color,
             "global::Discord.Color.Parse(\"blah\")"
         );
         {
@@ -42,13 +42,13 @@ public sealed class ColorTests(ITestOutputHelper output) : BaseRendererTest(outp
     {
         AssertRenders(
             "'00FF00'",
-            Renderers.Color,
+            CXValueGenerator.Color,
             "new global::Discord.Color(65280)"
         );
         
         AssertRenders(
             "'#00FF00'",
-            Renderers.Color,
+            CXValueGenerator.Color,
             "new global::Discord.Color(65280)"
         );
     }
@@ -56,11 +56,10 @@ public sealed class ColorTests(ITestOutputHelper output) : BaseRendererTest(outp
     [Fact]
     public void InterpolatedConstantHex()
     {
-        // color has an implicit conversion from uint
         AssertRenders(
             "'{Interp}'",
-            Renderers.Color,
-            "designer.GetValue<global::Discord.Color>(0)",
+            CXValueGenerator.Color,
+            "new global::Discord.Color(65280)",
             interpolations:
             [
                 new DesignerInterpolationInfo(

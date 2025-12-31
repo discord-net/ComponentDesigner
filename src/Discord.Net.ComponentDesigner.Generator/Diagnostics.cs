@@ -602,4 +602,13 @@ public static partial class Diagnostics
         DiagnosticSeverity.Error,
         true
     );
+    
+    public static DiagnosticDescriptor InvalidValue(string type) => new(
+        "DC0066",
+        $"Invalid value '{type}'",
+        $"'{type}' cannot be used here",
+        "Components",
+        DiagnosticSeverity.Error,
+        true
+    );
 }

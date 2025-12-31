@@ -39,7 +39,7 @@ public sealed class SectionComponentNode : ComponentNode
             Accessory = new(
                 "accessory",
                 isOptional: true,
-                renderer: Renderers.ComponentAsProperty
+                renderer: CXValueGenerator.Component
             )
         ];
     }
@@ -140,7 +140,11 @@ public sealed class SectionComponentNode : ComponentNode
 
         var renderedAccessory = (
             accessoryPropertyValue.HasValue
-                ? Accessory.Renderer(context, accessoryPropertyValue, AccessoryRenderingOptions.ToPropertyOptions())
+                ? Accessory.Renderer(
+                    context,
+                    new CXValueGeneratorTarget.ComponentProperty(accessoryPropertyValue),
+                    AccessoryRenderingOptions
+                )
                 : (
                     state
                         .Children
@@ -220,5 +224,5 @@ public sealed class AccessoryComponentNode : ComponentNode
         ComponentState state,
         IComponentContext context,
         ComponentRenderingOptions options
-    )    => state.RenderChildren(context);
+    ) => state.RenderChildren(context);
 }

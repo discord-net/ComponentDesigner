@@ -11,4 +11,9 @@ public readonly record struct ComponentTypingContext(
         CanSplat: true,
         ConformingType: ComponentBuilderKind.CollectionOfIMessageComponentBuilders
     );
+
+    public static readonly ComponentTypingContext SingleBuilder = new(
+        CanSplat: false,
+        ConformingType: ComponentBuilderKind.IMessageComponentBuilder
+    );
 }

@@ -138,15 +138,15 @@ public record ComponentState(
         IComponentContext context,
         bool asInitializers = false,
         Predicate<ComponentProperty>? ignorePredicate = null,
-        PropertyRenderingOptions? options = null
+        CXValueGeneratorOptions? options = null
     ) => RenderProperties(node.Properties, context, asInitializers, ignorePredicate, options);
-    
+
     public Result<string> RenderProperties(
         IEnumerable<ComponentProperty> properties,
         IComponentContext context,
         bool asInitializers = false,
         Predicate<ComponentProperty>? ignorePredicate = null,
-        PropertyRenderingOptions? options = null
+        CXValueGeneratorOptions? options = null
     )
     {
         // TODO: correct handling?
@@ -165,7 +165,11 @@ public record ComponentState(
 
             if (propertyValue.CanOmitFromSource) continue;
 
-            var propertyResult = property.Renderer(context, propertyValue, options ?? PropertyRenderingOptions.Default);
+            var propertyResult = property.Renderer(
+                context,
+                new CXValueGeneratorTarget.ComponentProperty(propertyValue),
+                options ?? CXValueGeneratorOptions.Default
+            );
 
             if (propertyResult.HasResult)
             {
@@ -217,12 +221,12 @@ public record ComponentState(
     }
 
     public Func<string, Result<string>> ConformResult(ComponentBuilderKind kind, ComponentTypingContext? context)
-        => ComponentBuilderKindUtils.Conform(Source, kind, context);
-    
+        => kind.Conform(Source, context);
+
     public virtual bool Equals(ComponentState? other)
     {
         if (other is null) return false;
-        
+
         if (ReferenceEquals(this, other)) return true;
 
         return

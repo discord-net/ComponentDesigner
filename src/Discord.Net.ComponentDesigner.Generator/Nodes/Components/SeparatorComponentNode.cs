@@ -25,14 +25,14 @@ public sealed class SeparatorComponentNode : ComponentNode
             Divider = new(
                 "divider",
                 isOptional: true,
-                renderer: Renderers.Boolean,
+                renderer: CXValueGenerator.Boolean,
                 dotnetParameterName: "isDivider"
             ),
             Spacing = new(
                 "spacing",
                 aliases: ["size"],
                 isOptional: true,
-                renderer: Renderers.RenderEnum(SEPARATOR_SPACING_QUALIFIED_NAME)
+                renderer: CXValueGenerator.Enum(SEPARATOR_SPACING_QUALIFIED_NAME)
             )
         ];
     }

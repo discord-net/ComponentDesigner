@@ -12,7 +12,7 @@ public sealed class ComponentProperty : IEquatable<ComponentProperty>
     public static ComponentProperty Id => new(
         "id",
         isOptional: true,
-        renderer: Renderers.Integer,
+        renderer: CXValueGenerator.Integer,
         dotnetPropertyName: "Id"
     );
 
@@ -24,7 +24,7 @@ public sealed class ComponentProperty : IEquatable<ComponentProperty>
     public bool Synthetic { get; }
     public string DotnetPropertyName { get; }
     public string DotnetParameterName { get; }
-    public PropertyRenderer Renderer { get; }
+    public CXValueGeneratorDelegate Renderer { get; }
 
     public IReadOnlyList<PropertyValidator> Validators { get; }
 
@@ -34,7 +34,7 @@ public sealed class ComponentProperty : IEquatable<ComponentProperty>
         bool requiresValue = true,
         IEnumerable<string>? aliases = null,
         IEnumerable<PropertyValidator>? validators = null,
-        PropertyRenderer? renderer = null,
+        CXValueGeneratorDelegate? renderer = null,
         string? dotnetParameterName = null,
         string? dotnetPropertyName = null,
         bool synthetic = false
@@ -47,7 +47,7 @@ public sealed class ComponentProperty : IEquatable<ComponentProperty>
         Synthetic = synthetic;
         DotnetPropertyName = dotnetPropertyName ?? name;
         DotnetParameterName = dotnetParameterName ?? name;
-        Renderer = renderer ?? Renderers.DefaultRenderer;
+        Renderer = renderer ?? CXValueGenerator.Default;
         Validators = [..validators ?? []];
     }
 

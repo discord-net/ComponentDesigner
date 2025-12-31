@@ -106,7 +106,7 @@ public abstract class TextControlElement(TextSpan span)
                     {
                         if (
                             token.InterpolationIndex is { } index &&
-                            ComponentBuilderKindUtils.IsValidComponentBuilderType(
+                            ComponentBuilderKind.IsValidComponentBuilderType(
                                 context.GetInterpolationInfo(index).Symbol,
                                 context.Compilation
                             )
@@ -120,7 +120,7 @@ public abstract class TextControlElement(TextSpan span)
                 case CXValue.Interpolation interpolation:
                     if (
                         isRoot &&
-                        ComponentBuilderKindUtils.IsValidComponentBuilderType(
+                        ComponentBuilderKind.IsValidComponentBuilderType(
                             context.GetInterpolationInfo(interpolation).Symbol,
                             context.Compilation
                         )
@@ -469,7 +469,7 @@ public abstract class TextControlElement(TextSpan span)
                 ? 1
                 : Math.Max(
                     1,
-                    literalParts.Select(x => Renderers.GetInterpolationDollarRequirement(x.Value)).Max()
+                    literalParts.Select(x => StringGenerator.GetInterpolationDollarRequirement(x.Value)).Max()
                 );
 
 
@@ -498,7 +498,7 @@ public abstract class TextControlElement(TextSpan span)
                 result = result
                     .Map(x =>
                     {
-                        var quoteCount = (Renderers.GetSequentialQuoteCount(x.Value) + 1) switch
+                        var quoteCount = (StringGenerator.GetSequentialQuoteCount(x.Value) + 1) switch
                         {
                             2 => 3,
                             var r => r

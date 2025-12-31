@@ -57,16 +57,16 @@ public sealed class LabelComponentNode : ComponentNode<LabelComponentState>
             ComponentProperty.Id,
             Component = new(
                 "component",
-                renderer: Renderers.ComponentAsProperty
+                renderer: CXValueGenerator.Component
             ),
             Value = new(
                 "value",
-                renderer: Renderers.String
+                renderer: CXValueGenerator.String
             ),
             Description = new(
                 "description",
                 isOptional: true,
-                renderer: Renderers.String
+                renderer: CXValueGenerator.String
             )
         ];
     }
@@ -160,7 +160,7 @@ public sealed class LabelComponentNode : ComponentNode<LabelComponentState>
             }
         }
 
-        var labelChild = state.GetProperty(Component).Node;
+        var labelChild = state.GetProperty(Component).GraphNode;
 
         if (labelChild is not null && !IsValidLabelChild(labelChild.Inner))
         {

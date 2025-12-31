@@ -22,7 +22,7 @@ public abstract class BaseRendererTest(ITestOutputHelper output) : BaseTestWithD
 
     protected void AssertRenders(
         string? cx,
-        PropertyRenderer renderer,
+        CXValueGeneratorDelegate renderer,
         string? expected,
         ParseMode mode = ParseMode.AttributeValue,
         DesignerInterpolationInfo[]? interpolations = null,
@@ -31,7 +31,7 @@ public abstract class BaseRendererTest(ITestOutputHelper output) : BaseTestWithD
         bool isOptional = false,
         string? propertyName = null,
         int? wrappingQuoteCount = null,
-        PropertyRenderingOptions? options = null
+        CXValueGeneratorOptions? options = null
     )
     {
         AssertEmptyDiagnostics();
@@ -74,7 +74,6 @@ public abstract class BaseRendererTest(ITestOutputHelper output) : BaseTestWithD
             );
         }
 
-
         var context = new MockComponentContext(
             Compilation,
             new CXDesignerGeneratorState(
@@ -101,7 +100,7 @@ public abstract class BaseRendererTest(ITestOutputHelper output) : BaseTestWithD
             value?.Span ?? default
         );
 
-        var result = renderer(context, propValue, options ?? PropertyRenderingOptions.Default);
+        var result = renderer(context, new CXValueGeneratorTarget.ComponentProperty(propValue), options ?? CXValueGeneratorOptions.Default);
 
         PushDiagnostics(result.Diagnostics);
 
@@ -114,7 +113,7 @@ public abstract class BaseRendererTest(ITestOutputHelper output) : BaseTestWithD
 
     private sealed record MockPropertyValue(
         CXValue? Value,
-        GraphNode? Node,
+        GraphNode? GraphNode,
         bool IsSpecified,
         bool HasValue,
         bool IsAttributeValue,
