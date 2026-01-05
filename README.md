@@ -9,7 +9,7 @@ An elegant way to design and write [Discord Message Components](https://discord.
 
 ### How does it work?
 
-The Component Designer uses a [source generator](https://devblogs.microsoft.com/dotnet/introducing-c-source-generators/) to find any calls to `Discord.ComponentDesigner.cx`, using a [custom parser](./src/Discord.Net.ComponentDesigner.Parser/) to parse the syntax, validates the structure against Discord's component contraints, and if everything looks good then an [interceptor](https://github.com/dotnet/roslyn/blob/main/docs/features/interceptors.md) is emitted, replacing the `cx` call with the Discord.Net component builder strucutre.
+The Component Designer uses a [source generator](https://devblogs.microsoft.com/dotnet/introducing-c-source-generators/) to find any calls to `Discord.ComponentDesigner.cx`, using a [custom parser](./src/Discord.Net.ComponentDesigner.Parser/) to parse the syntax, validates the structure against Discord's component contraints, and if everything looks good then an [interceptor](https://github.com/dotnet/roslyn/blob/main/docs/features/interceptors.md) is emitted, replacing the `cx` call with the Discord.Net component builder structure.
 
 ### Getting started
 
@@ -725,7 +725,7 @@ var component = cx(
     """
 )
 
-public static CXMessageComponent SayHello(User user)
+public static CXMessageComponent SayHello(User)
     => cx(
        $"""
         <text>
