@@ -21,7 +21,7 @@ public abstract class BaseParsingTest(ITestOutputHelper output) : IDisposable
     private readonly Stack<CXDiagnostic> _diagnostics = [];
 
 
-    protected CXDiagnostic Diagnostic(CXErrorCode code, string? message = null, TextSpan? span = null)
+    protected CXDiagnostic Diagnostic(CXErrorCode code, string? message = null, CXTextSpan? span = null)
     {
         Assert.NotEmpty(_diagnostics);
         var diagnostic = _diagnostics.Pop();
@@ -46,7 +46,7 @@ public abstract class BaseParsingTest(ITestOutputHelper output) : IDisposable
     protected void Parses(
         [StringSyntax("html")]string cx,
         Func<CXParser, IEnumerable<CXNode>>? parseFunc = null,
-        TextSpan[]? interpolations = null,
+        CXTextSpan[]? interpolations = null,
         bool allowErrors = false
     )
     {

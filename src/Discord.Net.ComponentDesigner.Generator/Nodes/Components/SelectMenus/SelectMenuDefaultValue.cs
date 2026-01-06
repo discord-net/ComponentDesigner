@@ -313,7 +313,7 @@ public abstract class SelectMenuDefaultValue : IEquatable<SelectMenuDefaultValue
             {
                 diagnostics.Add(
                     Diagnostics.TooManyValuesInSelectMenuDefault,
-                    TextSpan.FromBounds(
+                    CXTextSpan.FromBounds(
                         element.Children[1].Span.Start,
                         element.Children.Last().Span.End
                     )

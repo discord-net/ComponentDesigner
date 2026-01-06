@@ -3,6 +3,8 @@ using System.Linq;
 using Discord.CX.Parser;
 using Microsoft.CodeAnalysis;
 
+using DiagnosticSeverity = Microsoft.CodeAnalysis.DiagnosticSeverity;
+
 namespace Discord.CX;
 
 public static partial class Diagnostics
@@ -13,7 +15,7 @@ public static partial class Diagnostics
             diagnostic.Message,
             diagnostic.Message,
             "CX Parser",
-            diagnostic.Severity,
+            (DiagnosticSeverity)(int)diagnostic.Severity,
             true
         );
 

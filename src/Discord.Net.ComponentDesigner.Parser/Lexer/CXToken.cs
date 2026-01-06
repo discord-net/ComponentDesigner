@@ -1,8 +1,5 @@
 ﻿using System;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.Text;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
 
 namespace Discord.CX.Parser;
@@ -53,8 +50,8 @@ public sealed record CXToken(
         ? 0
         : LeadingTrivia.CharacterLength + RawValue.Length + TrailingTrivia.CharacterLength;
 
-    public TextSpan Span => new(this.Offset + LeadingTrivia.CharacterLength, IsMissing ? 0 : RawValue.Length);
-    public TextSpan FullSpan => new(this.Offset, Width);
+    public CXTextSpan Span => new(this.Offset + LeadingTrivia.CharacterLength, IsMissing ? 0 : RawValue.Length);
+    public CXTextSpan FullSpan => new(this.Offset, Width);
 
     /// <inheritdoc/>
     public CXNode? Parent { get; set; }
@@ -87,7 +84,7 @@ public sealed record CXToken(
     ///     Creates a new synthetic token.
     /// </summary>
     /// <param name="kind">The kind of the synthetic token.</param>
-    /// <param name="span">The <see cref="TextSpan"/> of the synthetic token.</param>
+    /// <param name="span">The <see cref="CXTextSpan"/> of the synthetic token.</param>
     /// <param name="flags">The flags of the synthetic token.</param>
     /// <param name="rawValue">The raw value of the synthetic token.</param>
     /// <param name="value">The value of the synthetic token.</param>
@@ -95,7 +92,7 @@ public sealed record CXToken(
     /// <returns>The newly created synthetic token.</returns>
     public static CXToken CreateSynthetic(
         CXTokenKind kind,
-        TextSpan? span = null,
+        CXTextSpan? span = null,
         CXTokenFlags? flags = null,
         string? rawValue = null,
         string? value = null,

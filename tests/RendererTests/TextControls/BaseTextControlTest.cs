@@ -21,7 +21,7 @@ public abstract class BaseTextControlTest(ITestOutputHelper output) : BaseTestWi
     {
         var parser = new CXParser(
             CXSourceText.From(cx).CreateReader(
-                interpolations?.Select(x => x.Span).ToArray(),
+                interpolations?.Select(x => new CXTextSpan( x.Span.Start,  x.Span.Length)).ToArray(),
                 wrappingQuoteCount
             )
         );

@@ -5,11 +5,12 @@ namespace Discord.CX.Nodes;
 
 public record CXValueGeneratorTarget(
     CXValue? Value,
-    TextSpan Span
+    CXTextSpan Span
 )
 {
     public CXValueGeneratorTarget(CXValue value) : this(value, value.Span)
     {
+        
     }
     
     public sealed record ComponentProperty(

@@ -1,6 +1,7 @@
 ﻿using System.Collections.Immutable;
 using System.Text;
 using Discord.CX;
+using Discord.CX.Parser;
 using Discord.CX.Utils;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -120,11 +121,14 @@ public abstract class BaseGeneratorTest : BaseTestWithDiagnostics, IDisposable
             base.PushDiagnostics(
                 result.Diagnostics.Select(x => new DiagnosticInfo(
                     x.Descriptor,
-                    x.Location.SourceSpan
+                    new CXTextSpan(
+                        x.Location.SourceSpan.Start,
+                        x.Location.SourceSpan.Length
+                    )
                 ))
             );
         }
-       
+
 
         return result;
     }
@@ -162,7 +166,7 @@ public abstract class BaseGeneratorTest : BaseTestWithDiagnostics, IDisposable
     {
         Assert.Equal(step, result.Results[0].TrackedSteps[name][0].Outputs[0].Reason);
     }
-    
+
     protected void AssertRenders(GeneratorDriverRunResult result, string expected)
     {
         var rendered = result.Results[0]
@@ -181,7 +185,7 @@ public abstract class BaseGeneratorTest : BaseTestWithDiagnostics, IDisposable
             .Value[0]
             .Outputs[0]
             .Value;
-    
+
     protected void LogRunVisual(GeneratorDriverRunResult result)
     {
         var tree = _generator
@@ -191,7 +195,7 @@ public abstract class BaseGeneratorTest : BaseTestWithDiagnostics, IDisposable
                     .TrackedSteps
                     .ToDictionary(x => x.Key, x => x.Value[0].Outputs[0].Reason)
             );
-        
+
         _output.WriteLine($"Generator Tree:\n{tree}");
     }
 

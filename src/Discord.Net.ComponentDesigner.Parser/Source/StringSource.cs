@@ -1,7 +1,4 @@
-﻿using Discord.CX.Parser;
-using Microsoft.CodeAnalysis.Text;
-
-namespace Discord.CX.Parser;
+﻿namespace Discord.CX.Parser;
 
 partial class CXSourceText
 {

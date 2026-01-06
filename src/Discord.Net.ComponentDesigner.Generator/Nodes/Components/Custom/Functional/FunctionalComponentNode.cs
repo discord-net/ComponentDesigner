@@ -386,7 +386,7 @@ public sealed class FunctionalComponentNode :
 
             diagnostics.Add(
                 Diagnostics.ExpectedScalarFunctionalComponentChildValue,
-                TextSpan.FromBounds(lower, upper)
+                CXTextSpan.FromBounds(lower, upper)
             );
         }
 
@@ -531,7 +531,7 @@ public sealed class FunctionalComponentNode :
                         ))),
                         _ => new DiagnosticInfo(
                             Diagnostics.InvalidChildComponentCardinality(state.Identifier),
-                            TextSpan.FromBounds(nodes[0].Span.Start, nodes[nodes.Count - 1].Span.End)
+                            CXTextSpan.FromBounds(nodes[0].Span.Start, nodes[nodes.Count - 1].Span.End)
                         )
                     };
             case ComponentBuilderKind.CXMessageComponent:
@@ -591,7 +591,7 @@ public sealed class FunctionalComponentNode :
                     Diagnostics.TypeMismatch(kind.ToString(), "unknown component"),
                     nodes.Count is 0
                         ? state.Source.Span
-                        : TextSpan.FromBounds(nodes[0].Span.Start, nodes[nodes.Count - 1].Span.End)
+                        : CXTextSpan.FromBounds(nodes[0].Span.Start, nodes[nodes.Count - 1].Span.End)
                 );
         }
     }

@@ -145,7 +145,7 @@ public sealed class EnumGenerator : CXValueGenerator
 
     private Result<string> FromText(
         IComponentContext context,
-        TextSpan span,
+        CXTextSpan span,
         string text,
         EnumInfo? info = null
     )
@@ -192,7 +192,7 @@ public sealed class EnumGenerator : CXValueGenerator
     }
 
     private Result<string> UseEnumParseMethod(
-        TextSpan span,
+        CXTextSpan span,
         string code
     ) => Result<string>.FromValue(
         $"global::System.Enum.Parse<{QualifiedName}>({code})",

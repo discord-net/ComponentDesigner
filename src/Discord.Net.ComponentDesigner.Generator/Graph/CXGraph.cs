@@ -30,7 +30,7 @@ public sealed class CXGraph : IEquatable<CXGraph>
     public CXDesignerGeneratorState CX => _state.CX;
 
     public GeneratorOptions Options => _state.GeneratorOptions;
-    
+
     private readonly GraphGeneratorState _state;
 
     private readonly EquatableArray<DiagnosticInfo> _diagnostics;
@@ -68,14 +68,14 @@ public sealed class CXGraph : IEquatable<CXGraph>
         // TODO: support inc. parsing
         var reader = new CXSourceReader(
             new CXSourceText.StringSource(state.CX.Designer),
-            state.CX.InterpolationInfos.Select(x =>
-            {
-                // normalize to source
-                return new TextSpan(
+            state
+                .CX
+                .InterpolationInfos
+                .Select(x => new CXTextSpan(
                     x.Span.Start - state.CX.Location.TextSpan.Start,
                     x.Span.Length
-                );
-            }).ToArray(),
+                ))
+                .ToArray(),
             state.CX.QuoteCount
         );
 
@@ -217,7 +217,7 @@ public sealed class CXGraph : IEquatable<CXGraph>
                 string.Empty,
                 Diagnostics
             );
-        
+
         context ??= new ComponentContext(this);
 
         var diagnostics = new List<DiagnosticInfo>(Diagnostics);
@@ -246,11 +246,11 @@ public sealed class CXGraph : IEquatable<CXGraph>
     )
     {
         var diagnostics = new List<DiagnosticInfo>();
-        
+
         for (var i = 0; i < nodes.Count; i++)
         {
             var current = nodes[i];
-            
+
             if (
                 TextControlElement.TryCreate(
                     context,
@@ -289,19 +289,20 @@ public sealed class CXGraph : IEquatable<CXGraph>
                     graphNode.State = state;
                     yield return graphNode;
                 }
-                
+
                 // advance to the next non text control node, minus one here because the for loop increments by one
                 i += nodesUsed - 1;
                 continue;
             }
-            
+
             // use standard create nodes function
-            standardNodeCreation: foreach (var node in CreateNodes(current, parent, context))
+            standardNodeCreation:
+            foreach (var node in CreateNodes(current, parent, context))
             {
                 yield return node;
             }
         }
-        
+
         foreach (var diagnostic in diagnostics)
             context.Diagnostics.Add(diagnostic);
     }

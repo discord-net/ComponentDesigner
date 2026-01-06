@@ -1,6 +1,7 @@
 ﻿using Discord;
 using Discord.CX;
 using Discord.CX.Nodes.Components;
+using Discord.CX.Parser;
 using Microsoft.CodeAnalysis.Text;
 using Xunit.Abstractions;
 
@@ -73,7 +74,7 @@ public sealed class MediaGalleryTests(ITestOutputHelper output) : BaseComponentT
 
             Validate(hasErrors: true);
 
-            var errorSpan = TextSpan.FromBounds(
+            var errorSpan = CXTextSpan.FromBounds(
                 eleventh.State.Source.Span.Start,
                 twelfth.State.Source.Span.End
             );

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Discord.CX.Parser;
 using Microsoft.CodeAnalysis.Text;
 
 namespace Discord.CX.Nodes.Components;
@@ -28,7 +29,7 @@ public sealed class AutoTextDisplayComponentNode : TextDisplayComponentNode
         {
             diagnostics.Add(
                 Diagnostics.MissingRequiredProperty("auto text", Content.Name),
-                new TextSpan()
+                default(CXTextSpan)
             );
         }
     }

@@ -199,7 +199,7 @@ public sealed class AccessoryComponentNode : ComponentNode
 
             diagnostics.Add(
                 Diagnostics.TooManyAccessoryChildren,
-                TextSpan.FromBounds(start, end)
+                CXTextSpan.FromBounds(start, end)
             );
 
             base.Validate(state, context, diagnostics);

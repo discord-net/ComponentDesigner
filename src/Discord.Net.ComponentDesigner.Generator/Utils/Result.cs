@@ -123,7 +123,7 @@ public readonly struct Result<T> : IEquatable<Result<T>>
     public static Result<T> FromValue(
         T value,
         DiagnosticDescriptor descriptor,
-        TextSpan span
+        CXTextSpan span
     ) => new(value, new DiagnosticInfo(descriptor, span));
     
     public static Result<T> FromValue(
@@ -142,7 +142,7 @@ public readonly struct Result<T> : IEquatable<Result<T>>
 
     public static Result<T> FromDiagnostic(
         DiagnosticDescriptor descriptor,
-        TextSpan span
+        CXTextSpan span
     ) => FromDiagnostics(new DiagnosticInfo(descriptor, span));
     
     public static Result<T> FromDiagnostic(

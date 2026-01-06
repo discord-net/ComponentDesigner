@@ -3,7 +3,6 @@ using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading;
-using Microsoft.CodeAnalysis.Text;
 
 namespace Discord.CX.Parser;
 
@@ -37,7 +36,7 @@ public sealed class CXBlender
     public CXBlender(
         CXLexer lexer,
         CXDocument document,
-        TextChangeRange changeRange
+        CXTextChangeRange changeRange
     )
     {
         _lexer = lexer;
@@ -47,7 +46,7 @@ public sealed class CXBlender
             0,
             0,
             0,
-            ImmutableStack<TextChangeRange>
+            ImmutableStack<CXTextChangeRange>
                 .Empty
                 .Push(changeRange)
         );

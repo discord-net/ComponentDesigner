@@ -1,5 +1,4 @@
-﻿using Microsoft.CodeAnalysis.Text;
-using System;
+﻿using System;
 using System.Collections.Immutable;
 using System.Text;
 using Discord.CX.Util;
@@ -24,9 +23,9 @@ public sealed class CXSourceReader
     ///     Gets a string at the specified <paramref name="span"/>.
     /// </summary>
     /// <param name="span">
-    ///     A relative <see cref="TextSpan"/> representing the region of the source to get.
+    ///     A relative <see cref="CXTextSpan"/> representing the region of the source to get.
     /// </param>
-    public string this[TextSpan span]
+    public string this[CXTextSpan span]
         => Source[span];
 
     /// <summary>
@@ -39,7 +38,7 @@ public sealed class CXSourceReader
     ///     The number of characters to read from the source.
     /// </param>
     public string this[int index, int length]
-        => this[new TextSpan(index, length)];
+        => this[new CXTextSpan(index, length)];
 
     /// <summary>
     ///     Gets whether the reader is at the end of the source.
@@ -87,10 +86,10 @@ public sealed class CXSourceReader
     public CXSourceText Source { get; }
 
     /// <summary>
-    ///     Gets a read-only array of <see cref="TextSpan"/>s representing the interpolations found within the
+    ///     Gets a read-only array of <see cref="CXTextSpan"/>s representing the interpolations found within the
     ///     <see cref="Source"/>.
     /// </summary>
-    public ImmutableArray<TextSpan> Interpolations { get; }
+    public ImmutableArray<CXTextSpan> Interpolations { get; }
 
     /// <summary>
     ///     Gets the number of quotes that wrap the <see cref="Source"/>.
@@ -120,7 +119,7 @@ public sealed class CXSourceReader
     /// </param>
     public CXSourceReader(
         CXSourceText source,
-        TextSpan[] interpolations,
+        CXTextSpan[] interpolations,
         int wrappingQuoteCount
     )
     {
@@ -182,7 +181,7 @@ public sealed class CXSourceReader
     {
         var upper = Math.Min(Source.Length, Position + length);
 
-        return Source[TextSpan.FromBounds(
+        return Source[CXTextSpan.FromBounds(
             Position,
             upper
         )];
@@ -211,10 +210,10 @@ public sealed class CXSourceReader
     ///     An interned string representing the text at the current <see cref="Position"/> with the provided
     ///     <paramref name="length"/>.
     /// </returns>
-    public string ReadInternedText(int length, out TextSpan span)
+    public string ReadInternedText(int length, out CXTextSpan span)
     {
         var text = this[Position, length];
-        span = new TextSpan(Position, text.Length);
+        span = new CXTextSpan(Position, text.Length);
         Advance(length);
         return Intern(text);
     }

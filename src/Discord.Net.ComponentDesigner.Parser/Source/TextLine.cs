@@ -1,6 +1,4 @@
-﻿using Microsoft.CodeAnalysis.Text;
-
-namespace Discord.CX.Parser;
+﻿namespace Discord.CX.Parser;
 
 /// <summary>
 ///     Represents a single line within a <see cref="CXSourceText"/>.
@@ -27,14 +25,14 @@ public readonly record struct TextLine(
     public int End => EndIncludingBreaks - LineBreakLength;
 
     /// <summary>
-    ///     Gets a <see cref="TextSpan"/> representing this line, excluding line breaks.
+    ///     Gets a <see cref="CXTextSpan"/> representing this line, excluding line breaks.
     /// </summary>
-    public TextSpan Span => TextSpan.FromBounds(Start, End);
+    public CXTextSpan Span => CXTextSpan.FromBounds(Start, End);
     
     /// <summary>
-    ///     Gets a <see cref="TextSpan"/> representing this line, including line breaks.
+    ///     Gets a <see cref="CXTextSpan"/> representing this line, including line breaks.
     /// </summary>
-    public TextSpan SpanIncludingBreaks => TextSpan.FromBounds(Start, End);
+    public CXTextSpan SpanIncludingBreaks => CXTextSpan.FromBounds(Start, End);
 
     /// <summary>
     ///     Gets the length in characters of this <see cref="TextLine"/>s linebreak.

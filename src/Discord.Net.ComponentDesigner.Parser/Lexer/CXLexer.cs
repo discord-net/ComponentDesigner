@@ -1,9 +1,6 @@
-﻿using Microsoft.CodeAnalysis.Text;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.Collections.Immutable;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using System.Threading;
 
@@ -228,10 +225,10 @@ public sealed partial class CXLexer
     public int? InterpolationIndex { get; private set; }
 
     /// <summary>
-    ///     Gets a <see cref="TextSpan"/> representing the current interpolation boundary at the lexers current
+    ///     Gets a <see cref="CXTextSpan"/> representing the current interpolation boundary at the lexers current
     ///     position.
     /// </summary>
-    public TextSpan? CurrentInterpolationSpan
+    public CXTextSpan? CurrentInterpolationSpan
     {
         get
         {
@@ -259,9 +256,9 @@ public sealed partial class CXLexer
     }
 
     /// <summary>
-    ///     Gets a <see cref="TextSpan"/> of the next interpolation based off of the lexers current position.
+    ///     Gets a <see cref="CXTextSpan"/> of the next interpolation based off of the lexers current position.
     /// </summary>
-    public TextSpan? NextInterpolationSpan
+    public CXTextSpan? NextInterpolationSpan
     {
         get
         {

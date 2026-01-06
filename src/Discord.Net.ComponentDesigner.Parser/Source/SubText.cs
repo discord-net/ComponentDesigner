@@ -1,6 +1,4 @@
-﻿using Discord.CX.Parser;
-using Microsoft.CodeAnalysis.Text;
-using System;
+﻿using System;
 
 namespace Discord.CX.Parser;
 
@@ -19,7 +17,7 @@ partial class CXSourceText
         public override int Length => _span.Length;
 
         private readonly CXSourceText _underlyingText;
-        private readonly TextSpan _span;
+        private readonly CXTextSpan _span;
 
         /// <summary>
         ///     Constructs a new <see cref="SubText"/>.
@@ -28,7 +26,7 @@ partial class CXSourceText
         ///     The underlying <see cref="CXSourceText"/> in which this sub-text resides.
         /// </param>
         /// <param name="span">The bounds of this sub-text.</param>
-        public SubText(CXSourceText underlyingText, TextSpan span)
+        public SubText(CXSourceText underlyingText, CXTextSpan span)
         {
             _underlyingText = underlyingText;
             _span = span;
@@ -43,19 +41,19 @@ partial class CXSourceText
         ///     A composited span, relative to this <see cref="SubText"/>s span, normalized to the underlying
         ///     <see cref="CXSourceText"/>.
         /// </returns>
-        private TextSpan GetCompositeSpan(TextSpan span)
+        private CXTextSpan GetCompositeSpan(CXTextSpan span)
         {
             var compositeStart = Math.Min(_underlyingText.Length, _span.Start + span.Start);
             var compositeEnd = Math.Min(_underlyingText.Length, compositeStart + span.Length);
 
-            return TextSpan.FromBounds(compositeStart, compositeEnd);
+            return CXTextSpan.FromBounds(compositeStart, compositeEnd);
         }
 
         /// <inheritdoc/>
         protected override TextLineCollection ComputeLines() => new SubTextLineInfo(this);
 
         /// <inheritdoc/>
-        public override CXSourceText GetSubText(TextSpan span)
+        public override CXSourceText GetSubText(CXTextSpan span)
             => new SubText(_underlyingText, GetCompositeSpan(span));
 
         /// <summary>

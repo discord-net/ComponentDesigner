@@ -254,7 +254,7 @@ public sealed class MediaGalleryComponentNode : ComponentNode<MediaGalleryCompon
             if (graphValidChildren.Length > Constants.MAX_MEDIA_ITEMS)
             {
                 var extra = graphValidChildren.Skip(Constants.MAX_MEDIA_ITEMS).ToArray();
-                var span = TextSpan.FromBounds(
+                var span = CXTextSpan.FromBounds(
                     extra[0].State.Source.Span.Start,
                     extra[extra.Length - 1].State.Source.Span.End
                 );

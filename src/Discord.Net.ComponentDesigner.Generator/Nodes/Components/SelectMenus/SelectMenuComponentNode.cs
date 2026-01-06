@@ -348,7 +348,7 @@ public sealed class SelectMenuComponentNode : ComponentNode
             case > Constants.STRING_SELECT_MAX_VALUES:
                 diagnostics.Add(
                     Diagnostics.TooManyStringSelectMenuChildren,
-                    TextSpan.FromBounds(
+                    CXTextSpan.FromBounds(
                         state.Children.Skip(Constants.STRING_SELECT_MAX_VALUES).First()
                             .State!.Source.Span.Start,
                         state.Children.Skip(Constants.STRING_SELECT_MAX_VALUES).Last()

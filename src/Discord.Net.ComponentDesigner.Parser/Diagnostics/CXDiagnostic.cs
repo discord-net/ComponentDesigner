@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Linq;
-using Discord.CX.Util;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.Text;
 
 namespace Discord.CX.Parser;
 
@@ -113,7 +110,7 @@ public readonly record struct CXDiagnosticDescriptor(
 /// <param name="Span">The location within the source this diagnostic points to.</param>
 public readonly record struct CXDiagnostic(
     CXDiagnosticDescriptor Descriptor,
-    TextSpan Span
+    CXTextSpan Span
 )
 {
     /// <inheritdoc cref="CXDiagnosticDescriptor.Severity"/>

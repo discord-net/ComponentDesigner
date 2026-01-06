@@ -213,7 +213,7 @@ public sealed class SourceGenerator : IIncrementalGenerator
         target.CX
     );
 
-    
+
     public void Generate(
         SourceProductionContext context,
         (ImmutableArray<RenderedGraph> Renders, ImmutableArray<Glue> Glues) tuple
@@ -239,11 +239,14 @@ public sealed class SourceGenerator : IIncrementalGenerator
                 context.ReportDiagnostic(
                     Diagnostic.Create(
                         diagnosticInfo.Descriptor,
-                        glue.SyntaxTree.GetLocation(diagnosticInfo.Span)
+                        glue.SyntaxTree.GetLocation(new TextSpan(
+                            diagnosticInfo.Span.Start,
+                            diagnosticInfo.Span.Length
+                        ))
                     )
                 );
             }
-            
+
             foreach (var diagnostic in render.Diagnostics)
             {
                 // adjust the span to match the source
@@ -251,12 +254,12 @@ public sealed class SourceGenerator : IIncrementalGenerator
 
                 if (diagnostic.Span.IsEmpty)
                     start--;
-                
+
                 var diagnosticSpan = new TextSpan(
                     start,
                     Math.Max(1, diagnostic.Span.Length)
                 );
-                
+
                 context.ReportDiagnostic(
                     Diagnostic.Create(
                         diagnostic.Descriptor,
@@ -272,7 +275,7 @@ public sealed class SourceGenerator : IIncrementalGenerator
                        {render.EmittedSource!.WithNewlinePadding(4)}
                    ])
                    """;
-            
+
             if (i > 0)
                 sb.AppendLine();
 
@@ -411,17 +414,17 @@ public sealed class SourceGenerator : IIncrementalGenerator
         {
             var enableAutoRows = Result<bool>.Empty;
             var enableAutoTextDisplays = Result<bool>.Empty;
-            
+
             foreach (var argument in operation.Arguments)
             {
-                if(argument.ArgumentKind is ArgumentKind.DefaultValue) continue;
-                
+                if (argument.ArgumentKind is ArgumentKind.DefaultValue) continue;
+
                 switch (argument.Parameter?.Name)
                 {
-                    case "autoRows" when argument.Syntax is ArgumentSyntax {Expression: {} expression}:
+                    case "autoRows" when argument.Syntax is ArgumentSyntax { Expression: { } expression }:
                         enableAutoRows = GetConstantValue(expression);
                         break;
-                    case "autoTextDisplays"when argument.Syntax is ArgumentSyntax {Expression: {} expression}:
+                    case "autoTextDisplays" when argument.Syntax is ArgumentSyntax { Expression: { } expression }:
                         enableAutoTextDisplays = GetConstantValue(expression);
                         break;
                 }
@@ -437,7 +440,10 @@ public sealed class SourceGenerator : IIncrementalGenerator
                 {
                     return new DiagnosticInfo(
                         Diagnostics.ExpectedAConstantValue,
-                        expression.Span
+                        new CXTextSpan(
+                            expression.Span.Start,
+                            expression.Span.Length
+                        )
                     );
                 }
 
@@ -448,7 +454,7 @@ public sealed class SourceGenerator : IIncrementalGenerator
                 };
             }
         }
-        
+
         static bool TryGetCXDesigner(
             ExpressionSyntax expression,
             SemanticModel semanticModel,

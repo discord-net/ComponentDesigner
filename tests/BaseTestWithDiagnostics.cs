@@ -3,6 +3,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
 using Xunit.Abstractions;
 using DiagnosticInfo = Discord.CX.DiagnosticInfo;
+using DiagnosticSeverity = Microsoft.CodeAnalysis.DiagnosticSeverity;
 
 namespace UnitTests;
 
@@ -41,12 +42,12 @@ public abstract class BaseTestWithDiagnostics(ITestOutputHelper output) : IDispo
     
     protected DiagnosticInfo Diagnostic(
         DiagnosticDescriptor descriptor,
-        TextSpan? span = null
+        CXTextSpan? span = null
     ) => Diagnostic(
         descriptor.Id,
         descriptor.Title.ToString(),
         descriptor.MessageFormat.ToString(),
-        descriptor.DefaultSeverity,
+        (DiagnosticSeverity)(int)descriptor.DefaultSeverity,
         span
     );
 
@@ -55,7 +56,7 @@ public abstract class BaseTestWithDiagnostics(ITestOutputHelper output) : IDispo
         string? title = null,
         string? message = null,
         DiagnosticSeverity? severity = null,
-        TextSpan? span = null
+        CXTextSpan? span = null
     )
     {
         Assert.NotEmpty(_diagnostics);
@@ -78,7 +79,7 @@ public abstract class BaseTestWithDiagnostics(ITestOutputHelper output) : IDispo
     protected static DiagnosticInfo AssertDiagnostic(
         DiagnosticInfo diagnostic,
         DiagnosticDescriptor descriptor,
-        TextSpan? span = null
+        CXTextSpan? span = null
     ) => AssertDiagnostic(
         diagnostic,
         descriptor.Id,
@@ -94,7 +95,7 @@ public abstract class BaseTestWithDiagnostics(ITestOutputHelper output) : IDispo
         string? title = null,
         string? message = null,
         DiagnosticSeverity? severity = null,
-        TextSpan? span = null
+        CXTextSpan? span = null
     )
     {
         Assert.Equal(id, diagnostic.Descriptor.Id);

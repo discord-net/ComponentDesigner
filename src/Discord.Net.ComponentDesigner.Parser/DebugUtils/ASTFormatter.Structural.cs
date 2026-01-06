@@ -5,9 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Security.Cryptography;
 using System.Text;
-using Microsoft.CodeAnalysis.Text;
 
 namespace Discord.CX.Parser.DebugUtils;
 
@@ -209,7 +207,7 @@ public static partial class ASTFormatter
                     }
                     break;
                 }
-                case TextSpan span:
+                case CXTextSpan span:
                     sb.Append($"{span.Start}..{span.End}".Aqua());
                     break;
                 case ICXNode node:

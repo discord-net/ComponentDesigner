@@ -1,9 +1,7 @@
-﻿using Microsoft.CodeAnalysis.Text;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using System.Runtime.InteropServices;
 
 namespace Discord.CX.Parser;
 
@@ -24,10 +22,10 @@ public abstract partial class CXSourceText
     public abstract char this[int position] { get; }
 
     /// <summary>
-    ///     Gets a string at the given <see cref="TextSpan"/>.
+    ///     Gets a string at the given <see cref="CXTextSpan"/>.
     /// </summary>
     /// <param name="span">The span containing the starting index and length of the string to get.</param>
-    public virtual string this[TextSpan span] => this[span.Start, span.Length];
+    public virtual string this[CXTextSpan span] => this[span.Start, span.Length];
 
     /// <summary>
     ///     Gets a string at the given position with the given length.
@@ -59,7 +57,7 @@ public abstract partial class CXSourceText
     /// </summary>
     /// <param name="span">The relative span of this <see cref="CXSourceText"/>.</param>
     /// <param name="interpolations">
-    ///     An array of <see cref="TextSpan"/>s indicating where in this <see cref="CXSourceText"/> interpolations lay.
+    ///     An array of <see cref="CXTextSpan"/>s indicating where in this <see cref="CXSourceText"/> interpolations lay.
     /// </param>
     /// <param name="wrappingQuoteCount">
     ///     The number of C# quotes wrapping this <see cref="CXSourceText"/>. 
@@ -68,7 +66,7 @@ public abstract partial class CXSourceText
     ///     A <see cref="CXSourceReader"/> that can read from this <see cref="CXSourceText"/>.
     /// </returns>
     public CXSourceReader CreateReader(
-        TextSpan[]? interpolations = null,
+        CXTextSpan[]? interpolations = null,
         int? wrappingQuoteCount = null
     ) => new(
         this,
@@ -80,7 +78,7 @@ public abstract partial class CXSourceText
     ///     Creates a new <see cref="CXSourceText"/> representing a sub-region of this <see cref="CXSourceText"/>.
     /// </summary>
     /// <param name="span">
-    ///     The <see cref="TextSpan"/> representing the bounds of the sub-region to get.
+    ///     The <see cref="CXTextSpan"/> representing the bounds of the sub-region to get.
     /// </param>
     /// <returns>
     ///     A <see cref="CXSourceText"/> representing a sub-region of this <see cref="CXSourceText"/>.
@@ -88,7 +86,7 @@ public abstract partial class CXSourceText
     /// <exception cref="ArgumentOutOfRangeException">
     ///     The provided <paramref name="span"/> was outside the bounds of this <see cref="CXSourceText"/>.
     /// </exception>
-    public virtual CXSourceText GetSubText(TextSpan span)
+    public virtual CXSourceText GetSubText(CXTextSpan span)
     {
         if (span.Length == 0) return new StringSource(string.Empty);
 
@@ -100,7 +98,7 @@ public abstract partial class CXSourceText
     }
 
     /// <summary>
-    ///     Returns a new <see cref="CXSourceText"/> with the provided collection of <see cref="TextChange"/>s applied
+    ///     Returns a new <see cref="CXSourceText"/> with the provided collection of <see cref="CXTextChange"/>s applied
     ///     to it.  
     /// </summary>
     /// <param name="changes">
@@ -109,12 +107,12 @@ public abstract partial class CXSourceText
     /// <exception cref="InvalidOperationException">
     ///     Some changes overlap eachother.
     /// </exception>
-    public virtual CXSourceText WithChanges(params IReadOnlyCollection<TextChange> changes)
+    public virtual CXSourceText WithChanges(params IReadOnlyCollection<CXTextChange> changes)
     {
         if (changes.Count == 0) return this;
 
         var segments = new List<CXSourceText>();
-        var changeRanges = new List<TextChangeRange>();
+        var changeRanges = new List<CXTextChangeRange>();
 
         var pos = 0;
         foreach (var change in changes)
@@ -175,14 +173,14 @@ public abstract partial class CXSourceText
     ///     The <see cref="CXSourceText"/> to diff against.
     /// </param>
     /// <returns>
-    ///     A read-only collection of <see cref="TextChangeRange"/>s representing the changes between this
+    ///     A read-only collection of <see cref="CXTextChangeRange"/>s representing the changes between this
     ///     <see cref="CXSourceText"/> and the provided <see cref="CXSourceText"/>.
     /// </returns>
-    public virtual IReadOnlyList<TextChangeRange> GetChangeRanges(CXSourceText oldText)
+    public virtual IReadOnlyList<CXTextChangeRange> GetChangeRanges(CXSourceText oldText)
     {
         if (oldText == this) return [];
 
-        return [new TextChangeRange(new(0, oldText.Length), Length)];
+        return [new CXTextChangeRange(new(0, oldText.Length), Length)];
     }
 
     /// <summary>
@@ -193,8 +191,8 @@ public abstract partial class CXSourceText
     /// <returns>
     ///     A <see cref="CXSourceText"/> with the applied replacement.
     /// </returns>
-    public CXSourceText Replace(TextSpan span, string? newText)
-        => WithChanges(new TextChange(span, newText ?? string.Empty));
+    public CXSourceText Replace(CXTextSpan span, string? newText)
+        => WithChanges(new CXTextChange(span, newText ?? string.Empty));
 
     /// <summary>
     ///     Diffs this <see cref="CXSourceText"/> with the provided <see cref="CXSourceText"/>.
@@ -203,22 +201,22 @@ public abstract partial class CXSourceText
     ///     The <see cref="CXSourceText"/> to diff against.
     /// </param>
     /// <returns>
-    ///     A read-only collection of <see cref="TextChange"/>s representing the changes between this
+    ///     A read-only collection of <see cref="CXTextChange"/>s representing the changes between this
     ///     <see cref="CXSourceText"/> and the provided <see cref="CXSourceText"/>.
     /// </returns>
-    public virtual IReadOnlyList<TextChange> GetTextChanges(CXSourceText oldText)
+    public virtual IReadOnlyList<CXTextChange> GetTextChanges(CXSourceText oldText)
     {
         var newPosDelta = 0;
 
         var ranges = GetChangeRanges(oldText);
-        var results = new List<TextChange>();
+        var results = new List<CXTextChange>();
 
         foreach (var range in ranges)
         {
             var newPos = range.Span.Start + newPosDelta;
 
             var text = range.NewLength > 0
-                ? this[new TextSpan(newPos, range.NewLength)].ToString()
+                ? this[new CXTextSpan(newPos, range.NewLength)].ToString()
                 : string.Empty;
 
             results.Add(new(range.Span, text));
@@ -283,7 +281,7 @@ public abstract partial class CXSourceText
     ///     Gets the string value of this <see cref="CXSourceText"/>.
     /// </summary>
     public override string ToString()
-        => this[new TextSpan(0, Length)];
+        => this[new CXTextSpan(0, Length)];
 
     /// <summary>
     ///     Represents information about the lines within this <see cref="CXSourceText"/>.

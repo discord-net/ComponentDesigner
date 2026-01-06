@@ -12,11 +12,19 @@
         <IncludeBuildOutput>false</IncludeBuildOutput>
         <PublishSingleFile>true</PublishSingleFile>
         <NoWarn>RS1035</NoWarn>
+        <DefineConstants>CODEANALYSIS</DefineConstants>
+        <ExtraConstants>CODEANALYSIS</ExtraConstants>
+
     </PropertyGroup>
 
     <ItemGroup>
         <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false"/>
-        <None Include="$(OutputPath)\Discord.Net.ComponentDesigner.Parser.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false"/>
+        <None 
+                Include="$(OutputPath)\Discord.Net.ComponentDesigner.Parser.dll" 
+                Pack="true"
+                PackagePath="analyzers/dotnet/cs"
+                Visible="false"
+        />
     </ItemGroup>
 
     <ItemGroup>
@@ -28,7 +36,10 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Discord.Net.ComponentDesigner.Parser\Discord.Net.ComponentDesigner.Parser.csproj" PrivateAssets="all"/>
+        <ProjectReference 
+                Include="..\Discord.Net.ComponentDesigner.Parser\Discord.Net.ComponentDesigner.Parser.csproj" 
+                PrivateAssets="all"
+        />
     </ItemGroup>
 
 </Project>

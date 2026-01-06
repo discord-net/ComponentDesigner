@@ -111,14 +111,13 @@ public abstract class BaseIncrementalTests(ITestOutputHelper output) : IDisposab
 
         var reader = source
             .CreateReader(
-                target.CX.InterpolationInfos
-                    .Select(x =>
-                    {
-                        return new TextSpan(
-                            x.Span.Start - target.CX.Location.TextSpan.Start,
-                            x.Span.Length
-                        );
-                    })
+                target
+                    .CX
+                    .InterpolationInfos
+                    .Select(x => new CXTextSpan(
+                        x.Span.Start - target.CX.Location.TextSpan.Start,
+                        x.Span.Length
+                    ))
                     .ToArray()
             );
 
@@ -128,7 +127,7 @@ public abstract class BaseIncrementalTests(ITestOutputHelper output) : IDisposab
         }
         else
         {
-            var changes = new List<TextChange>();
+            var changes = new List<CXTextChange>();
 
             var dmp = new diff_match_patch();
             var diffs = dmp.diff_main(_document.Source!.ToString(), source.ToString());
@@ -147,7 +146,7 @@ public abstract class BaseIncrementalTests(ITestOutputHelper output) : IDisposab
                             if (next.operation is Operation.INSERT)
                             {
                                 changes.Add(
-                                    new TextChange(new(pos, diff.text.Length), next.text)
+                                    new CXTextChange(new(pos, diff.text.Length), next.text)
                                 );
                                 i++;
                                 pos += diff.text.Length;
@@ -155,14 +154,14 @@ public abstract class BaseIncrementalTests(ITestOutputHelper output) : IDisposab
                             }
                         }
 
-                        changes.Add(new TextChange(
+                        changes.Add(new CXTextChange(
                             new(pos, diff.text.Length),
                             string.Empty
                         ));
                         pos += diff.text.Length;
                         break;
                     case Operation.INSERT:
-                        changes.Add(new TextChange(
+                        changes.Add(new CXTextChange(
                             new(pos, 0),
                             diff.text
                         ));
@@ -175,7 +174,11 @@ public abstract class BaseIncrementalTests(ITestOutputHelper output) : IDisposab
                 }
             }
 
-            _document = _document.IncrementalParse(reader, changes, token);
+            _document = _document.IncrementalParse(
+                reader,
+                changes,
+                token
+            );
         }
 
         foreach (var diagnostic in _document.AllDiagnostics)
@@ -258,7 +261,7 @@ public abstract class BaseIncrementalTests(ITestOutputHelper output) : IDisposab
         return (T)current;
     }
 
-    protected CXDiagnostic Diagnostic(CXErrorCode code, string? message = null, TextSpan? span = null)
+    protected CXDiagnostic Diagnostic(CXErrorCode code, string? message = null, CXTextSpan? span = null)
     {
         Assert.NotEmpty(_diagnostics);
         var diagnostic = _diagnostics.Pop();

@@ -30,9 +30,9 @@ public readonly record struct RenderedTextControlElement(
         => $"{LeadingTrivia}{Value}{TrailingTrivia}";
 }
 
-public abstract class TextControlElement(TextSpan span)
+public abstract class TextControlElement(CXTextSpan span)
 {
-    public TextSpan Span => span;
+    public CXTextSpan Span => span;
     public abstract string FriendlyName { get; }
 
     public virtual IReadOnlyList<TextControlElement> Children => [];
@@ -443,7 +443,7 @@ public abstract class TextControlElement(TextSpan span)
     ) : TextControlElement(
         tokens.Count is 0
             ? default
-            : TextSpan.FromBounds(tokens[0].Span.Start, tokens[tokens.Count - 1].Span.End)
+            : CXTextSpan.FromBounds(tokens[0].Span.Start, tokens[tokens.Count - 1].Span.End)
     )
     {
         public override string FriendlyName => "Root";

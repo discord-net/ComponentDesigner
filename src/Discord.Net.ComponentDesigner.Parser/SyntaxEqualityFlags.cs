@@ -1,5 +1,4 @@
 ﻿using System;
-using Microsoft.CodeAnalysis.Text;
 
 namespace Discord.CX.Parser;
 
@@ -15,7 +14,7 @@ public enum SyntaxEqualityFlags : byte
     CompareTrivia = 1 << 0,
 
     /// <summary>
-    ///     Indicates that locational <see cref="TextSpan"/>s should be compared for equality between
+    ///     Indicates that locational <see cref="CXTextSpan"/>s should be compared for equality between
     ///     <see cref="ICXNode"/>.
     /// </summary>
     CompareLocation = 1 << 1,

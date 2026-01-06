@@ -317,7 +317,7 @@ public sealed class MentionTextControlElement : TextControlElement
             {
                 diagnostics.Add(
                     Diagnostics.TooManyChildren(element.Identifier),
-                    TextSpan.FromBounds(
+                    CXTextSpan.FromBounds(
                         element.Children[1].Span.Start,
                         element.Children[element.Children.Count - 1].Span.End
                     )

@@ -1,6 +1,4 @@
-﻿using Microsoft.CodeAnalysis.Text;
-
-namespace Discord.CX.Parser;
+﻿namespace Discord.CX.Parser;
 
 /// <summary>
 ///     An AST node representing a single attribute within the CX language.

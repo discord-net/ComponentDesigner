@@ -8,11 +8,11 @@ namespace Discord.CX.Nodes;
 public sealed record ComponentPropertyValue(
     ComponentProperty Property,
     CXAttribute? Attribute,
-    TextSpan SourceSpan,
+    CXTextSpan SourceSpan,
     GraphNode? GraphNode = null
 ) : IComponentPropertyValue
 {
-    public TextSpan Span
+    public CXTextSpan Span
     {
         get
         {

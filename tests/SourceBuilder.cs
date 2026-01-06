@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using Discord.CX.Parser;
 using Microsoft.CodeAnalysis.Text;
 
 namespace UnitTests;
@@ -6,7 +7,7 @@ namespace UnitTests;
 public sealed class SourceBuilder
 {
     public StringBuilder StringBuilder { get; } = new();
-    public List<TextSpan> Interpolations { get; } = [];
+    public List<CXTextSpan> Interpolations { get; } = [];
         
     public SourceBuilder AddSource(string source)
     {
@@ -18,7 +19,7 @@ public sealed class SourceBuilder
     {
         var actual = $"{{{interpolation}}}";
             
-        var span = new TextSpan(StringBuilder.Length, actual.Length);
+        var span = new CXTextSpan(StringBuilder.Length, actual.Length);
         Interpolations.Add(span);
             
         return AddSource(actual);

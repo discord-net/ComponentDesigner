@@ -434,7 +434,7 @@ public class SyntaxTests(ITestOutputHelper output) : BaseParsingTest(output)
             """
             <Foo bar={This is interpolated} />
             """,
-            interpolations: [TextSpan.FromBounds(9, 31)]
+            interpolations: [CXTextSpan.FromBounds(9, 31)]
         );
         {
             Element();
@@ -469,7 +469,7 @@ public class SyntaxTests(ITestOutputHelper output) : BaseParsingTest(output)
             """
             <Foo bar="abc{Interpolation}def" />
             """,
-            interpolations: [TextSpan.FromBounds(13, 28)]
+            interpolations: [CXTextSpan.FromBounds(13, 28)]
         );
         {
             Element();

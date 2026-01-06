@@ -20,7 +20,7 @@ public sealed class ComponentDocument
 
     private CXSourceText _source;
 
-    private TextSpan? _incrementalChangeRange;
+    private CXTextSpan? _incrementalChangeRange;
 
     private CXDocument? _cxDoc;
 
@@ -63,7 +63,7 @@ public sealed class ComponentDocument
     {
         if (Version.HasValue && Version == version) return;
 
-        var sourceChanges = new List<TextChange>();
+        var sourceChanges = new List<CXTextChange>();
 
         foreach (var change in changes)
         {
@@ -72,7 +72,7 @@ public sealed class ComponentDocument
             var start = _source.Lines[change.Range.Start.Line].Start + change.Range.Start.Character;
             var end = _source.Lines[change.Range.End.Line].Start + change.Range.End.Character;
 
-            var newChange = new TextChange(TextSpan.FromBounds(start, end), change.Text);
+            var newChange = new CXTextChange(CXTextSpan.FromBounds(start, end), change.Text);
             sourceChanges.Add(newChange); 
             
             Log.Logger.Information("[{Id}]: Change: {Change}", Uri, newChange);

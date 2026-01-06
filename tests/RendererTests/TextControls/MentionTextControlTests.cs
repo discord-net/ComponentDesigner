@@ -1,5 +1,6 @@
 ﻿using Discord.CX;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Text;
 using Xunit.Abstractions;
 
 namespace UnitTests.RendererTests.TextControls;
@@ -23,7 +24,7 @@ public sealed class MentionTextControlTests(ITestOutputHelper output) : BaseText
         Renders("<mention type='role'>123</mention>", "<@&123>");
         Renders("<mention type='cmd' name='foo'>123</mention>", "</foo:123>");
     }
-    
+
     [Fact]
     public void NameChild()
     {
@@ -47,12 +48,12 @@ public sealed class MentionTextControlTests(ITestOutputHelper output) : BaseText
             Diagnostic(Diagnostics.MissingRequiredProperty("mention", "type"));
             Diagnostic(Diagnostics.MissingRequiredProperty("mention", "id"));
         }
-        
+
         Renders("<user-mention />", null, allowFail: true);
         {
             Diagnostic(Diagnostics.MissingRequiredProperty("user-mention", "id"));
         }
-        
+
         Renders("<cmd-mention />", null, allowFail: true);
         {
             Diagnostic(Diagnostics.MissingRequiredProperty("cmd-mention", "id"));
@@ -67,22 +68,22 @@ public sealed class MentionTextControlTests(ITestOutputHelper output) : BaseText
             Compilation.GetKnownTypes().IUserType!,
             "<@{designer.GetValue<global::Discord.IUser>(0).Id}>"
         );
-        
+
         AssertRendersChild(
             Compilation.GetKnownTypes().IChannelType!,
             "<#{designer.GetValue<global::Discord.IChannel>(0).Id}>"
         );
-        
+
         AssertRendersChild(
             Compilation.GetKnownTypes().IRoleType!,
             "<@&{designer.GetValue<global::Discord.IRole>(0).Id}>"
         );
-        
+
         AssertRendersChild(
             Compilation.GetKnownTypes().IApplicationCommandType!,
             "</{designer.GetValue<global::Discord.IApplicationCommand>(0).Name}:{designer.GetValue<global::Discord.IApplicationCommand>(0).Id}>"
         );
-        
+
         void AssertRendersChild(
             INamedTypeSymbol type,
             string expected
@@ -100,7 +101,10 @@ public sealed class MentionTextControlTests(ITestOutputHelper output) : BaseText
                 [
                     new DesignerInterpolationInfo(
                         0,
-                        source.Interpolations[0],
+                        new TextSpan(
+                            source.Interpolations[0].Start,
+                            source.Interpolations[0].Length
+                        ),
                         type,
                         default
                     )

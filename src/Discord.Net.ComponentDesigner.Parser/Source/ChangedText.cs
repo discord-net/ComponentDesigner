@@ -1,5 +1,4 @@
-﻿using Microsoft.CodeAnalysis.Text;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 
@@ -15,13 +14,13 @@ partial class CXSourceText
         /// <summary>
         ///     Represents the change information about a change.
         /// </summary>
-        /// <param name="Changes">The <see cref="TextChangeRange"/>s representing the changes.</param>
+        /// <param name="Changes">The <see cref="CXTextChangeRange"/>s representing the changes.</param>
         /// <param name="WeakOldText">
         ///     A weak reference to the old <see cref="CXSourceText"/> before the changes were applied.
         /// </param>
         /// <param name="Previous">The previous change information applied before this one.</param>
         private sealed record ChangeInfo(
-            ImmutableArray<TextChangeRange> Changes,
+            ImmutableArray<CXTextChangeRange> Changes,
             WeakReference<CXSourceText> WeakOldText,
             ChangeInfo? Previous = null
         )
@@ -70,7 +69,7 @@ partial class CXSourceText
         public ChangedText(
             CXSourceText oldText,
             CXSourceText newText,
-            ImmutableArray<TextChangeRange> changes
+            ImmutableArray<CXTextChangeRange> changes
         )
         {
             _newText = newText;
@@ -81,7 +80,7 @@ partial class CXSourceText
         protected override TextLineCollection ComputeLines() => _newText.Lines;
 
         /// <inheritdoc/>
-        public override CXSourceText WithChanges(params IReadOnlyCollection<TextChange> changes)
+        public override CXSourceText WithChanges(params IReadOnlyCollection<CXTextChange> changes)
         {
             var changed = _newText.WithChanges(changes);
 
@@ -92,7 +91,7 @@ partial class CXSourceText
         }
 
         /// <inheritdoc/>
-        public override IReadOnlyList<TextChangeRange> GetChangeRanges(CXSourceText oldText)
+        public override IReadOnlyList<CXTextChangeRange> GetChangeRanges(CXSourceText oldText)
         {
             if (_info.WeakOldText.TryGetTarget(out var actualOldText) && actualOldText == oldText)
                 return _info.Changes;
@@ -107,7 +106,7 @@ partial class CXSourceText
             if (actualOldText is not null && actualOldText.GetChangeRanges(oldText).Count == 0)
                 return _info.Changes;
 
-            return [new TextChangeRange(new(0, oldText.Length), _newText.Length)];
+            return [new CXTextChangeRange(new(0, oldText.Length), _newText.Length)];
         }
 
         /// <summary>
@@ -136,15 +135,15 @@ partial class CXSourceText
         /// <param name="oldText">The <see cref="CXSourceText"/> to start getting changes from.</param>
         /// <param name="newText">The <see cref="ChangedText"/> buck to stop at.</param>
         /// <returns>
-        ///     A 2d collection of <see cref="TextChangeRange"/> describing each step of changes made between
+        ///     A 2d collection of <see cref="CXTextChangeRange"/> describing each step of changes made between
         ///     the <paramref name="oldText"/> and <paramref name="newText"/>
         /// </returns>
-        private static IReadOnlyList<ImmutableArray<TextChangeRange>> GetChangesBetween(
+        private static IReadOnlyList<ImmutableArray<CXTextChangeRange>> GetChangesBetween(
             CXSourceText oldText,
             ChangedText newText
         )
         {
-            var results = new List<ImmutableArray<TextChangeRange>>();
+            var results = new List<ImmutableArray<CXTextChangeRange>>();
 
             var info = newText._info;
             results.Add(info.Changes);
@@ -168,7 +167,7 @@ partial class CXSourceText
         /// </summary>
         /// <param name="changes">The changes to merge.</param>
         /// <returns>A merged collection of changes.</returns>
-        private static ImmutableArray<TextChangeRange> Merge(IReadOnlyList<ImmutableArray<TextChangeRange>> changes)
+        private static ImmutableArray<CXTextChangeRange> Merge(IReadOnlyList<ImmutableArray<CXTextChangeRange>> changes)
         {
             var merged = changes[0];
             for (var i = 1; i < changes.Count; i++)
@@ -184,15 +183,15 @@ partial class CXSourceText
         /// </summary>
         /// <param name="oldChanges">The old changes to merge.</param>
         /// <param name="newChanges">The new changes to merge with.</param>
-        /// <returns>The merged changes as a read-only array of <see cref="TextChangeRange"/>.</returns>
+        /// <returns>The merged changes as a read-only array of <see cref="CXTextChangeRange"/>.</returns>
         /// <exception cref="InvalidOperationException" />
         /// <exception cref="ArgumentOutOfRangeException">Change exceeds the source.</exception>
-        private static ImmutableArray<TextChangeRange> Merge(
-            ImmutableArray<TextChangeRange> oldChanges,
-            ImmutableArray<TextChangeRange> newChanges
+        private static ImmutableArray<CXTextChangeRange> Merge(
+            ImmutableArray<CXTextChangeRange> oldChanges,
+            ImmutableArray<CXTextChangeRange> newChanges
         )
         {
-            var results = new List<TextChangeRange>();
+            var results = new List<CXTextChangeRange>();
 
             var oldChange = oldChanges[0];
             var newChange = new UnadjustedNewChange(newChanges[0]);
@@ -268,14 +267,14 @@ partial class CXSourceText
                     AddAndAdjustOldDelta(
                         results,
                         ref oldDelta,
-                        new TextChangeRange(
-                            TextSpan.FromBounds(oldChange.Span.Start, oldChangeLeadingDeletion),
+                        new CXTextChangeRange(
+                            CXTextSpan.FromBounds(oldChange.Span.Start, oldChangeLeadingDeletion),
                             oldChangeLeadingInsertion
                         )
                     );
 
-                    oldChange = new TextChangeRange(
-                        new TextSpan(newChange.SpanStart - oldDelta, oldChange.Span.Length - oldChangeLeadingDeletion),
+                    oldChange = new CXTextChangeRange(
+                        new CXTextSpan(newChange.SpanStart - oldDelta, oldChange.Span.Length - oldChangeLeadingDeletion),
                         oldChange.NewLength - oldChangeLeadingInsertion
                     );
                     continue;
@@ -327,9 +326,9 @@ partial class CXSourceText
             return [..results];
 
             static void AddAndAdjustOldDelta(
-                List<TextChangeRange> results,
+                List<CXTextChangeRange> results,
                 ref int oldDelta,
-                TextChangeRange oldChange
+                CXTextChangeRange oldChange
             )
             {
                 oldDelta -= (oldChange.Span.Length + oldChange.NewLength);
@@ -337,7 +336,7 @@ partial class CXSourceText
             }
 
             static void AdjustAndAddNewChange(
-                List<TextChangeRange> results,
+                List<CXTextChangeRange> results,
                 int oldDelta,
                 UnadjustedNewChange newChange
             )
@@ -352,8 +351,8 @@ partial class CXSourceText
             }
 
             static void Add(
-                List<TextChangeRange> results,
-                TextChangeRange change
+                List<CXTextChangeRange> results,
+                CXTextChangeRange change
             )
             {
                 if (results.Count == 0)
@@ -367,7 +366,7 @@ partial class CXSourceText
                 {
                     // merge
                     results[results.Count - 1] = new(
-                        new TextSpan(last.Span.Start, last.Span.Length + change.Span.Length),
+                        new CXTextSpan(last.Span.Start, last.Span.Length + change.Span.Length),
                         last.NewLength + change.NewLength
                     );
                     return;
@@ -430,10 +429,10 @@ partial class CXSourceText
             ///     Constructs a new <see cref="UnadjustedNewChange"/>.
             /// </summary>
             /// <param name="range">
-            ///     The <see cref="TextChangeRange"/> containing the information to constuct this
+            ///     The <see cref="CXTextChangeRange"/> containing the information to constuct this
             ///     <see cref="UnadjustedNewChange"/> with.
             /// </param>
-            public UnadjustedNewChange(TextChangeRange range) : this(range.Span.Start, range.Span.Length,
+            public UnadjustedNewChange(CXTextChangeRange range) : this(range.Span.Start, range.Span.Length,
                 range.NewLength)
             {
             }

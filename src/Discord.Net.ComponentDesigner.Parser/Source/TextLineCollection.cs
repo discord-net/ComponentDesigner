@@ -1,6 +1,4 @@
-﻿using System.Net.Mime;
-
-namespace Discord.CX.Parser;
+﻿namespace Discord.CX.Parser;
 
 /// <summary>
 ///     Represents a collection of lines within a <see cref="CXSourceText"/>.

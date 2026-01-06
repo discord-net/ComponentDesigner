@@ -1,5 +1,4 @@
 ﻿using System;
-using Microsoft.CodeAnalysis.Text;
 using System.Collections.Generic;
 
 namespace Discord.CX.Parser;
@@ -12,12 +11,12 @@ public interface ICXNode : IEquatable<ICXNode>, ICloneable
     /// <summary>
     ///     Gets the full span, including trivia, that this node was parsed from in the source.
     /// </summary>
-    TextSpan FullSpan { get; }
+    CXTextSpan FullSpan { get; }
     
     /// <summary>
     ///     Gets the span representing this node in the source.
     /// </summary>
-    TextSpan Span { get; }
+    CXTextSpan Span { get; }
 
     /// <summary>
     ///     Gets the full width in characters of this node.

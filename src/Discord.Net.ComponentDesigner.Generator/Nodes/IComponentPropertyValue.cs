@@ -5,7 +5,7 @@ namespace Discord.CX.Nodes;
 
 public interface IComponentPropertyValue
 {
-    TextSpan Span { get; }
+    CXTextSpan Span { get; }
     
     CXValue? Value { get; }
     

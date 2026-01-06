@@ -115,7 +115,10 @@ public sealed class StringTests(ITestOutputHelper output) : BaseRendererTest(out
             [
                 new DesignerInterpolationInfo(
                     0,
-                    builder.Interpolations[0],
+                    new(
+                        builder.Interpolations[0].Start,
+                        builder.Interpolations[0].Length
+                    ),
                     Compilation.GetSpecialType(SpecialType.System_String),
                     default
                 )

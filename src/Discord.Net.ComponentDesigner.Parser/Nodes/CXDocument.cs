@@ -1,5 +1,4 @@
-﻿using Microsoft.CodeAnalysis.Text;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -119,11 +118,11 @@ public sealed class CXDocument : CXNode
     [Obsolete("This is untested and most likely doesn't work anymore")]
     public CXDocument IncrementalParse(
         CXSourceReader reader,
-        IReadOnlyList<TextChange> changes,
+        IReadOnlyList<CXTextChange> changes,
         CancellationToken token = default
     )
     {
-        var affectedRange = TextChangeRange.Collapse(changes.Select(x => (TextChangeRange)x));
+        var affectedRange = CXTextChangeRange.Collapse(changes.Select(x => (CXTextChangeRange)x));
 
         var parser = new CXParser(reader, this, affectedRange, token);
 

@@ -68,7 +68,7 @@ public sealed class AutoActionRowComponentNode : ActionRowComponentNode
             diagnostics.Add(
                 Diagnostics.AutoRowsDisabled,
                 state.HasChildren
-                    ? TextSpan.FromBounds(
+                    ? CXTextSpan.FromBounds(
                         state.Children[0].SourceCXNode.Span.Start,
                         state.Children[state.Children.Count - 1].SourceCXNode.Span.End
                     )

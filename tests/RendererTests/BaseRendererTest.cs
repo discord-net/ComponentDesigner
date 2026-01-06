@@ -45,7 +45,8 @@ public abstract class BaseRendererTest(ITestOutputHelper output) : BaseTestWithD
         {
             var source = CXSourceText.From(cx);
 
-            var interpolationSpans = interpolations?.Select(x => x.Span).ToArray();
+            var interpolationSpans = interpolations?
+                .Select(x => new CXTextSpan(x.Span.Start, x.Span.Length)).ToArray();
 
             parser = new CXParser(source.CreateReader(
                 wrappingQuoteCount: wrappingQuoteCount,
@@ -120,6 +121,6 @@ public abstract class BaseRendererTest(ITestOutputHelper output) : BaseTestWithD
         bool RequiresValue,
         bool IsOptional,
         string PropertyName,
-        TextSpan Span
+        CXTextSpan Span
     ) : IComponentPropertyValue;
 }

@@ -1,7 +1,5 @@
-﻿using Microsoft.CodeAnalysis.Text;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 
 namespace Discord.CX.Parser;
 

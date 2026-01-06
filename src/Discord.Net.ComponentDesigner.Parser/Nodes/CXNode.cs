@@ -1,12 +1,7 @@
-﻿using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.Text;
-using System;
-using System.Collections;
+﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Text;
 using Discord.CX.Util;
 
@@ -120,12 +115,12 @@ public abstract class CXNode : ICXNode
     }
 
     /// <inheritdoc/>
-    public TextSpan FullSpan => new(this.Offset, Width);
+    public CXTextSpan FullSpan => new(this.Offset, Width);
 
     /// <inheritdoc/>
-    public TextSpan Span
+    public CXTextSpan Span
         => FirstTerminal is { } first && LastTerminal is { } last
-            ? TextSpan.FromBounds(first.Span.Start, last.Span.End)
+            ? CXTextSpan.FromBounds(first.Span.Start, last.Span.End)
             : FullSpan;
     
     /// <inheritdoc/>

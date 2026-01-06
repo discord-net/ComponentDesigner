@@ -17,7 +17,7 @@ public sealed class TimestampTextControlTests(ITestOutputHelper output) : BaseTe
             "<t:123>"
         );
     }
-    
+
     [Fact]
     public void SyntaxIndented()
     {
@@ -30,7 +30,7 @@ public sealed class TimestampTextControlTests(ITestOutputHelper output) : BaseTe
             "<t:123>"
         );
     }
-    
+
     [Fact]
     public void Basic()
     {
@@ -55,14 +55,17 @@ public sealed class TimestampTextControlTests(ITestOutputHelper output) : BaseTe
             [
                 new DesignerInterpolationInfo(
                     0,
-                    builder.Interpolations[0],
+                    new(
+                        builder.Interpolations[0].Start,
+                        builder.Interpolations[0].Length
+                    ),
                     Compilation.GetTypeByMetadataName("System.DateTime"),
                     default
                 )
             ]
         );
     }
-    
+
     [Fact]
     public void InterpolatedDTO()
     {
@@ -78,7 +81,10 @@ public sealed class TimestampTextControlTests(ITestOutputHelper output) : BaseTe
             [
                 new DesignerInterpolationInfo(
                     0,
-                    builder.Interpolations[0],
+                    new(
+                        builder.Interpolations[0].Start,
+                        builder.Interpolations[0].Length
+                    ),
                     Compilation.GetTypeByMetadataName("System.DateTimeOffset"),
                     default
                 )
@@ -101,7 +107,10 @@ public sealed class TimestampTextControlTests(ITestOutputHelper output) : BaseTe
             [
                 new DesignerInterpolationInfo(
                     0,
-                    builder.Interpolations[0],
+                    new(
+                        builder.Interpolations[0].Start,
+                        builder.Interpolations[0].Length
+                    ),
                     Compilation.GetSpecialType(SpecialType.System_Int32),
                     new(12345)
                 )
@@ -151,18 +160,21 @@ public sealed class TimestampTextControlTests(ITestOutputHelper output) : BaseTe
             [
                 new DesignerInterpolationInfo(
                     0,
-                    builder.Interpolations[0],
+                    new(
+                        builder.Interpolations[0].Start,
+                        builder.Interpolations[0].Length
+                    ),
                     Compilation.GetTypeByMetadataName("Discord.TimestampTagStyles"),
                     default
                 )
             ]
         );
     }
-    
+
     private void AssertStyle(string style, string? expected = null)
     {
         expected ??= style;
-        
+
         Renders(
             $"""
              <time style="{style}">123</time>

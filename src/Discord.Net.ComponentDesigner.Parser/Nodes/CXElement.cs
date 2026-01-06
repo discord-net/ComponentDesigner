@@ -1,8 +1,4 @@
-﻿using Microsoft.CodeAnalysis.Text;
-using System;
-using System.Collections.Generic;
-
-namespace Discord.CX.Parser;
+﻿namespace Discord.CX.Parser;
 
 /// <summary>
 ///     A data type containing the AST nodes related to an opening tag within a <see cref="CXElement"/>.
@@ -116,7 +112,7 @@ public sealed class CXElement : CXNode
     {
         if (descriptor.Code is CXErrorCode.MissingElementClosingTag)
         {
-            var span = OpeningTag.IdentifierToken?.Span ?? TextSpan.FromBounds(
+            var span = OpeningTag.IdentifierToken?.Span ?? CXTextSpan.FromBounds(
                 OpeningTag.StartToken.Span.Start,
                 OpeningTag.EndToken.Span.End
             );

@@ -1,6 +1,4 @@
-﻿using Microsoft.CodeAnalysis.Text;
-
-namespace Discord.CX.Parser;
+﻿namespace Discord.CX.Parser;
 
 /// <summary>
 ///     An abstract record representing a non-specific form of syntax trivia.

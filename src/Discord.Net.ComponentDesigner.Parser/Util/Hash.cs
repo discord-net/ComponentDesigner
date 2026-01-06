@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using Microsoft.CodeAnalysis;
 
 namespace Discord.CX.Util;
 
@@ -179,7 +178,7 @@ internal static class Hash
 
         for (int i = 0; i < data.Length; i++)
         {
-            hashCode = unchecked((hashCode ^ CaseInsensitiveComparison.ToLower(data[i])) * Hash.FnvPrime);
+            hashCode = unchecked((hashCode ^ char.ToLowerInvariant(data[i])) * Hash.FnvPrime);
         }
 
         return hashCode;

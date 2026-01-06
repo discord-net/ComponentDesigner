@@ -1,10 +1,6 @@
-﻿using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.Text;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using System.Threading;
 
 namespace Discord.CX.Parser;
@@ -69,7 +65,7 @@ public sealed partial class CXParser
     /// <param name="reader">The reader to use when parsing/lexing</param>
     /// <param name="document">The old <see cref="CXDocument"/> to blend.</param>
     /// <param name="change">
-    ///     A <see cref="TextChangeRange"/> representing what has changed within the <paramref name="document"/>.
+    ///     A <see cref="CXTextChangeRange"/> representing what has changed within the <paramref name="document"/>.
     /// </param>
     /// <param name="token">
     ///     A <see cref="CancellationToken"/> used to cancel parsing.
@@ -77,7 +73,7 @@ public sealed partial class CXParser
     public CXParser(
         CXSourceReader reader,
         CXDocument document,
-        TextChangeRange change,
+        CXTextChangeRange change,
         CancellationToken token = default
     ) : this(reader, token)
     {
