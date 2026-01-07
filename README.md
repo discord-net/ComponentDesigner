@@ -162,7 +162,7 @@ Action rows wrap buttons or select menus providing top-level layout.
 
 | Name | Type | Description                        |
 | ---- | ---- | ---------------------------------- |
-| id?  | int  | The optonal identifier for the row |
+| id?  | int  | The optional identifier for the row |
 
 #### Valid children
 - [Button](#button)
