@@ -24,7 +24,7 @@ public abstract class BaseComponentTest(ITestOutputHelper output) : BaseTestWith
     private IEnumerator<GraphNode>? _nodeEnumerator;
 
     public void Graph(
-        [StringSyntax("html")] string cx,
+        string cx,
         [StringSyntax("csharp")]string? pretext = null,
         bool allowParsingErrors = false,
         GeneratorOptions? options = null,

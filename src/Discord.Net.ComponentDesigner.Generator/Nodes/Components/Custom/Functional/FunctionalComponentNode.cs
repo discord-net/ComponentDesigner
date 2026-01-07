@@ -81,11 +81,15 @@ public sealed class FunctionalComponentNode :
     {
         if (context.CXNode is not CXElement element) return null;
 
-        var method = SearchForTarget(element.Identifier, context.CXNode, context.GraphContext, diagnostics);
+        var method = SearchForTarget(
+            element,
+            context.GraphContext,
+            diagnostics
+        );
 
         if (method is null) return null;
 
-        var state = CreateFromSymbol(context.Compilation, method, context.GraphNode, element, diagnostics);
+        var state = CreateFromSymbol(context.GraphContext, method, context.GraphNode, element, diagnostics);
 
         if (state?.ChildrenParameter is not null)
             context.AddChildren(element.Children.OfType<CXElement>());
@@ -103,12 +107,12 @@ public sealed class FunctionalComponentNode :
          * returning old state is fine in cases that we fail to generate it, as produced diagnostics will cause
          * the rendering pipeline to end
          */
-        var method = SearchForTarget(state.Identifier, state.Source, context, diagnostics);
+        var method = SearchForTarget(state.Source, context, diagnostics);
 
         if (method is null) return state;
 
         return CreateFromSymbol(
-            context.Compilation,
+            context,
             method,
             state.GraphNode,
             state.Source,
@@ -132,16 +136,22 @@ public sealed class FunctionalComponentNode :
     }
 
     private static IMethodSymbol? SearchForTarget(
-        string name,
-        ICXNode node,
+        CXElement element,
         IComponentContext context,
         IList<DiagnosticInfo> diagnostics
     )
     {
         var candidates = context.CX.SemanticModel.LookupSymbols(
             context.CX.Location.TextSpan.Start,
-            name: name
+            name: element.Identifier,
+            container: element
+                .OpeningTag
+                .Identifier is CXIdentifier.Interpolated { InterpolationToken: { } interpolationToken }
+                ? context.GetInterpolationInfo(interpolationToken).Symbol
+                : null
         );
+
+        var requiresStatic = element.OpeningTag.Identifier is CXIdentifier.Simple;
 
         var results = new List<SearchResult>();
 
@@ -159,7 +169,7 @@ public sealed class FunctionalComponentNode :
                 continue;
             }
 
-            if (!method.IsStatic)
+            if (method.IsStatic != requiresStatic)
             {
                 results.Add(new(candidate, SearchResultKind.NonStatic));
                 continue;
@@ -177,8 +187,8 @@ public sealed class FunctionalComponentNode :
         if (results.Count is 0)
         {
             diagnostics.Add(
-                Diagnostics.UnknownComponent(name),
-                node
+                Diagnostics.UnknownComponent(element.Identifier),
+                element
             );
             return null;
         }
@@ -205,7 +215,7 @@ public sealed class FunctionalComponentNode :
             Diagnostics.AmbiguousFunctionalComponent(
                 targets.Select(x => x.Symbol.ToDisplayString())
             ),
-            node
+            element
         );
 
         return null;
@@ -223,11 +233,11 @@ public sealed class FunctionalComponentNode :
                         SearchResultKind.NotAMethod => "not a method",
                         SearchResultKind.InvalidComponentReturnKind => "invalid component return type",
                         SearchResultKind.NonPublic => "not public or internal",
-                        SearchResultKind.NonStatic => "not state",
+                        SearchResultKind.NonStatic => "not static",
                         _ => "unknown"
                     }
                 ),
-                node
+                element
             );
 
             return null;
@@ -235,7 +245,7 @@ public sealed class FunctionalComponentNode :
     }
 
     private static FunctionalComponentState? CreateFromSymbol(
-        Compilation compilation,
+        IComponentContext context,
         IMethodSymbol methodSymbol,
         GraphNode graphNode,
         CXElement source,
@@ -245,7 +255,7 @@ public sealed class FunctionalComponentNode :
         if (
             !ComponentBuilderKind.IsValidComponentBuilderType(
                 methodSymbol.ReturnType,
-                compilation,
+                context.Compilation,
                 out var returnKind
             )
         )
@@ -277,7 +287,7 @@ public sealed class FunctionalComponentNode :
             var childParameterAttribute = parameter
                 .GetAttributes()
                 .FirstOrDefault(x =>
-                    compilation
+                    context.Compilation
                         .GetKnownTypes()
                         .CXChildrenAttribute!
                         .Equals(x.AttributeClass, SymbolEqualityComparer.Default)
@@ -288,7 +298,7 @@ public sealed class FunctionalComponentNode :
             if (childParameterAttribute is not null && childrenParameter is null)
             {
                 renderer = CreateChildrenRenderer(
-                    compilation,
+                    context.Compilation,
                     parameter.Type,
                     source,
                     diagnostics,
@@ -299,7 +309,7 @@ public sealed class FunctionalComponentNode :
             else
             {
                 renderer = CXValueGenerator.GetGeneratorForType(
-                    compilation,
+                    context.Compilation,
                     parameter.Type
                 );
             }
@@ -325,12 +335,12 @@ public sealed class FunctionalComponentNode :
 
             properties.Add(property);
         }
-
+        
         var state = new FunctionalComponentState(
             graphNode,
             source,
             source.Identifier,
-            $"{methodSymbol.ContainingType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}.{methodSymbol.Name}",
+            CreateMethodReference(source, context, methodSymbol),
             [..properties],
             key,
             returnKind,
@@ -344,6 +354,30 @@ public sealed class FunctionalComponentNode :
         return state;
     }
 
+    private static string CreateMethodReference(
+        CXElement element,
+        IComponentContext context,
+        IMethodSymbol symbol
+    )
+    {
+        switch (element.OpeningTag.Identifier)
+        {
+            case CXIdentifier.Simple:
+                return $"{
+                    symbol.ContainingType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
+                }.{symbol.Name}";
+            case CXIdentifier.Interpolated{InterpolationToken: var token}:
+            {
+                var info = context.GetInterpolationInfo(token);
+
+                return $"{
+                    context.GetDesignerValue(info, info.Symbol)
+                }.{symbol.Name}";
+            }
+            default: throw new ArgumentOutOfRangeException(element.OpeningTag.Identifier?.GetType().Name);
+        }
+    }
+    
     private static CXValueGeneratorDelegate CreateChildrenRenderer(
         Compilation compilation,
         ITypeSymbol childrenType,
