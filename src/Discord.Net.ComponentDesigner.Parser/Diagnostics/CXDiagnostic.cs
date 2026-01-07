@@ -22,12 +22,12 @@ public readonly record struct CXDiagnosticDescriptor(
     ///     Constructs a new <see cref="CXDiagnosticDescriptor"/> for a missing elements closing tag.
     /// </summary>
     /// <param name="identifier">The elements identifier who is missing a closing tag.</param>
-    public static CXDiagnosticDescriptor MissingElementClosingTag(CXToken? identifier)
+    public static CXDiagnosticDescriptor MissingElementClosingTag(CXIdentifier? identifier)
         => new(
             DiagnosticSeverity.Error,
             CXErrorCode.MissingElementClosingTag,
             identifier is not null
-                ? $"Missing closing tag for '{identifier.RawValue}'"
+                ? $"Missing closing tag for '{identifier.Value}'"
                 : "Missing fragment closing tag"
         );
 

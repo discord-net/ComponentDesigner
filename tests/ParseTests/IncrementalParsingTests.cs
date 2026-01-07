@@ -25,7 +25,7 @@ public sealed class IncrementalParsingTests(ITestOutputHelper output) : BaseIncr
             Element(reused: false);
             {
                 T(CXTokenKind.LessThan, reused: false);
-                Ident("bar", reused: false);
+                SimpleIdent("bar", reused: false);
                 T(CXTokenKind.GreaterThan, reused: false);
                 
                 T(CXTokenKind.LessThanForwardSlash, reused: false);
@@ -53,7 +53,7 @@ public sealed class IncrementalParsingTests(ITestOutputHelper output) : BaseIncr
             Element(reused: false);
             {
                 T(CXTokenKind.LessThan, reused: true);
-                Ident("foo", reused: true);
+                SimpleIdent("foo", reused: true);
 
                 Attribute(reused: false);
                 {
@@ -91,7 +91,7 @@ public sealed class IncrementalParsingTests(ITestOutputHelper output) : BaseIncr
             Element(reused: false);
             {
                 T(CXTokenKind.LessThan, reused: true);
-                Ident("Foo", reused: true);
+                SimpleIdent("Foo", reused: true);
 
                 // trivia changed
                 Attribute(reused: false);
@@ -131,20 +131,20 @@ public sealed class IncrementalParsingTests(ITestOutputHelper output) : BaseIncr
             Element();
             {
                 T(CXTokenKind.LessThan);
-                Ident("Parent");
+                SimpleIdent("Parent");
                 T(CXTokenKind.GreaterThan);
 
                 Element();
                 {
                     T(CXTokenKind.LessThan);
-                    Ident("Child1");
+                    SimpleIdent("Child1");
                     T(CXTokenKind.ForwardSlashGreaterThan);
                 }
                 
                 Element();
                 {
                     T(CXTokenKind.LessThan);
-                    Ident("Child2");
+                    SimpleIdent("Child2");
                     T(CXTokenKind.ForwardSlashGreaterThan);
                 }
                 
@@ -166,20 +166,20 @@ public sealed class IncrementalParsingTests(ITestOutputHelper output) : BaseIncr
             Element(reused: false);
             {
                 T(CXTokenKind.LessThan, reused: true);
-                Ident("Parent", reused: true);
+                SimpleIdent("Parent", reused: true);
                 T(CXTokenKind.GreaterThan, reused: true);
 
                 Element(reused: true);
                 {
                     T(CXTokenKind.LessThan, reused: true);
-                    Ident("Child1", reused: true);
+                    SimpleIdent("Child1", reused: true);
                     T(CXTokenKind.ForwardSlashGreaterThan, reused: true);
                 }
                 
                 Element(reused: false);
                 {
                     T(CXTokenKind.LessThan, reused: true);
-                    Ident("Child2", reused: false);
+                    SimpleIdent("Child2", reused: false);
 
                     Attribute(reused: false);
                     {
@@ -204,7 +204,7 @@ public sealed class IncrementalParsingTests(ITestOutputHelper output) : BaseIncr
             Element();
             {
                 T(CXTokenKind.LessThan);
-                Ident("foo");
+                SimpleIdent("foo");
                 T(CXTokenKind.ForwardSlashGreaterThan);
             }
         }
@@ -214,7 +214,7 @@ public sealed class IncrementalParsingTests(ITestOutputHelper output) : BaseIncr
             Element(reused: false);
             {
                 T(CXTokenKind.LessThan, reused: true);
-                Ident("foo", reused: false); // new trivia
+                SimpleIdent("foo", reused: false); // new trivia
 
                 Attribute(reused: false);
                 {
@@ -234,7 +234,7 @@ public sealed class IncrementalParsingTests(ITestOutputHelper output) : BaseIncr
             Element();
             {
                 T(CXTokenKind.LessThan);
-                Ident("foo");
+                SimpleIdent("foo");
                 
                 Attribute();
                 {
@@ -250,7 +250,7 @@ public sealed class IncrementalParsingTests(ITestOutputHelper output) : BaseIncr
             Element(reused: false);
             {
                 T(CXTokenKind.LessThan, reused: true);
-                Ident("foo", reused: false);
+                SimpleIdent("foo", reused: false);
                 T(CXTokenKind.ForwardSlashGreaterThan, reused: true);
             }
         }
@@ -264,7 +264,7 @@ public sealed class IncrementalParsingTests(ITestOutputHelper output) : BaseIncr
             Element();
             {
                 T(CXTokenKind.LessThan);
-                Ident("foo");
+                SimpleIdent("foo");
                 
                 Attribute();
                 {
@@ -280,7 +280,7 @@ public sealed class IncrementalParsingTests(ITestOutputHelper output) : BaseIncr
             Element(reused: false);
             {
                 T(CXTokenKind.LessThan, reused: true);
-                Ident("foo", reused: true);
+                SimpleIdent("foo", reused: true);
                 
                 Attribute(reused: false);
                 {

@@ -16,7 +16,7 @@ public sealed class SyntaxDiagnosticTests(ITestOutputHelper output) : BaseParsin
             var element = Element();
             {
                 Token(CXTokenKind.LessThan);
-                Token(CXTokenKind.Identifier, flags: CXTokenFlags.Missing);
+                SimpleIdentifier(flags: CXTokenFlags.Missing);
                 Token(CXTokenKind.ForwardSlashGreaterThan, flags: CXTokenFlags.Missing);
             }
 
@@ -34,7 +34,7 @@ public sealed class SyntaxDiagnosticTests(ITestOutputHelper output) : BaseParsin
             var element = Element();
             {
                 Token(CXTokenKind.LessThan);
-                Token(CXTokenKind.Identifier);
+                SimpleIdentifier("foo");
                 Token(CXTokenKind.ForwardSlashGreaterThan, flags: CXTokenFlags.Missing);
             }
 
@@ -56,7 +56,7 @@ public sealed class SyntaxDiagnosticTests(ITestOutputHelper output) : BaseParsin
             var element = Element();
             {
                 Token(CXTokenKind.LessThan);
-                Identifier("foo");
+                SimpleIdentifier("foo");
                 Token(CXTokenKind.GreaterThan);
 
                 Scalar();
@@ -71,7 +71,7 @@ public sealed class SyntaxDiagnosticTests(ITestOutputHelper output) : BaseParsin
 
             Diagnostic(
                 CXErrorCode.MissingElementClosingTag,
-                span: element.OpeningTag.IdentifierToken!.Span
+                span: element.OpeningTag.Identifier!.Span
             );
         }
         
@@ -83,7 +83,7 @@ public sealed class SyntaxDiagnosticTests(ITestOutputHelper output) : BaseParsin
             var element = Element();
             {
                 Token(CXTokenKind.LessThan);
-                Identifier("foo");
+                SimpleIdentifier("foo");
                 Token(CXTokenKind.GreaterThan);
 
                 Scalar();
@@ -98,7 +98,7 @@ public sealed class SyntaxDiagnosticTests(ITestOutputHelper output) : BaseParsin
 
             Diagnostic(
                 CXErrorCode.MissingElementClosingTag,
-                span: element.OpeningTag.IdentifierToken!.Span
+                span: element.OpeningTag.Identifier!.Span
             );
         }
         
@@ -110,7 +110,7 @@ public sealed class SyntaxDiagnosticTests(ITestOutputHelper output) : BaseParsin
             var element = Element();
             {
                 Token(CXTokenKind.LessThan);
-                Identifier("foo");
+                SimpleIdentifier("foo");
                 Token(CXTokenKind.GreaterThan);
 
                 Scalar();
@@ -125,7 +125,7 @@ public sealed class SyntaxDiagnosticTests(ITestOutputHelper output) : BaseParsin
 
             Diagnostic(
                 CXErrorCode.MissingElementClosingTag,
-                span: element.OpeningTag.IdentifierToken!.Span
+                span: element.OpeningTag.Identifier!.Span
             );
         }
     }
@@ -145,7 +145,7 @@ public sealed class SyntaxDiagnosticTests(ITestOutputHelper output) : BaseParsin
             var element = Element();
             {
                 Token(CXTokenKind.LessThan);
-                Identifier("foo");
+                SimpleIdentifier("foo");
                 Token(CXTokenKind.ForwardSlashGreaterThan);
             }
             
@@ -159,7 +159,7 @@ public sealed class SyntaxDiagnosticTests(ITestOutputHelper output) : BaseParsin
             var element = Element();
             {
                 Token(CXTokenKind.LessThan);
-                Identifier("foo");
+                SimpleIdentifier("foo");
                 Token(CXTokenKind.ForwardSlashGreaterThan);
             }
 
@@ -186,7 +186,7 @@ public sealed class SyntaxDiagnosticTests(ITestOutputHelper output) : BaseParsin
             Element();
             {
                 Token(CXTokenKind.LessThan);
-                Identifier("foo");
+                SimpleIdentifier("foo");
 
                 attribute = Attribute();
                 {

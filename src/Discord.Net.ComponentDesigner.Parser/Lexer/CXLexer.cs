@@ -468,6 +468,12 @@ public sealed partial class CXLexer
 
         switch (Reader.Current)
         {
+            // qualifier '.' in identifier mode
+            case PERIOD_CHAR when Mode is LexMode.Identifier:
+                Reader.Advance();
+                info.Kind = CXTokenKind.Qualifier;
+                return;
+            
             // open parenthesis are only valid in attributes, they represent the start of an inline element value
             case OPEN_PAREN_CHAR when Mode == LexMode.Attribute:
                 Reader.Advance();

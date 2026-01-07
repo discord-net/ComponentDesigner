@@ -74,4 +74,9 @@ public enum CXTokenKind : byte
     ///     A variable length identifier token.
     /// </summary>
     Identifier,
+    
+    /// <summary>
+    ///     A name qualifying token '<c>.</c>'.
+    /// </summary>
+    Qualifier,
 }

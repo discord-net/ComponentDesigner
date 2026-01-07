@@ -27,6 +27,7 @@ public static class CXTokenKindExtensions
             CXTokenKind.Equals => "=",
             CXTokenKind.OpenParenthesis => "(",
             CXTokenKind.CloseParenthesis => ")",
+            CXTokenKind.Qualifier => ".",
             CXTokenKind.EOF or CXTokenKind.Invalid => string.Empty,
             _ => null
         };

@@ -51,6 +51,19 @@ public static class CXNodeExtensions
                 return node.Slots.Any(x => x.HasDiagnostics);
             }
         }
+
+        /// <summary>
+        ///     Gets whether this node contains any tokens that have the missing flag specified.
+        /// </summary>
+        public bool HasMissingTokens
+        {
+            get
+            {
+                if (node is CXToken token) return token.IsMissing;
+
+                return node.Slots.Any(x => x.HasMissingTokens);
+            }
+        }
         
         /// <summary>
         ///     Gets the diagnostics reported for this node.

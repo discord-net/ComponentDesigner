@@ -8,12 +8,12 @@ namespace Discord.CX.Parser;
 ///     A data type containing the AST nodes related to an opening tag within a <see cref="CXElement"/>.
 /// </summary>
 /// <param name="StartToken">The opening tags starting token.</param>
-/// <param name="IdentifierToken">The opening tags identifier token.</param>
+/// <param name="Identifier">The opening tags identifier.</param>
 /// <param name="Attributes">The opening tags' attributes.</param>
 /// <param name="EndToken">The opening tags ending token.</param>
 public readonly record struct CXElementOpeningTag(
     CXToken StartToken,
-    CXToken? IdentifierToken,
+    CXIdentifier? Identifier,
     CXCollection<CXAttribute> Attributes,
     CXToken EndToken
 );
@@ -44,7 +44,7 @@ public sealed class CXElement : CXNode
     /// <summary>
     ///     Gets whether this node is a fragment (<c>&lt;&gt;</c>) element.
     /// </summary>
-    public bool IsFragment => OpeningTag.IdentifierToken is null && ClosingTag.IdentifierToken is null;
+    public bool IsFragment => OpeningTag.Identifier is null && ClosingTag.IdentifierToken is null;
     
     /// <summary>
     ///     Gets the identifier of this element.
@@ -52,7 +52,7 @@ public sealed class CXElement : CXNode
     /// <remarks>
     ///     If this element is a fragment, <see cref="string.Empty"/> is returned.
     /// </remarks>
-    public string Identifier => OpeningTag.IdentifierToken?.RawValue ?? string.Empty;
+    public string Identifier => OpeningTag.Identifier?.Value ?? string.Empty;
 
     /// <summary>
     ///     Gets the opening tag of this <see cref="CXElement"/> .
@@ -78,7 +78,7 @@ public sealed class CXElement : CXNode
     ///     Constructs a new <see cref="CXElement"/>
     /// </summary>
     /// <param name="openingTagStartToken">The opening tags starting token.</param>
-    /// <param name="openingTagIdentifierToken">The opening tags identifier token.</param>
+    /// <param name="openingTagIdentifier">The opening tags identifier.</param>
     /// <param name="attributes">The attributes found in the opening tag.</param>
     /// <param name="openingTagEndToken">The opening tags ending token.</param>
     /// <param name="children">The children of this <see cref="CXElement"/>.</param>
@@ -87,7 +87,7 @@ public sealed class CXElement : CXNode
     /// <param name="closingTagEndToken">The closing tags ending token.</param>
     public CXElement(
         CXToken openingTagStartToken,
-        CXToken? openingTagIdentifierToken,
+        CXIdentifier? openingTagIdentifier,
         CXCollection<CXAttribute> attributes,
         CXToken openingTagEndToken,
         CXCollection<CXNode> children,
@@ -98,7 +98,7 @@ public sealed class CXElement : CXNode
     {
         OpeningTag = new(
             Slot(openingTagStartToken),
-            Slot(openingTagIdentifierToken),
+            Slot(openingTagIdentifier),
             Slot(attributes),
             Slot(openingTagEndToken)
         );
@@ -116,7 +116,7 @@ public sealed class CXElement : CXNode
     {
         if (descriptor.Code is CXErrorCode.MissingElementClosingTag)
         {
-            var span = OpeningTag.IdentifierToken?.Span ?? TextSpan.FromBounds(
+            var span = OpeningTag.Identifier?.Span ?? TextSpan.FromBounds(
                 OpeningTag.StartToken.Span.Start,
                 OpeningTag.EndToken.Span.End
             );

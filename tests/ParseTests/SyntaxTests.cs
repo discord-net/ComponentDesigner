@@ -7,6 +7,33 @@ namespace UnitTests.ParseTests;
 public class SyntaxTests(ITestOutputHelper output) : BaseParsingTest(output)
 {
     [Fact]
+    public void ElementInterpolatedIdentifier()
+    {
+        var source = new SourceBuilder()
+            .AddSource("<")
+            .AddInterpolation("interp")
+            .AddSource(".Foo />");
+
+        Parses(
+            source.StringBuilder.ToString(),
+            interpolations: source.Interpolations.ToArray()
+        );
+        {
+            Element();
+            {
+                Token(CXTokenKind.LessThan);
+                Node<CXIdentifier.Interpolated>();
+                {
+                    Token(CXTokenKind.Interpolation, "{interp}");
+                    Token(CXTokenKind.Qualifier);
+                    Identifier("Foo");
+                }
+                Token(CXTokenKind.ForwardSlashGreaterThan);
+            }
+        }
+    }
+    
+    [Fact]
     public void HexEscapeSequence()
     {
         Parses(
@@ -18,7 +45,7 @@ public class SyntaxTests(ITestOutputHelper output) : BaseParsingTest(output)
             Element();
             {
                 Token(CXTokenKind.LessThan);
-                Identifier("Foo");
+                SimpleIdentifier("Foo");
                 Token(CXTokenKind.GreaterThan);
 
                 Node<CXValue.Scalar>();
@@ -45,7 +72,7 @@ public class SyntaxTests(ITestOutputHelper output) : BaseParsingTest(output)
             Element();
             {
                 Token(CXTokenKind.LessThan);
-                Identifier("Foo");
+                SimpleIdentifier("Foo");
                 Token(CXTokenKind.GreaterThan);
 
                 Node<CXValue.Scalar>();
@@ -74,7 +101,7 @@ public class SyntaxTests(ITestOutputHelper output) : BaseParsingTest(output)
             Element();
             {
                 Token(CXTokenKind.LessThan);
-                Identifier("Foo");
+                SimpleIdentifier("Foo");
                 Token(CXTokenKind.GreaterThan);
 
                 Node<CXValue.Scalar>();
@@ -97,7 +124,7 @@ public class SyntaxTests(ITestOutputHelper output) : BaseParsingTest(output)
             Element();
             {
                 Token(CXTokenKind.LessThan);
-                Identifier("Foo");
+                SimpleIdentifier("Foo");
                 Token(CXTokenKind.GreaterThan);
 
                 Node<CXValue.Scalar>();
@@ -120,7 +147,7 @@ public class SyntaxTests(ITestOutputHelper output) : BaseParsingTest(output)
             Node<CXElement>();
             {
                 Token(CXTokenKind.LessThan);
-                Token(CXTokenKind.Identifier, "Foo");
+                SimpleIdentifier("Foo");
                 Token(CXTokenKind.ForwardSlashGreaterThan);
             }
             EOF();
@@ -141,7 +168,7 @@ public class SyntaxTests(ITestOutputHelper output) : BaseParsingTest(output)
             Node<CXElement>();
             {
                 Token(CXTokenKind.LessThan);
-                Token(CXTokenKind.Identifier, "Foo");
+                SimpleIdentifier("Foo");
                 Token(CXTokenKind.GreaterThan);
 
                 Token(CXTokenKind.LessThanForwardSlash);
@@ -167,13 +194,13 @@ public class SyntaxTests(ITestOutputHelper output) : BaseParsingTest(output)
             Node<CXElement>();
             {
                 Token(CXTokenKind.LessThan);
-                Token(CXTokenKind.Identifier, "Foo");
+                SimpleIdentifier("Foo");
                 Token(CXTokenKind.GreaterThan);
 
                 Node<CXElement>();
                 {
                     Token(CXTokenKind.LessThan);
-                    Token(CXTokenKind.Identifier, "Bar");
+                    SimpleIdentifier("Bar");
                     Token(CXTokenKind.ForwardSlashGreaterThan);
                 }
 
@@ -211,32 +238,32 @@ public class SyntaxTests(ITestOutputHelper output) : BaseParsingTest(output)
             Node<CXElement>();
             {
                 Token(CXTokenKind.LessThan);
-                Token(CXTokenKind.Identifier, "Foo");
+                SimpleIdentifier("Foo");
                 Token(CXTokenKind.GreaterThan);
 
                 Node<CXElement>();
                 {
                     Token(CXTokenKind.LessThan);
-                    Token(CXTokenKind.Identifier, "Bar");
+                    SimpleIdentifier("Bar");
                     Token(CXTokenKind.ForwardSlashGreaterThan);
                 }
 
                 Node<CXElement>();
                 {
                     Token(CXTokenKind.LessThan);
-                    Token(CXTokenKind.Identifier, "Baz");
+                    SimpleIdentifier("Baz");
                     Token(CXTokenKind.GreaterThan);
 
                     Node<CXElement>();
                     {
                         Token(CXTokenKind.LessThan);
-                        Token(CXTokenKind.Identifier, "ABC");
+                        SimpleIdentifier( "ABC");
                         Token(CXTokenKind.GreaterThan);
 
                         Node<CXElement>();
                         {
                             Token(CXTokenKind.LessThan);
-                            Token(CXTokenKind.Identifier, "DEF");
+                            SimpleIdentifier("DEF");
                             Token(CXTokenKind.ForwardSlashGreaterThan);
                         }
 
@@ -248,34 +275,34 @@ public class SyntaxTests(ITestOutputHelper output) : BaseParsingTest(output)
                     Node<CXElement>();
                     {
                         Token(CXTokenKind.LessThan);
-                        Token(CXTokenKind.Identifier, "GHI");
+                        SimpleIdentifier("GHI");
                         Token(CXTokenKind.ForwardSlashGreaterThan);
                     }
 
                     Node<CXElement>();
                     {
                         Token(CXTokenKind.LessThan);
-                        Token(CXTokenKind.Identifier, "JKL");
+                        SimpleIdentifier("JKL");
                         Token(CXTokenKind.GreaterThan);
 
                         Node<CXElement>();
                         {
                             Token(CXTokenKind.LessThan);
-                            Token(CXTokenKind.Identifier, "Depth1");
-                            Token(CXTokenKind.ForwardSlashGreaterThan);
-                        }
-
-                        var x = Node<CXElement>();
-                        {
-                            Token(CXTokenKind.LessThan);
-                            Token(CXTokenKind.Identifier, "Depth2");
+                            SimpleIdentifier("Depth1");
                             Token(CXTokenKind.ForwardSlashGreaterThan);
                         }
 
                         Node<CXElement>();
                         {
                             Token(CXTokenKind.LessThan);
-                            Token(CXTokenKind.Identifier, "Depth3");
+                            SimpleIdentifier("Depth2");
+                            Token(CXTokenKind.ForwardSlashGreaterThan);
+                        }
+
+                        Node<CXElement>();
+                        {
+                            Token(CXTokenKind.LessThan);
+                            SimpleIdentifier("Depth3");
                             Token(CXTokenKind.ForwardSlashGreaterThan);
                         }
 
@@ -311,7 +338,7 @@ public class SyntaxTests(ITestOutputHelper output) : BaseParsingTest(output)
             Node<CXElement>();
             {
                 Token(CXTokenKind.LessThan);
-                Token(CXTokenKind.Identifier, "Foo");
+                SimpleIdentifier("Foo");
 
                 Node<CXAttribute>();
                 {
@@ -345,7 +372,7 @@ public class SyntaxTests(ITestOutputHelper output) : BaseParsingTest(output)
             Element();
             {
                 Token(CXTokenKind.LessThan);
-                Identifier("Foo");
+                SimpleIdentifier("Foo");
 
                 Attribute();
                 {
@@ -407,7 +434,7 @@ public class SyntaxTests(ITestOutputHelper output) : BaseParsingTest(output)
             Element();
             {
                 Token(CXTokenKind.LessThan);
-                Identifier("Foo");
+                SimpleIdentifier("Foo");
                 Token(CXTokenKind.GreaterThan);
 
                 Node<CXValue.Scalar>();
@@ -440,7 +467,7 @@ public class SyntaxTests(ITestOutputHelper output) : BaseParsingTest(output)
             Element();
             {
                 Token(CXTokenKind.LessThan);
-                Identifier("Foo");
+                SimpleIdentifier("Foo");
 
                 Attribute();
                 {
@@ -475,7 +502,7 @@ public class SyntaxTests(ITestOutputHelper output) : BaseParsingTest(output)
             Element();
             {
                 Token(CXTokenKind.LessThan);
-                Identifier("Foo");
+                SimpleIdentifier("Foo");
 
                 Attribute();
                 {
@@ -521,7 +548,7 @@ public class SyntaxTests(ITestOutputHelper output) : BaseParsingTest(output)
             Element();
             {
                 Token(CXTokenKind.LessThan);
-                Identifier("Foo");
+                SimpleIdentifier("Foo");
 
                 Attribute();
                 {
@@ -565,7 +592,7 @@ public class SyntaxTests(ITestOutputHelper output) : BaseParsingTest(output)
             Element();
             {
                 Token(CXTokenKind.LessThan);
-                Identifier("Foo");
+                SimpleIdentifier("Foo");
                 Token(CXTokenKind.GreaterThan);
 
                 Multipart();
@@ -603,13 +630,13 @@ public class SyntaxTests(ITestOutputHelper output) : BaseParsingTest(output)
             Element();
             {
                 Token(CXTokenKind.LessThan);
-                Identifier("Foo");
+                SimpleIdentifier("Foo");
                 Token(CXTokenKind.GreaterThan);
 
                 Element();
                 {
                     Token(CXTokenKind.LessThan);
-                    Identifier("Bar");
+                    SimpleIdentifier("Bar");
                     Token(CXTokenKind.ForwardSlashGreaterThan);
                 }
 
@@ -639,12 +666,12 @@ public class SyntaxTests(ITestOutputHelper output) : BaseParsingTest(output)
             Element();
             {
                 Token(CXTokenKind.LessThan);
-                Identifier("Foo");
+                SimpleIdentifier("Foo");
                 Token(CXTokenKind.GreaterThan);
 
                 var fragment = Element();
                 {
-                    Assert.Null(fragment.OpeningTag.IdentifierToken);
+                    Assert.Null(fragment.OpeningTag.Identifier);
                     Assert.True(fragment.IsFragment);
 
                     Token(CXTokenKind.LessThan);
@@ -653,14 +680,14 @@ public class SyntaxTests(ITestOutputHelper output) : BaseParsingTest(output)
                     Element();
                     {
                         Token(CXTokenKind.LessThan);
-                        Identifier("Bar");
+                        SimpleIdentifier("Bar");
                         Token(CXTokenKind.ForwardSlashGreaterThan);
                     }
 
                     Element();
                     {
                         Token(CXTokenKind.LessThan);
-                        Identifier("Baz");
+                        SimpleIdentifier("Baz");
                         Token(CXTokenKind.ForwardSlashGreaterThan);
                     }
 
@@ -743,20 +770,20 @@ public class SyntaxTests(ITestOutputHelper output) : BaseParsingTest(output)
             Element();
             {
                 Token(CXTokenKind.LessThan);
-                Identifier("Foo");
+                SimpleIdentifier("Foo");
                 Token(CXTokenKind.ForwardSlashGreaterThan);
             }
 
             Element();
             {
                 Token(CXTokenKind.LessThan);
-                Identifier("Bar");
+                SimpleIdentifier("Bar");
                 Token(CXTokenKind.GreaterThan);
 
                 Element();
                 {
                     Token(CXTokenKind.LessThan);
-                    Identifier("Baz");
+                    SimpleIdentifier("Baz");
                     Token(CXTokenKind.ForwardSlashGreaterThan);
                 }
 
@@ -789,13 +816,13 @@ public class SyntaxTests(ITestOutputHelper output) : BaseParsingTest(output)
             Element();
             {
                 Token(CXTokenKind.LessThan);
-                Identifier("Foo");
+                SimpleIdentifier("Foo");
                 Token(CXTokenKind.GreaterThan);
 
                 Element();
                 {
                     Token(CXTokenKind.LessThan);
-                    Identifier("Bar");
+                    SimpleIdentifier("Bar");
                     Token(CXTokenKind.ForwardSlashGreaterThan);
                 }
 
@@ -827,7 +854,7 @@ public class SyntaxTests(ITestOutputHelper output) : BaseParsingTest(output)
             Element();
             {
                 Token(CXTokenKind.LessThan);
-                Identifier("Foo");
+                SimpleIdentifier("Foo");
 
                 Attribute();
                 {
@@ -840,7 +867,7 @@ public class SyntaxTests(ITestOutputHelper output) : BaseParsingTest(output)
                         Element();
                         {
                             Token(CXTokenKind.LessThan);
-                            Identifier("Baz");
+                            SimpleIdentifier("Baz");
                             Token(CXTokenKind.ForwardSlashGreaterThan);
                         }
                         Token(CXTokenKind.CloseParenthesis);
@@ -866,7 +893,7 @@ public class SyntaxTests(ITestOutputHelper output) : BaseParsingTest(output)
             Element();
             {
                 Token(CXTokenKind.LessThan);
-                Identifier("Foo");
+                SimpleIdentifier("Foo");
 
                 Attribute();
                 {
@@ -897,7 +924,7 @@ public class SyntaxTests(ITestOutputHelper output) : BaseParsingTest(output)
             Element();
             {
                 Token(CXTokenKind.LessThan);
-                Identifier("Foo");
+                SimpleIdentifier("Foo");
 
                 Attribute();
                 {
