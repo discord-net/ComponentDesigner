@@ -66,7 +66,7 @@ The syntax for writing components is based off of JSX, and is referred as 'CX' w
 
 ### Elements
 
-An element consists of a name, some attributes, and some children:
+An element consists of an identifier, some attributes, and some children:
 ```xml
 <Example />
 <Example foo="bar" />
@@ -76,6 +76,7 @@ An element consists of a name, some attributes, and some children:
     <Child2 />
     {DateTime.UtcNow}
 </Parent>
+<{interpolation}.Foo />
 ```
 
 Valid children of an element are:
@@ -622,9 +623,6 @@ var button = cx(
 );
 ```
 
-> [!NOTE]
-> You can't use string interpolations for element identifiers
-
 Most components have constraints on what type of value is allowed (ex select.min should be an integer) and diagnostics will be reported on type mismatches
 
 ```tsx
@@ -706,7 +704,7 @@ You can define basic custom components which can be used within the CX syntax. A
 ### Functional components
 
 A functional component is a function that is:
-- `static`.
+- `static` or instanced qualified.
 - either `public` or `internal`.
 - returns a valid interpolation component type.
 
@@ -733,6 +731,26 @@ public static CXMessageComponent SayHello(User)
         </text>
         """
     );
+```
+
+#### Instanced functional components
+
+You can specify an instance by qualifying the identifier of the functional component with an interpolation of the instance:
+
+```cs
+
+var instance = new MyClass();
+
+var component = cx($"""
+    <container>
+        <{instance}.MyComponent />
+    </container>
+""");
+
+public class MyClass()
+{
+    public CXMessageComponent MyComponent() => ...;
+}
 ```
 
 > [!TIP]
