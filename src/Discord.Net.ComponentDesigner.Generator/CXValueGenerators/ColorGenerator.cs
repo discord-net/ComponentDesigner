@@ -39,12 +39,13 @@ public sealed class ColorGenerator : CXValueGenerator
             context.Compilation.HasImplicitConversion(
                 info.Symbol,
                 context.KnownTypes.ColorType
-            )
+            ) ||
+            info.Symbol.IsNullableOfValueType(context.KnownTypes.ColorType, context.Compilation)
         )
         {
             return context.GetDesignerValue(
                 info,
-                context.KnownTypes.ColorType!.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
+                info.Symbol!.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
             );
         }
 

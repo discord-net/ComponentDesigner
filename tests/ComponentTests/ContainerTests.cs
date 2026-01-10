@@ -1,4 +1,5 @@
-﻿using Discord.CX;
+﻿using Discord;
+using Discord.CX;
 using Discord.CX.Nodes.Components;
 using Xunit.Abstractions;
 
@@ -146,6 +147,56 @@ public sealed class ContainerTests(ITestOutputHelper output) : BaseComponentTest
             );
 
             EOF();
+        }
+    }
+
+    [Fact]
+    public void ContainerWithInterpolatedColor()
+    {
+        Graph(
+            """
+            <container color={color} />
+            """,
+            pretext: "Discord.Color color = default;"
+        );
+        {
+            Node<ContainerComponentNode>();
+
+            Validate();
+
+            Renders(
+                """
+                new global::Discord.ContainerBuilder()
+                {
+                    AccentColor = designer.GetValue<global::Discord.Color>(0)
+                }
+                """
+            );
+        }
+    }
+    
+    [Fact]
+    public void ContainerWithNullableInterpolatedColor()
+    {
+        Graph(
+            """
+            <container color={color} />
+            """,
+            pretext: "Discord.Color? color = null;"
+        );
+        {
+            Node<ContainerComponentNode>();
+
+            Validate();
+            
+            Renders(
+                """
+                new global::Discord.ContainerBuilder()
+                {
+                    AccentColor = designer.GetValue<global::Discord.Color?>(0)
+                }
+                """
+            );
         }
     }
 
