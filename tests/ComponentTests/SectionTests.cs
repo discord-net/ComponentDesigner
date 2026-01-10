@@ -7,6 +7,49 @@ namespace UnitTests.ComponentTests;
 public sealed class SectionTests(ITestOutputHelper output) : BaseComponentTest(output)
 {
     [Fact]
+    public void WithButtonAccessory()
+    {
+        Graph(
+            """
+            <section
+                accessory=(
+                    <button customId='b1' label='b1' />
+                )
+            >
+                <text>Foo</text>
+            </section>
+            """
+        );
+        {
+            Node<SectionComponentNode>();
+            {
+                Node<ButtonComponentNode>();
+                Node<TextDisplayComponentNode>();
+            }
+            
+            Validate(hasErrors: false);
+
+            Renders(
+                """
+                new global::Discord.SectionBuilder(
+                    accessory: new global::Discord.ButtonBuilder(
+                        style: global::Discord.ButtonStyle.Primary,
+                        label: "b1",
+                        customId: "b1"
+                    ),
+                    components:
+                    [
+                        new global::Discord.TextDisplayBuilder(
+                            content: "Foo"
+                        )
+                    ]
+                )
+                """
+            );
+        }
+    }
+    
+    [Fact]
     public void EmptySection()
     {
         Graph(

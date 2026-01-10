@@ -117,8 +117,13 @@ public sealed class ButtonComponentNode : ComponentNode<ButtonComponentState>
 
     public override void AddGraphNode(ComponentGraphInitializationContext context)
     {
-        if (!AutoActionRowComponentNode.AddPossibleAutoRowNode(this, context))
+        if (
+            context.ParentGraphNode?.Inner is SectionComponentNode ||
+            !AutoActionRowComponentNode.AddPossibleAutoRowNode(this, context)
+        )
+        {
             base.AddGraphNode(context);
+        }
     }
 
     public override ButtonComponentState? CreateState(
