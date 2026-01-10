@@ -132,7 +132,7 @@ public sealed class EmojiGenerator : CXValueGenerator
                 $"""
                  global::Discord.Emoji.TryParse({code}, out var {varName})
                     ? (global::Discord.IEmote){varName}
-                    : global::Discord.Emote.Parse({context})
+                    : global::Discord.Emote.Parse({code})
                  """;
             
             builder.AddDiagnostic(
