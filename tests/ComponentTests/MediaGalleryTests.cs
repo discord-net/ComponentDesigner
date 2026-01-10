@@ -9,6 +9,33 @@ namespace UnitTests.ComponentTests;
 public sealed class MediaGalleryTests(ITestOutputHelper output) : BaseComponentTest(output)
 {
     [Fact]
+    public void InterpolatedGallery()
+    {
+        Graph(
+            """
+            <text>Foo</text>
+            {new MediaGalleryBuilder(attachments.Select(x => new MediaGalleryItemProperties(new(x))))}
+            """,
+            pretext: "IReadOnlyList<string> attachments = null!;"
+        );
+        {
+            Node<TextDisplayComponentNode>();
+            Node<InterleavedComponentNode>();
+
+            Validate(hasErrors: false);
+
+            Renders(
+                """
+                new global::Discord.TextDisplayBuilder(
+                    content: "Foo"
+                ),
+                designer.GetValue<global::Discord.MediaGalleryBuilder>(0)
+                """
+            );
+        }
+    }
+
+    [Fact]
     public void EmptyGallery()
     {
         Graph(

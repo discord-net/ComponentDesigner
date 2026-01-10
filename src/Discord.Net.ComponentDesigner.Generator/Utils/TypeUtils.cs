@@ -20,7 +20,7 @@ public static class TypeUtils
     {
         if (other is null) return false;
         
-        if (symbol.TypeKind is TypeKind.Class)
+        if (symbol.TypeKind is TypeKind.Class && other.TypeKind is TypeKind.Class)
         {
             var current = symbol;
 
@@ -35,7 +35,7 @@ public static class TypeUtils
         }
 
         return other.Equals(symbol, SymbolEqualityComparer.Default) ||
-               other.AllInterfaces.Contains(symbol, SymbolEqualityComparer.Default);
+               symbol.AllInterfaces.Contains(other, SymbolEqualityComparer.Default);
     }
     
     public static bool TryGetEnumerableType(this ITypeSymbol? symbol, out ITypeSymbol inner)
