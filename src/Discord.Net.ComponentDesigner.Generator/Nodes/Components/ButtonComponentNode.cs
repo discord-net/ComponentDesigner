@@ -85,7 +85,7 @@ public sealed class ButtonComponentNode : ComponentNode<ButtonComponentState>
                 "emoji",
                 isOptional: true,
                 aliases: ["emote"],
-                renderer: CXValueGenerator.Emoji,
+                renderer: CXValueGenerator.NullableEmoji,
                 dotnetParameterName: "emote"
             ),
             CustomId = new(
@@ -98,7 +98,7 @@ public sealed class ButtonComponentNode : ComponentNode<ButtonComponentState>
                 "skuId",
                 aliases: ["sku"],
                 isOptional: true,
-                renderer: CXValueGenerator.Snowflake
+                renderer: CXValueGenerator.NullableSnowflake
             ),
             Url = new(
                 "url",

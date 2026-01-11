@@ -31,7 +31,7 @@ public sealed class FileComponentNode : ComponentNode
             Spoiler = new(
                 "spoiler",
                 isOptional: true,
-                renderer: CXValueGenerator.Boolean,
+                renderer: CXValueGenerator.NullableBoolean,
                 dotnetParameterName: "isSpoiler"
             )
         ];

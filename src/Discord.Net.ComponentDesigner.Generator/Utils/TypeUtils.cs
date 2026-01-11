@@ -6,6 +6,14 @@ namespace Discord.CX;
 
 public static class TypeUtils
 {
+    public static bool CanNullPatternMatch(this ITypeSymbol? symbol, Compilation compilation)
+        => symbol is not null && (
+            !symbol.IsValueType || (
+                symbol is INamedTypeSymbol { IsGenericType: true, IsUnboundGenericType: false } named &&
+                named.ConstructedFrom.Equals(compilation.GetKnownTypes().NullableOfT, SymbolEqualityComparer.Default)
+            )
+        );
+
     public static bool IsNullableOfValueType(
         this ITypeSymbol? symbol,
         ITypeSymbol? toCheck,

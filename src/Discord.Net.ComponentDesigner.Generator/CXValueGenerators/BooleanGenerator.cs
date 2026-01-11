@@ -5,6 +5,16 @@ namespace Discord.CX.Nodes;
 
 public sealed class BooleanGenerator : CXValueGenerator
 {
+    private readonly bool _allowNullable;
+
+    private BooleanGenerator(bool allowNullable)
+    {
+        _allowNullable = allowNullable;
+    }
+
+    public static BooleanGenerator Create(bool allowNullable)
+        => Memoize.Of(allowNullable, static a => new BooleanGenerator(a));
+
     protected override Result<string> RenderInterpolation(
         IComponentContext context,
         CXValueGeneratorTarget target,
@@ -25,14 +35,42 @@ public sealed class BooleanGenerator : CXValueGenerator
                 info.Symbol,
                 context.Compilation.GetSpecialType(SpecialType.System_Boolean)
             )
+            ||
+            (
+                _allowNullable &&
+                info.Symbol.IsNullableOfValueType(
+                    context.Compilation.GetSpecialType(SpecialType.System_Boolean),
+                    context.Compilation
+                )
+            )
         )
         {
-            return context.GetDesignerValue(info, "bool");
+            return context.GetDesignerValue(
+                info,
+                info.Symbol!.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
+            );
         }
 
+        string code;
+
+        if (_allowNullable && info.Symbol.CanNullPatternMatch(context.Compilation))
+        {
+            var varName = context.GetVariableName();
+            code =
+                $$"""
+                  {{context.GetDesignerValue(info, info.Symbol)}} is {} {{varName}}
+                      ? bool.Parse({{varName}}.ToString())
+                      : null
+                  """;
+        }
+        else
+        {
+            code = $"bool.Parse({context.GetDesignerValue(info)})";
+        }
+        
 
         return Result<string>.FromValue(
-            $"bool.Parse({context.GetDesignerValue(info)})",
+            code,
             Diagnostics.FallbackToRuntimeValueParsing("bool.Parse"),
             token
         );
@@ -68,7 +106,7 @@ public sealed class BooleanGenerator : CXValueGenerator
         if (
             target is CXValueGeneratorTarget.ComponentProperty { Property: { RequiresValue: false } }
         ) return "true";
-        
+
         return base.RenderMissingValue(context, target, options);
     }
 

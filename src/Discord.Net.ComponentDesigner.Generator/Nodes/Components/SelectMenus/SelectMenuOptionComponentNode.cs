@@ -54,7 +54,7 @@ public sealed class SelectMenuOptionComponentNode : ComponentNode
             Emoji = new(
                 "emoji",
                 isOptional: true,
-                renderer: CXValueGenerator.Emoji
+                renderer: CXValueGenerator.NullableEmoji
             ),
             Default = new(
                 "default",

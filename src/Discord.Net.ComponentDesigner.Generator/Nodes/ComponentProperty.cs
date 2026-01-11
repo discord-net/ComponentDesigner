@@ -12,7 +12,7 @@ public sealed class ComponentProperty : IEquatable<ComponentProperty>
     public static ComponentProperty Id => new(
         "id",
         isOptional: true,
-        renderer: CXValueGenerator.Integer,
+        renderer: CXValueGenerator.NullableInteger,
         dotnetPropertyName: "Id"
     );
 

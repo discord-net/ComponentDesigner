@@ -9,8 +9,6 @@ namespace Discord.CX.Nodes;
 
 public sealed class EnumGenerator : CXValueGenerator
 {
-    private readonly record struct RendererKey(string Name, bool RenderAsSymbolReference);
-
     private readonly record struct FieldMapKey(string Name, string Assembly);
 
     private readonly record struct EnumFieldInfo(string Name, Optional<object> Constant);
@@ -23,32 +21,34 @@ public sealed class EnumGenerator : CXValueGenerator
         IReadOnlyDictionary<string, EnumFieldInfo> Fields
     );
 
-    private static readonly Dictionary<RendererKey, EnumGenerator> _renderers = [];
     private static readonly Dictionary<FieldMapKey, EnumInfo> _enumInfos = [];
 
     public string QualifiedName { get; }
     public bool RenderAsSymbolReference { get; }
 
+    private readonly bool _allowNullable;
+
     public EnumGenerator(
         string qualifiedName,
-        bool renderAsSymbolReference
+        bool renderAsSymbolReference,
+        bool allowNullable
     )
     {
+        _allowNullable = allowNullable;
         QualifiedName = qualifiedName;
         RenderAsSymbolReference = renderAsSymbolReference;
     }
 
     public static EnumGenerator Create(
         string qualifiedEnumName,
-        bool renderAsSymbolReference = true
-    )
-    {
-        var key = new RendererKey(qualifiedEnumName, renderAsSymbolReference);
-
-        if (_renderers.TryGetValue(key, out var renderer)) return renderer;
-
-        return _renderers[key] = new(qualifiedEnumName, renderAsSymbolReference);
-    }
+        bool renderAsSymbolReference,
+        bool allowNullable
+    ) => Memoize.Of(
+        qualifiedEnumName,
+        renderAsSymbolReference,
+        allowNullable,
+        static (a, b, c) => new EnumGenerator(a, b, c)
+    );
 
     protected override Result<string> RenderScalar(
         IComponentContext context,
@@ -71,13 +71,17 @@ public sealed class EnumGenerator : CXValueGenerator
         )
         {
             return UseEnumParseMethod(
+                context,
                 target.Span,
-                context.GetDesignerValue(info)
+                context.GetDesignerValue(info),
+                isNullable: false
             );
         }
 
         if (info.Constant.HasValue)
         {
+            if (info.Constant.Value is null && _allowNullable) return "null";
+
             if (
                 enumInfo.BaseType is not null &&
                 context.Compilation.GetTypeByMetadataName(enumInfo.BaseType) is { } baseSymbol &&
@@ -112,11 +116,19 @@ public sealed class EnumGenerator : CXValueGenerator
                 info.Symbol,
                 enumSymbol
             )
+            ||
+            (
+                _allowNullable &&
+                info.Symbol.IsNullableOfValueType(
+                    enumSymbol,
+                    context.Compilation
+                )
+            )
         )
         {
             var designer = context.GetDesignerValue(
                 info,
-                enumInfo.FullyQualifiedName
+                enumSymbol
             );
 
             if (RenderAsSymbolReference || enumInfo.QualifiedBaseType is null)
@@ -128,8 +140,10 @@ public sealed class EnumGenerator : CXValueGenerator
         }
 
         return UseEnumParseMethod(
+            context,
             target.Span,
-            context.GetDesignerValue(info)
+            context.GetDesignerValue(info),
+            info.Symbol.CanNullPatternMatch(context.Compilation)
         );
     }
 
@@ -139,8 +153,10 @@ public sealed class EnumGenerator : CXValueGenerator
         CXValue.Multipart multipart,
         CXValueGeneratorOptions options
     ) => UseEnumParseMethod(
+        context,
         target.Span,
-        StringGenerator.ToCSharpString(multipart)
+        StringGenerator.ToCSharpString(multipart),
+        isNullable: false
     );
 
     private Result<string> FromText(
@@ -154,7 +170,7 @@ public sealed class EnumGenerator : CXValueGenerator
         {
             TryGetEnumInfo(context, QualifiedName, out info);
         }
-        
+
         if (info is not null && info.Fields.TryGetValue(text.ToLowerInvariant(), out var field))
             return RenderField(info, field);
 
@@ -167,7 +183,7 @@ public sealed class EnumGenerator : CXValueGenerator
                 span
             );
 
-        return UseEnumParseMethod(span, StringGenerator.ToCSharpString(text));
+        return UseEnumParseMethod(context, span, StringGenerator.ToCSharpString(text), isNullable: false);
     }
 
     private Result<string> RenderField(EnumInfo info, EnumFieldInfo field)
@@ -192,13 +208,35 @@ public sealed class EnumGenerator : CXValueGenerator
     }
 
     private Result<string> UseEnumParseMethod(
+        IComponentContext context,
         TextSpan span,
-        string code
-    ) => Result<string>.FromValue(
-        $"global::System.Enum.Parse<{QualifiedName}>({code})",
-        Diagnostics.FallbackToRuntimeValueParsing("Enum.Parse"),
-        span
-    );
+        string value,
+        bool isNullable
+    )
+    {
+        string code;
+
+        if (_allowNullable && isNullable)
+        {
+            var varName = context.GetVariableName();
+            code =
+                $$"""
+                  {{value}} is {} {{varName}}
+                      ? global::System.Enum.Parse<{{QualifiedName}}>({{varName}}.ToString())
+                      : null
+                  """;
+        }
+        else
+        {
+            code = $"global::System.Enum.Parse<{QualifiedName}>({value})";
+        }
+
+        return Result<string>.FromValue(
+            code,
+            Diagnostics.FallbackToRuntimeValueParsing("Enum.Parse"),
+            span
+        );
+    }
 
     private static bool TryGetEnumInfo(
         IComponentContext context,

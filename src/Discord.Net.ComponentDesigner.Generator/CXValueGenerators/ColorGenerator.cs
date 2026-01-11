@@ -11,6 +11,16 @@ public sealed class ColorGenerator : CXValueGenerator
 {
     private static readonly Dictionary<string, IReadOnlyDictionary<string, string>> _fieldMaps = [];
 
+    private readonly bool _allowNullable;
+
+    private ColorGenerator(bool allowNullable)
+    {
+        _allowNullable = allowNullable;
+    }
+
+    public static ColorGenerator Create(bool allowNullable)
+        => Memoize.Of(allowNullable, static a => new ColorGenerator(a));
+
     protected override Result<string> RenderInterpolation(
         IComponentContext context,
         CXValueGeneratorTarget target,
@@ -39,8 +49,12 @@ public sealed class ColorGenerator : CXValueGenerator
             context.Compilation.HasImplicitConversion(
                 info.Symbol,
                 context.KnownTypes.ColorType
-            ) ||
-            info.Symbol.IsNullableOfValueType(context.KnownTypes.ColorType, context.Compilation)
+            )
+            ||
+            (
+                _allowNullable &&
+                info.Symbol.IsNullableOfValueType(context.KnownTypes.ColorType, context.Compilation)
+            )
         )
         {
             return context.GetDesignerValue(
@@ -49,7 +63,12 @@ public sealed class ColorGenerator : CXValueGenerator
             );
         }
 
-        return UseLibraryParseFunc(context, token, context.GetDesignerValue(info));
+        return UseLibraryParseFunc(
+            context,
+            token,
+            context.GetDesignerValue(info),
+            isNullable: info.Symbol.CanNullPatternMatch(context.Compilation)
+        );
     }
 
     protected override Result<string> RenderScalar(
@@ -67,10 +86,11 @@ public sealed class ColorGenerator : CXValueGenerator
     ) => UseLibraryParseFunc(
         context,
         multipart,
-        StringGenerator.ToCSharpString(multipart)
+        StringGenerator.ToCSharpString(multipart),
+        isNullable: false
     );
 
-    private static Result<string> FromText(IComponentContext context, ICXNode owner, string text)
+    private Result<string> FromText(IComponentContext context, ICXNode owner, string text)
     {
         if (TryGetColorPreset(context, text, out var preset)) return preset;
 
@@ -94,17 +114,40 @@ public sealed class ColorGenerator : CXValueGenerator
             }({hexCode})";
         }
 
-        return UseLibraryParseFunc(context, owner, text);
+        return UseLibraryParseFunc(context, owner, StringGenerator.ToCSharpString(text), isNullable: false);
     }
 
-    private static Result<string> UseLibraryParseFunc(IComponentContext context, ICXNode owner, string text)
-        => Result<string>.FromValue(
-            $"{context.KnownTypes.ColorType!.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}.Parse({
-                StringGenerator.ToCSharpString(text)
-            })",
+    private Result<string> UseLibraryParseFunc(
+        IComponentContext context,
+        ICXNode owner,
+        string value,
+        bool isNullable
+    )
+    {
+        string code;
+
+        if (_allowNullable && isNullable)
+        {
+            var varName = context.GetVariableName();
+            code =
+                $$"""
+                  {{value}} is {} {{varName}}
+                      ? {{context.KnownTypes.ColorType!.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}}.Parse({{varName}}.ToString())
+                      : null
+                  """;
+        }
+        else
+        {
+            code =
+                $"{context.KnownTypes.ColorType!.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}.Parse({value})";
+        }
+
+        return Result<string>.FromValue(
+            code,
             Diagnostics.FallbackToRuntimeValueParsing("Discord.Color.Parse"),
             owner
         );
+    }
 
     private static bool TryGetColorPreset(IComponentContext context, string text,
         [MaybeNullWhen(false)] out string preset)
