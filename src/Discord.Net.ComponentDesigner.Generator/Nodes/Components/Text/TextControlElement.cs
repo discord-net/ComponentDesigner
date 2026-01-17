@@ -504,7 +504,7 @@ public abstract class TextControlElement(TextSpan span)
                             var r => r
                         };
 
-                        var isMultiline = x.HasNewlines;
+                        var isMultiline = x.HasNewlines || quoteCount > 1;
                         var isMultilineInterpolation = isMultiline && hasInterpolations;
 
                         if (isMultiline)

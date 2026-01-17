@@ -269,7 +269,7 @@ public sealed class StringGenerator : CXValueGenerator
                 count = 0;
             }
         }
-
-        return result;
+        
+        return Math.Max(result, count);
     }
 }

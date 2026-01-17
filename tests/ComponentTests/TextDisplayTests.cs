@@ -7,6 +7,99 @@ namespace UnitTests.ComponentTests;
 public sealed class TextDisplayTests(ITestOutputHelper output) : BaseComponentTest(output)
 {
     [Fact]
+    public void QuoteOverflow()
+    {
+        Graph(
+            """
+            <text>Foo ""</text>
+            """
+        );
+        {
+            Node<TextDisplayComponentNode>();
+
+            Validate(hasErrors: false);
+
+            Renders(
+                """"
+                new global::Discord.TextDisplayBuilder(
+                    content: 
+                    """
+                    Foo ""
+                    """
+                )
+                """"
+            );
+        }
+    }
+
+    [Fact]
+    public void AutoTextDisplayMultilineQuoteOverflow()
+    {
+        Graph(
+            """""
+            # test
+            """Hello""" 
+            """"Wolrd""""
+            test
+            """"",
+            quoteCount: 5,
+            options: new(
+                EnableAutoTextDisplay: true
+            )
+        );
+        {
+            Node<AutoTextDisplayComponentNode>();
+
+            Validate(hasErrors: false);
+
+            Renders(
+                """""""
+                new global::Discord.TextDisplayBuilder(
+                    content: 
+                    """""
+                    # test
+                    """Hello""" 
+                    """"Wolrd""""
+                    test
+                    """""
+                )
+                """""""
+            );
+        }
+    }
+
+    [Fact]
+    public void MultilineQuoteOverflow()
+    {
+        Graph(
+            """""
+            <text>
+                """Hello""" 
+                """"Wolrd""""
+            </text>
+            """"",
+            quoteCount: 5
+        );
+        {
+            Node<TextDisplayComponentNode>();
+
+            Validate(hasErrors: false);
+
+            Renders(
+                """""""
+                new global::Discord.TextDisplayBuilder(
+                    content: 
+                    """""
+                    """Hello""" 
+                    """"Wolrd""""
+                    """""
+                )
+                """""""
+            );
+        }
+    }
+
+    [Fact]
     public void AutoText()
     {
         Graph(
