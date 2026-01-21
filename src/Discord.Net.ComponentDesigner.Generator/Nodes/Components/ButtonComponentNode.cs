@@ -231,6 +231,15 @@ public sealed class ButtonComponentNode : ComponentNode<ButtonComponentState>
         IList<DiagnosticInfo> diagnostics
     )
     {
+        if (!context.IsMessageContext)
+        {
+            diagnostics.Add(
+                Diagnostics.ComponentNotAllowedInContext(Name, context.CX.Kind),
+                state.Source
+            );
+            return;
+        }
+        
         var label = state.GetProperty(Label);
 
         if (

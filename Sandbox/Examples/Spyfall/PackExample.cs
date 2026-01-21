@@ -8,7 +8,7 @@ public class PackExample
     public static CXMessageComponent CreatePackInfo(
         Pack pack,
         int locationPage
-    ) => cx(
+    ) => message(
         $"""
          <container>
              <PackHeader pack={pack} />
@@ -21,7 +21,7 @@ public class PackExample
     );
 
     public static CXMessageComponent PageControls(Pack pack, int page)
-        => cx(
+        => message(
             $"""
             <row>
                 <button 
@@ -55,7 +55,7 @@ public class PackExample
         var pageLower = (page * packLocationsPerPage) + 1;
         var pageUpper = pageLower + displayedLocations.Length;
 
-        return cx(
+        return message(
             $"""
              <text>
                  ## {locations.Count} Locations
@@ -96,7 +96,7 @@ public class PackExample
                  """
             );
 
-        return cx(
+        return message(
             $"""
              <separator />
              {content}
@@ -119,7 +119,7 @@ public class PackExample
              """
         );
 
-        return cx(
+        return message(
             $"""
              <section accessory={viewProfileButton}>
                  <text>
@@ -132,7 +132,7 @@ public class PackExample
 
     public static CXMessageComponent PackHeader(Pack pack)
     {
-        var packHeaderText = cx(
+        var packHeaderText = message(
             $"""
              <text>
                  # {pack.Name}
@@ -143,7 +143,7 @@ public class PackExample
 
         if (pack.Icon is null) return packHeaderText;
 
-        return cx(
+        return message(
             $"""
              <section
                 accessory=(

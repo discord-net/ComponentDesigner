@@ -611,4 +611,13 @@ public static partial class Diagnostics
         DiagnosticSeverity.Error,
         true
     );
+    
+    public static DiagnosticDescriptor ComponentNotAllowedInContext(string component, CXKind kind) => new(
+        "DC0067",
+        $"'{component}' not allowed in context '{kind}'",
+        $"'{component}' not allowed in context '{kind}'",
+        "Components",
+        DiagnosticSeverity.Error,
+        true
+    );
 }

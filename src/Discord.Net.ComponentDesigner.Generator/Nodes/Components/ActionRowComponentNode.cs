@@ -39,6 +39,15 @@ public class ActionRowComponentNode : ComponentNode
 
     public override void Validate(ComponentState state, IComponentContext context, IList<DiagnosticInfo> diagnostics)
     {
+        if (!context.IsMessageContext)
+        {
+            diagnostics.Add(
+                Diagnostics.ComponentNotAllowedInContext(Name, context.CX.Kind),
+                state.Source
+            );
+            return;
+        }
+            
         if (!state.HasChildren)
         {
             diagnostics.Add(

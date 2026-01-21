@@ -221,7 +221,9 @@ public record ComponentState(
     }
 
     public Func<string, Result<string>> ConformResult(ComponentBuilderKind kind, ComponentTypingContext? context)
-        => kind.Conform(Source, context);
+        => context is null
+            ? x => x
+            : x => kind.Conform(x, context.Value, Source);
 
     public virtual bool Equals(ComponentState? other)
     {

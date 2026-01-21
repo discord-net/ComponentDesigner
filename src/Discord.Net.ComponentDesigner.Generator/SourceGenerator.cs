@@ -13,7 +13,6 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using Discord.CX.Util;
-using Discord.CX.Utils;
 
 namespace Discord.CX;
 
@@ -24,37 +23,8 @@ using UpdateGraphStateParams =
     );
 
 [Generator]
-public sealed class SourceGenerator : IIncrementalGenerator
+public sealed partial class SourceGenerator : IIncrementalGenerator
 {
-    public sealed class Glue(
-        string key,
-        InterceptableLocation interceptLocation,
-        LocationInfo location,
-        bool usesDesigner,
-        SyntaxTree syntaxTree,
-        ComponentDesignerOptionOverloads overloads
-    ) : IEquatable<Glue>
-    {
-        public string Key { get; init; } = key;
-        public InterceptableLocation InterceptLocation { get; init; } = interceptLocation;
-        public LocationInfo Location { get; init; } = location;
-        public bool UsesDesigner { get; init; } = usesDesigner;
-        public SyntaxTree SyntaxTree { get; init; } = syntaxTree;
-        public ComponentDesignerOptionOverloads Overloads { get; } = overloads;
-
-        public bool Equals(Glue other)
-            => Key == other.Key &&
-               InterceptLocation.Equals(other.InterceptLocation) &&
-               Location.Equals(other.Location) &&
-               UsesDesigner == other.UsesDesigner;
-
-        public override bool Equals(object? obj)
-            => obj is Glue other && Equals(other);
-
-        public override int GetHashCode()
-            => Hash.Combine(Key, InterceptLocation, Location, UsesDesigner);
-    }
-
     public IncrementalValueProvider<(ImmutableArray<RenderedGraph> Left, ImmutableArray<Glue> Right)> Provider
     {
         get;
@@ -66,7 +36,7 @@ public sealed class SourceGenerator : IIncrementalGenerator
         var targetProvider = context
             .SyntaxProvider
             .CreateSyntaxProvider(
-                IsComponentDesignerCall,
+                IsMethodCall,
                 MapPossibleComponentDesignerCall
             )
             .WithTrackingName(TrackingNames.INITIAL_TARGET)
@@ -134,12 +104,14 @@ public sealed class SourceGenerator : IIncrementalGenerator
             if (target is null || string.IsNullOrWhiteSpace(key)) continue;
 
             yield return new Glue(
+                target.Compilation,
                 key,
                 target.InterceptLocation,
                 target.CX.Location,
                 target.CX.UsesDesignerParameter,
                 target.SyntaxTree,
-                target.Overloads
+                target.Overloads,
+                target.CX.Kind
             );
         }
     }
@@ -213,7 +185,7 @@ public sealed class SourceGenerator : IIncrementalGenerator
         target.CX
     );
 
-    
+
     public void Generate(
         SourceProductionContext context,
         (ImmutableArray<RenderedGraph> Renders, ImmutableArray<Glue> Glues) tuple
@@ -234,6 +206,17 @@ public sealed class SourceGenerator : IIncrementalGenerator
 
             Debug.Assert(render.Key == glue.Key);
 
+            var knownTypes = glue.Compilation.GetKnownTypes();
+
+            var returnType = (
+                glue.Kind switch
+                {
+                    CXKind.Modal => knownTypes.CXModalComponentType,
+                    CXKind.Message => knownTypes.CXMessageComponentType,
+                    _ => knownTypes.CXComponentType,
+                }
+            )?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+                            
             foreach (var diagnosticInfo in glue.Overloads.Diagnostics)
             {
                 context.ReportDiagnostic(
@@ -243,7 +226,7 @@ public sealed class SourceGenerator : IIncrementalGenerator
                     )
                 );
             }
-            
+
             foreach (var diagnostic in render.Diagnostics)
             {
                 // adjust the span to match the source
@@ -251,12 +234,12 @@ public sealed class SourceGenerator : IIncrementalGenerator
 
                 if (diagnostic.Span.IsEmpty)
                     start--;
-                
+
                 var diagnosticSpan = new TextSpan(
                     start,
                     Math.Max(1, diagnostic.Span.Length)
                 );
-                
+
                 context.ReportDiagnostic(
                     Diagnostic.Create(
                         diagnostic.Descriptor,
@@ -266,13 +249,13 @@ public sealed class SourceGenerator : IIncrementalGenerator
             }
 
             var body = string.IsNullOrWhiteSpace(render.EmittedSource)
-                ? "global::Discord.CXMessageComponent.Empty"
+                ? $"{returnType}.Empty"
                 : $"""
-                   new global::Discord.CXMessageComponent([
+                   new {returnType}([
                        {render.EmittedSource!.WithNewlinePadding(4)}
                    ])
                    """;
-            
+
             if (i > 0)
                 sb.AppendLine();
 
@@ -288,7 +271,7 @@ public sealed class SourceGenerator : IIncrementalGenerator
                   {{render.CX.NormalizeIndentation()}}
                   */
                   [global::System.Runtime.CompilerServices.InterceptsLocation(version: {{glue.InterceptLocation.Version}}, data: "{{glue.InterceptLocation.Data}}")]
-                  public static global::Discord.CXMessageComponent _{{Math.Abs(glue.InterceptLocation.GetHashCode())}}(
+                  public static {{returnType}} _{{Math.Abs(glue.InterceptLocation.GetHashCode())}}(
                       {{parameter}},
                       bool? autoRows = null,
                       bool? autoTextDisplays = null
@@ -370,7 +353,8 @@ public sealed class SourceGenerator : IIncrementalGenerator
                 out var operation,
                 out var invocationSyntax,
                 out var interceptLocation,
-                out var argumentSyntax
+                out var argumentSyntax,
+                out var kind
             )
         ) return null;
 
@@ -389,7 +373,8 @@ public sealed class SourceGenerator : IIncrementalGenerator
 
         return new ComponentDesignerTarget(
             interceptLocation,
-            semanticModel.GetEnclosingSymbol(invocationSyntax.SpanStart, token)
+            semanticModel
+                .GetEnclosingSymbol(invocationSyntax.SpanStart, token)
                 ?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
             new CXDesignerGeneratorState(
                 cxDesigner,
@@ -398,7 +383,8 @@ public sealed class SourceGenerator : IIncrementalGenerator
                 operation.TargetMethod.Parameters[0].Type.SpecialType is not SpecialType.System_String,
                 [..interpolationInfos],
                 semanticModel,
-                invocationSyntax.SyntaxTree
+                invocationSyntax.SyntaxTree,
+                kind
             ),
             GetOptionOverloads(operation, semanticModel, token)
         );
@@ -411,17 +397,17 @@ public sealed class SourceGenerator : IIncrementalGenerator
         {
             var enableAutoRows = Result<bool>.Empty;
             var enableAutoTextDisplays = Result<bool>.Empty;
-            
+
             foreach (var argument in operation.Arguments)
             {
-                if(argument.ArgumentKind is ArgumentKind.DefaultValue) continue;
-                
+                if (argument.ArgumentKind is ArgumentKind.DefaultValue) continue;
+
                 switch (argument.Parameter?.Name)
                 {
-                    case "autoRows" when argument.Syntax is ArgumentSyntax {Expression: {} expression}:
+                    case "autoRows" when argument.Syntax is ArgumentSyntax { Expression: { } expression }:
                         enableAutoRows = GetConstantValue(expression);
                         break;
-                    case "autoTextDisplays"when argument.Syntax is ArgumentSyntax {Expression: {} expression}:
+                    case "autoTextDisplays" when argument.Syntax is ArgumentSyntax { Expression: { } expression }:
                         enableAutoTextDisplays = GetConstantValue(expression);
                         break;
                 }
@@ -448,7 +434,7 @@ public sealed class SourceGenerator : IIncrementalGenerator
                 };
             }
         }
-        
+
         static bool TryGetCXDesigner(
             ExpressionSyntax expression,
             SemanticModel semanticModel,
@@ -540,10 +526,13 @@ public sealed class SourceGenerator : IIncrementalGenerator
             out IInvocationOperation operation,
             out InvocationExpressionSyntax invocationSyntax,
             out InterceptableLocation interceptLocation,
-            out ExpressionSyntax argumentExpressionSyntax
+            out ExpressionSyntax argumentExpressionSyntax,
+            out CXKind kind
         )
         {
             var localOperation = semanticModel.GetOperation(node, token)!;
+
+            kind = CXKind.Unknown;
             interceptLocation = null!;
             argumentExpressionSyntax = null!;
             invocationSyntax = null!;
@@ -589,19 +578,40 @@ public sealed class SourceGenerator : IIncrementalGenerator
 
             argumentExpressionSyntax = invocationSyntax.ArgumentList.Arguments[0].Expression;
 
-            return true;
+            return IsValidComponentDesignerEntryPoint(semanticModel.Compilation, operation.TargetMethod, out kind);
         }
     }
 
-    public static bool IsComponentDesignerCall(SyntaxNode node, CancellationToken token)
-        => node is InvocationExpressionSyntax
-        {
-            Expression: MemberAccessExpressionSyntax
-            {
-                Name: { Identifier.Value: "Create" or "cx" }
-            } or IdentifierNameSyntax
-            {
-                Identifier.ValueText: "cx"
-            }
-        };
+    public static bool IsValidComponentDesignerEntryPoint(
+        Compilation compilation,
+        IMethodSymbol symbol,
+        out CXKind kind
+    )
+    {
+        kind = CXKind.Unknown;
+
+        var knownTypes = compilation.GetKnownTypes();
+
+        if (knownTypes.CXEntryPointAttribute is not { } targetAttributeSymbol) return false;
+
+        if (
+            symbol
+            .GetAttributes()
+            .All(x =>
+                !targetAttributeSymbol.Equals(x.AttributeClass, SymbolEqualityComparer.Default)
+            )
+        ) return false;
+
+        if (symbol.ReturnType.Equals(knownTypes.CXComponentType, SymbolEqualityComparer.Default))
+            kind = CXKind.Any;
+        else if (symbol.ReturnType.Equals(knownTypes.CXMessageComponentType, SymbolEqualityComparer.Default))
+            kind = CXKind.Message;
+        else if (symbol.ReturnType.Equals(knownTypes.CXModalComponentType, SymbolEqualityComparer.Default))
+            kind = CXKind.Modal;
+
+        return kind is not CXKind.Unknown;
+    }
+
+    public static bool IsMethodCall(SyntaxNode node, CancellationToken token)
+        => node is InvocationExpressionSyntax;
 }

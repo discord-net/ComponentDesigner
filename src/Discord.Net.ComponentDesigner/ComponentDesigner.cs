@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+
 // ReSharper disable InconsistentNaming
 
 namespace Discord;
@@ -29,11 +30,12 @@ public static class ComponentDesigner
     /// <exception cref="UnreachableException">
     ///     The generator failed to produce a valid interceptor.
     /// </exception>
-    public static CXMessageComponent cx(
+    [CXEntryPoint]
+    public static CXMessageComponent message(
         [StringSyntax("html")] DesignerInterpolationHandler designer,
         bool? autoRows = null,
         bool? autoTextDisplays = null
-    ) => throw new UnreachableException("Make sure interceptors are enabled for the component designer, if they are, this is a bug");
+    ) => ThrowDefault<CXMessageComponent>();
 
     /// <summary>
     ///     Returns the pre-compiled components representing the provided CX syntax.
@@ -55,9 +57,45 @@ public static class ComponentDesigner
     /// <exception cref="UnreachableException">
     ///     The generator failed to produce a valid interceptor.
     /// </exception>
-    public static CXMessageComponent cx(
+    [CXEntryPoint]
+    public static CXMessageComponent message(
         [StringSyntax("html")] string cx,
         bool? autoRows = null,
         bool? autoTextDisplays = null
-    ) => throw new UnreachableException("Make sure interceptors are enabled for the component designer, if they are, this is a bug");
+    ) => ThrowDefault<CXMessageComponent>();
+
+    [CXEntryPoint]
+    public static CXModalComponent modal(
+        [StringSyntax("html")] string cx,
+        bool? autoRows = null,
+        bool? autoTextDisplays = null
+    ) => ThrowDefault<CXModalComponent>();
+    
+    [CXEntryPoint]
+    public static CXModalComponent modal(
+        [StringSyntax("html")] DesignerInterpolationHandler cx,
+        bool? autoRows = null,
+        bool? autoTextDisplays = null
+    ) => ThrowDefault<CXModalComponent>();
+
+    [CXEntryPoint]
+    public static CXComponent cx(
+        [StringSyntax("html")] string cx,
+        bool? autoRows = null,
+        bool? autoTextDisplays = null
+    ) => ThrowDefault<CXComponent>();
+    
+    [CXEntryPoint]
+    public static CXComponent cx(
+        [StringSyntax("html")] DesignerInterpolationHandler cx,
+        bool? autoRows = null,
+        bool? autoTextDisplays = null
+    ) => ThrowDefault<CXComponent>();
+    
+    [DoesNotReturn]
+    private static T ThrowDefault<T>()
+    {
+        throw new UnreachableException(
+            "Make sure interceptors are enabled for the component designer, if they are, this is a bug");
+    }
 }

@@ -83,7 +83,8 @@ public abstract class BaseRendererTest(ITestOutputHelper output) : BaseTestWithD
                 true,
                 [..interpolations ?? []],
                 null!,
-                null!
+                null!,
+                CXKind.Any
             ),
             GeneratorOptions.Default
         );

@@ -19,85 +19,110 @@ public class KnownTypes
         Compilation = compilation;
     }
 
+    public INamedTypeSymbol? ModalBuilderType
+        => GetOrResolveType("Discord.ModalBuilder", ref _ModalBuilderType);
+    
+    private Optional<INamedTypeSymbol?> _ModalBuilderType;
+    
+    public INamedTypeSymbol? CXComponentType
+        => GetOrResolveType("Discord.CXComponent", ref _CXComponentType);
+    
+    private Optional<INamedTypeSymbol?> _CXComponentType;
+    
+    public INamedTypeSymbol? CXModalComponentType
+        => GetOrResolveType("Discord.CXModalComponent", ref _CXModalComponentType);
+    
+    private Optional<INamedTypeSymbol?> _CXModalComponentType;
+    
+    public INamedTypeSymbol? ICXComponentType
+        => GetOrResolveType("Discord.ICXComponent", ref _ICXComponentType);
+    
+    private Optional<INamedTypeSymbol?> _ICXComponentType;
+    
+    public INamedTypeSymbol? CXEntryPointAttribute
+        => GetOrResolveType("Discord.CXEntryPointAttribute", ref _CXEntryPointAttribute);
+    
+    private Optional<INamedTypeSymbol?> _CXEntryPointAttribute;
+    
     public INamedTypeSymbol? NullableOfT
         => GetOrResolveType("System.Nullable`1", ref _NullableOfT);
     
-    public Optional<INamedTypeSymbol?> _NullableOfT;
+    private Optional<INamedTypeSymbol?> _NullableOfT;
     
     public INamedTypeSymbol? IApplicationCommandType
         => GetOrResolveType("Discord.IApplicationCommand", ref _IApplicationCommand);
     
-    public Optional<INamedTypeSymbol?> _IApplicationCommand;
+    private Optional<INamedTypeSymbol?> _IApplicationCommand;
     
     public INamedTypeSymbol? TimestampTagStylesEnum
         => GetOrResolveType("Discord.TimestampTagStyles", ref _TimestampTagStyles);
     
-    public Optional<INamedTypeSymbol?> _TimestampTagStyles;
+    private Optional<INamedTypeSymbol?> _TimestampTagStyles;
     
     public INamedTypeSymbol? IUserType
         => GetOrResolveType("Discord.IUser", ref _IUserType);
     
-    public Optional<INamedTypeSymbol?> _IUserType;
+    private Optional<INamedTypeSymbol?> _IUserType;
     
     public INamedTypeSymbol? IChannelType
         => GetOrResolveType("Discord.IChannel", ref _IChannelType);
     
-    public Optional<INamedTypeSymbol?> _IChannelType;
+    private Optional<INamedTypeSymbol?> _IChannelType;
     
     public INamedTypeSymbol? IRoleType
         => GetOrResolveType("Discord.IRole", ref _IRoleType);
     
-    public Optional<INamedTypeSymbol?> _IRoleType;
+    private Optional<INamedTypeSymbol?> _IRoleType;
     
     public INamedTypeSymbol? LabelBuilderType
         => GetOrResolveType("Discord.LabelBuilder", ref _LabelBuilderType);
     
-    public Optional<INamedTypeSymbol?> _LabelBuilderType;
+    private Optional<INamedTypeSymbol?> _LabelBuilderType;
     
     public INamedTypeSymbol? CXChildrenAttribute
         => GetOrResolveType("Discord.CXChildrenAttribute", ref _CXChildrenAttribute);
     
-    public Optional<INamedTypeSymbol?> _CXChildrenAttribute;
+    private Optional<INamedTypeSymbol?> _CXChildrenAttribute;
     
     public INamedTypeSymbol? MediaGalleryComponentType
         => GetOrResolveType("Discord.MediaGalleryComponent", ref _MediaGalleryComponentType);
     
-    public Optional<INamedTypeSymbol?> _MediaGalleryComponentType;
+    private Optional<INamedTypeSymbol?> _MediaGalleryComponentType;
     
     public INamedTypeSymbol? CXMessageComponentType
         => GetOrResolveType("Discord.CXMessageComponent", ref _CXMessageComponentType);
     
-    public Optional<INamedTypeSymbol?> _CXMessageComponentType;
+    private Optional<INamedTypeSymbol?> _CXMessageComponentType;
     
     public INamedTypeSymbol? SectionComponentType
         => GetOrResolveType("Discord.SectionComponent", ref _SectionComponentType);
     
-    public Optional<INamedTypeSymbol?> _SectionComponentType;
+    private Optional<INamedTypeSymbol?> _SectionComponentType;
     
     public INamedTypeSymbol? SeparatorComponentType
         => GetOrResolveType("Discord.SeparatorComponent", ref _SeparatorComponentType);
     
-    public Optional<INamedTypeSymbol?> _SeparatorComponentType;
+    private Optional<INamedTypeSymbol?> _SeparatorComponentType;
     
     public INamedTypeSymbol? TextDisplayComponentType
         => GetOrResolveType("Discord.TextDisplayComponent", ref _TextDisplayComponentType);
     
-    public Optional<INamedTypeSymbol?> _TextDisplayComponentType;
+    private Optional<INamedTypeSymbol?> _TextDisplayComponentType;
     
     public INamedTypeSymbol? ThumbnailComponentType
         => GetOrResolveType("Discord.ThumbnailComponent", ref _ThumbnailComponentType);
     
-    public Optional<INamedTypeSymbol?> _ThumbnailComponentType;
+    private Optional<INamedTypeSymbol?> _ThumbnailComponentType;
     
     public INamedTypeSymbol? TextInputComponentType
         => GetOrResolveType("Discord.TextInputComponent", ref _TextInputComponentType);
     
-    public Optional<INamedTypeSymbol?> _TextInputComponentType;
+    private Optional<INamedTypeSymbol?> _TextInputComponentType;
     
     public INamedTypeSymbol? MessageComponentType
         => GetOrResolveType("Discord.MessageComponent", ref _MessageComponentType);
     
-    public Optional<INamedTypeSymbol?> _MessageComponentType;
+    private Optional<INamedTypeSymbol?> _MessageComponentType;
     
     public INamedTypeSymbol? CXPropertyAttributeType
         => GetOrResolveType("Discord.CXPropertyAttribute", ref _CXPropertyAttributeType);

@@ -46,7 +46,8 @@ public abstract class BaseTextControlTest(ITestOutputHelper output) : BaseTestWi
                 true,
                 [..interpolations ?? []],
                 null!,
-                null!
+                null!,
+                CXKind.Any
             ),
             GeneratorOptions.Default
         );

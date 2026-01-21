@@ -51,6 +51,15 @@ public sealed class FileUploadComponentNode : ComponentNode
 
     public override void Validate(ComponentState state, IComponentContext context, IList<DiagnosticInfo> diagnostics)
     {
+        if (!context.IsModalContext)
+        {
+            diagnostics.Add(
+                Diagnostics.ComponentNotAllowedInContext(Name, context.CX.Kind),
+                state.Source
+            );
+            return;
+        }
+        
         if (context.KnownTypes.FileUploadComponentBuilderType is null)
         {
             diagnostics.Add(

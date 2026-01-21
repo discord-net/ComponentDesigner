@@ -42,6 +42,20 @@ public sealed class ThumbnailComponentNode : ComponentNode
         ];
     }
 
+    public override void Validate(ComponentState state, IComponentContext context, IList<DiagnosticInfo> diagnostics)
+    {
+        if (!context.IsMessageContext)
+        {
+            diagnostics.Add(
+                Diagnostics.ComponentNotAllowedInContext(Name, context.CX.Kind),
+                state.Source
+            );
+            return;
+        }
+        
+        base.Validate(state, context, diagnostics);
+    }
+
     public override Result<string> Render(
         ComponentState state,
         IComponentContext context,

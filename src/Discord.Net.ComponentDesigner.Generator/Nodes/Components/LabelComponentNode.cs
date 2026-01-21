@@ -71,12 +71,13 @@ public sealed class LabelComponentNode : ComponentNode<LabelComponentState>
         ];
     }
 
-    public override LabelComponentState? CreateState(ComponentStateInitializationContext context,
-        IList<DiagnosticInfo> diagnostics)
+    public override LabelComponentState? CreateState(
+        ComponentStateInitializationContext context,
+        IList<DiagnosticInfo> diagnostics
+    )
     {
         if (context.CXNode is not CXElement element) return null;
-
-
+        
         CXValue? childValue = null;
         CXElement? component = null;
 
@@ -123,6 +124,15 @@ public sealed class LabelComponentNode : ComponentNode<LabelComponentState>
         IList<DiagnosticInfo> diagnostics
     )
     {
+        if (!context.IsModalContext)
+        {
+            diagnostics.Add(
+                Diagnostics.ComponentNotAllowedInContext(Name, context.CX.Kind),
+                state.Source
+            );
+            return;
+        }
+
         base.Validate(state, context, diagnostics);
 
         var component = state.GetProperty(Component);

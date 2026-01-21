@@ -94,6 +94,15 @@ public sealed class TextInputComponentNode : ComponentNode
 
     public override void Validate(ComponentState state, IComponentContext context, IList<DiagnosticInfo> diagnostics)
     {
+        if (!context.IsModalContext)
+        {
+            diagnostics.Add(
+                Diagnostics.ComponentNotAllowedInContext(Name, context.CX.Kind),
+                state.Source
+            );
+            return;
+        }
+        
         base.Validate(state, context, diagnostics);
         Validators.Range(context, state, MinLength, MaxLength, diagnostics);
     }

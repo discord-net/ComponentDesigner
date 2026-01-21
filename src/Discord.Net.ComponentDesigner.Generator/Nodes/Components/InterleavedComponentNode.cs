@@ -118,29 +118,6 @@ public sealed class InterleavedComponentNode : ComponentNode<InterleavedState>, 
             }
         }
 
-        var value = ComponentBuilderKind.Convert(
-            designerValue,
-            Kind,
-            typingContext.Value.ConformingType,
-            typingContext.Value.CanSplat
-        );
-
-        if (value is null)
-        {
-            /*
-             * we've failed to convert, this case implies that whatever the type of this interleaved node is, it doesn't
-             * conform to the current constraints
-             */
-
-            return Result<string>.FromDiagnostic(
-                Diagnostics.InvalidInterleavedComponentInCurrentContext(
-                    Symbol.ToDisplayString(),
-                    typingContext.Value.ConformingType.ToString()
-                ),
-                state.Source
-            );
-        }
-
-        return value;
+        return ComponentBuilderKind.Conform(designerValue, Kind, typingContext.Value, state.Source);
     }
 }

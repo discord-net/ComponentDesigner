@@ -6,7 +6,7 @@ namespace Sandbox.Examples;
 public class FunctionComponents
 {
     public static CXMessageComponent Consumer()
-        => cx(
+        => message(
             $"""
             <CompWithChildren name="Foo">
                 <text>Foo</text>
@@ -19,7 +19,7 @@ public class FunctionComponents
         );
     
     public static CXMessageComponent CompWithChildren(string name, [CXChildren] CXMessageComponent component)
-        => cx(
+        => message(
             $"""
              <container>
                  {component}

@@ -46,6 +46,15 @@ public sealed class SectionComponentNode : ComponentNode
 
     public override void Validate(ComponentState state, IComponentContext context, IList<DiagnosticInfo> diagnostics)
     {
+        if (!context.IsMessageContext)
+        {
+            diagnostics.Add(
+                Diagnostics.ComponentNotAllowedInContext(Name, context.CX.Kind),
+                state.Source
+            );
+            return;
+        }
+        
         var accessoryPropertyValue = state.GetProperty(Accessory);
 
         if (!state.HasChildren && !accessoryPropertyValue.HasValue)

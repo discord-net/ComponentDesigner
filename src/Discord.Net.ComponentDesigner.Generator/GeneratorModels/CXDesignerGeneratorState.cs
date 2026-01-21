@@ -11,9 +11,11 @@ public sealed class CXDesignerGeneratorState(
     bool usesDesignerParameter,
     EquatableArray<DesignerInterpolationInfo> interpolationInfos,
     SemanticModel semanticModel,
-    SyntaxTree syntaxTree
+    SyntaxTree syntaxTree,
+    CXKind kind
 ) : IEquatable<CXDesignerGeneratorState>
 {
+    public CXKind Kind { get; init; } = kind;
     public string Designer { get; init; } = designer;
     public LocationInfo Location { get; init; } = location;
     public int QuoteCount { get; init; } = quoteCount;
@@ -21,17 +23,19 @@ public sealed class CXDesignerGeneratorState(
     public EquatableArray<DesignerInterpolationInfo> InterpolationInfos { get; init; } = interpolationInfos;
     public SemanticModel SemanticModel { get; } = semanticModel;
     public SyntaxTree SyntaxTree { get; } = syntaxTree;
+    
 
     public bool Equals(CXDesignerGeneratorState other)
         => Designer == other.Designer &&
            Location.Equals(other.Location) &&
            QuoteCount == other.QuoteCount &&
            UsesDesignerParameter == other.UsesDesignerParameter &&
-           InterpolationInfos.Equals(other.InterpolationInfos);
+           InterpolationInfos.Equals(other.InterpolationInfos) &&
+           Kind == other.Kind;
 
     public override bool Equals(object? obj)
         => obj is CXDesignerGeneratorState other && Equals(other);
 
     public override int GetHashCode()
-        => Hash.Combine(Designer, Location, QuoteCount, UsesDesignerParameter, InterpolationInfos);
+        => Hash.Combine(Designer, Location, QuoteCount, UsesDesignerParameter, InterpolationInfos, Kind);
 }

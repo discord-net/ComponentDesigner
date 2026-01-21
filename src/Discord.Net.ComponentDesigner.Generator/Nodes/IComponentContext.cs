@@ -29,6 +29,12 @@ public interface IComponentContext
 
 public static class ComponentContextExtensions
 {
+    extension(IComponentContext context)
+    {
+        public bool IsModalContext => context.CX.Kind.HasFlag(CXKind.Modal);
+        public bool IsMessageContext => context.CX.Kind.HasFlag(CXKind.Message);
+    }
+    
     public static DesignerInterpolationInfo GetInterpolationInfo(
         this IComponentContext context,
         CXValue.Interpolation interpolation

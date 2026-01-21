@@ -44,7 +44,7 @@ public abstract class BaseParsingTest(ITestOutputHelper output) : IDisposable
 
     [MemberNotNull(nameof(Document))]
     protected void Parses(
-        [StringSyntax("html")]string cx,
+        string cx,
         Func<CXParser, IEnumerable<CXNode>>? parseFunc = null,
         TextSpan[]? interpolations = null,
         bool allowErrors = false

@@ -188,6 +188,15 @@ public sealed class MediaGalleryComponentNode : ComponentNode<MediaGalleryCompon
 
     public override void Validate(MediaGalleryState state, IComponentContext context, IList<DiagnosticInfo> diagnostics)
     {
+        if (!context.IsMessageContext)
+        {
+            diagnostics.Add(
+                Diagnostics.ComponentNotAllowedInContext(Name, context.CX.Kind),
+                state.Source
+            );
+            return;
+        }
+        
         var validItemCount = 0;
         var hasEnumerables = false;
 
