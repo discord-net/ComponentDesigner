@@ -227,6 +227,16 @@ public abstract class BaseIncrementalTests(ITestOutputHelper output) : IDisposab
     protected CXAttribute Attribute(string? value = null, bool? reused = null)
         => N<CXAttribute>(value, reused);
 
+    protected CXIdentifier SimpleIdent(string value, bool? reused = null)
+    {
+        var node = N<CXIdentifier.Simple>(value, reused);
+        {
+            Ident(value, reused);
+        }
+
+        return node;
+    }
+    
     protected CXToken Ident(string value, bool? reused = null)
         => T(CXTokenKind.Identifier, value, reused);
 

@@ -6,6 +6,25 @@ namespace Discord.CX;
 
 public static class TypeUtils
 {
+    public static bool CanNullPatternMatch(this ITypeSymbol? symbol, Compilation compilation)
+        => symbol is not null && (
+            !symbol.IsValueType || (
+                symbol is INamedTypeSymbol { IsGenericType: true, IsUnboundGenericType: false } named &&
+                named.ConstructedFrom.Equals(compilation.GetKnownTypes().NullableOfT, SymbolEqualityComparer.Default)
+            )
+        );
+
+    public static bool IsNullableOfValueType(
+        this ITypeSymbol? symbol,
+        ITypeSymbol? toCheck,
+        Compilation compilation
+    ) => toCheck is not null && symbol is INamedTypeSymbol
+         {
+             IsGenericType: true, IsUnboundGenericType: false, TypeArguments.Length: 1
+         } named &&
+         named.ConstructedFrom.Equals(compilation.GetKnownTypes().NullableOfT, SymbolEqualityComparer.Default) &&
+         named.TypeArguments[0].Equals(toCheck, SymbolEqualityComparer.Default);
+
     public static bool IsNumericType(this Type type)
         => type == typeof(byte) ||
            type == typeof(sbyte) ||
@@ -15,12 +34,12 @@ public static class TypeUtils
            type == typeof(int) ||
            type == typeof(ulong) ||
            type == typeof(long);
-    
+
     public static bool IsInTypeTree(this ITypeSymbol symbol, ITypeSymbol? other)
     {
         if (other is null) return false;
-        
-        if (symbol.TypeKind is TypeKind.Class)
+
+        if (symbol.TypeKind is TypeKind.Class && other.TypeKind is TypeKind.Class)
         {
             var current = symbol;
 
@@ -35,9 +54,9 @@ public static class TypeUtils
         }
 
         return other.Equals(symbol, SymbolEqualityComparer.Default) ||
-               other.AllInterfaces.Contains(symbol, SymbolEqualityComparer.Default);
+               symbol.AllInterfaces.Contains(other, SymbolEqualityComparer.Default);
     }
-    
+
     public static bool TryGetEnumerableType(this ITypeSymbol? symbol, out ITypeSymbol inner)
     {
         if (symbol is not INamedTypeSymbol named)
@@ -45,7 +64,7 @@ public static class TypeUtils
             inner = null!;
             return false;
         }
-        
+
         if (IsEnumerableType(named) && named.TypeArguments.Length is 1)
         {
             inner = named.TypeArguments[0];
@@ -63,5 +82,6 @@ public static class TypeUtils
     }
 
     private static bool IsEnumerableType(this INamedTypeSymbol symbol)
-        => symbol.IsGenericType && symbol.ConstructedFrom.SpecialType is SpecialType.System_Collections_Generic_IEnumerable_T;
+        => symbol.IsGenericType &&
+           symbol.ConstructedFrom.SpecialType is SpecialType.System_Collections_Generic_IEnumerable_T;
 }

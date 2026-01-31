@@ -7,7 +7,7 @@
 
         <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
         <IsRoslynComponent>true</IsRoslynComponent>
-        <RootNamespace>Discord.Net.ComponentDesignerGenerator</RootNamespace>
+        <RootNamespace>Discord.CX</RootNamespace>
 
         <IncludeBuildOutput>false</IncludeBuildOutput>
         <PublishSingleFile>true</PublishSingleFile>

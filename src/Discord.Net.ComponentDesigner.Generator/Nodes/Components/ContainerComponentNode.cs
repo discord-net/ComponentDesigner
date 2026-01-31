@@ -35,14 +35,14 @@ public sealed class ContainerComponentNode : ComponentNode
                 "accentColor",
                 isOptional: true,
                 aliases: ["color", "accent"],
-                renderer: CXValueGenerator.Color,
+                renderer: CXValueGenerator.NullableColor,
                 dotnetPropertyName: "AccentColor"
             ),
             Spoiler = new(
                 "spoiler",
                 isOptional: true,
                 requiresValue: false,
-                renderer: CXValueGenerator.Boolean,
+                renderer: CXValueGenerator.NullableBoolean,
                 dotnetPropertyName: "IsSpoiler"
             )
         ];

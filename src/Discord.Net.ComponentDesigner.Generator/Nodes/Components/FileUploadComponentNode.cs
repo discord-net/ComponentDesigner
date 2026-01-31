@@ -25,7 +25,7 @@ public sealed class FileUploadComponentNode : ComponentNode
                 "min",
                 isOptional: true,
                 aliases: ["minValues"],
-                renderer: CXValueGenerator.Integer,
+                renderer: CXValueGenerator.NullableInteger,
                 validators:
                 [
                     Validators.IntRange(Constants.FILE_UPLOAD_MIN_VALUES_LOWER, Constants.FILE_UPLOAD_MIN_VALUES_UPPER)
@@ -35,7 +35,7 @@ public sealed class FileUploadComponentNode : ComponentNode
                 "max",
                 isOptional: true,
                 aliases: ["maxValues"],
-                renderer: CXValueGenerator.Integer,
+                renderer: CXValueGenerator.NullableInteger,
                 validators:
                 [
                     Validators.IntRange(Constants.FILE_UPLOAD_MAX_VALUES_LOWER, Constants.FILE_UPLOAD_MAX_VALUES_UPPER)

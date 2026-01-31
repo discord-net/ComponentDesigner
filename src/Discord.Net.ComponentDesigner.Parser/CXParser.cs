@@ -172,39 +172,16 @@ public sealed partial class CXParser
             // bail early, no starting token
             return new CXElement(
                 start,
-                CXToken.CreateMissing(CXTokenKind.Identifier),
+                new CXIdentifier.Simple(CXToken.CreateMissing(CXTokenKind.Identifier)),
                 [],
                 CXToken.CreateMissing(CXTokenKind.ForwardSlashGreaterThan),
                 []
             );
         }
 
-        CXToken? identifier;
-        using (Lexer.SetMode(CXLexer.LexMode.Identifier))
-        {
-            /*
-             * For element identifiers, we allow fragments, which can have attributes.
-             *
-             * This check covers fragments with and without attributes:
-             *  - Basic:      <>          Current token is '>'
-             *  - Attributes: <foo="bar"> Current token is 'identifier' and next is '='
-             */
-            if (
-                (CurrentToken.Kind is CXTokenKind.Identifier && NextToken.Kind is CXTokenKind.Equals) ||
-                CurrentToken.Kind is CXTokenKind.GreaterThan
-            )
-            {
-                // this is a fragment
-                identifier = null;
-            }
-            else
-            {
-                // just expect an identifier
-                identifier = Expect(CXTokenKind.Identifier, withDiagnostics: false);
-            }
-        }
+        var identifier = ParseIdentifier(includeDiagnostics: false);
 
-        if (identifier is { IsMissing: true })
+        if (identifier is CXIdentifier.Simple { Token.IsMissing: true })
         {
             // bail early
             return new CXElement(
@@ -298,7 +275,7 @@ public sealed partial class CXParser
             else
             {
                 // we should expect an identifier
-                elementEndIdent = ParseIdentifier(withDiagnostics: false);
+                elementEndIdent = ExpectIdentifier(withDiagnostics: false);
             }
 
             // we finally should see a '>'
@@ -318,7 +295,7 @@ public sealed partial class CXParser
              */
             var missingNamedClosing = identifier is null
                 ? elementEndIdent is not null
-                : elementEndIdent is null || identifier.RawValue != elementEndIdent.RawValue;
+                : elementEndIdent is null || identifier.Value != elementEndIdent.RawValue;
 
             if (
                 missingNamedClosing ||
@@ -331,6 +308,49 @@ public sealed partial class CXParser
                 // rollback
                 _position = sentinel;
             }
+        }
+    }
+
+    /// <summary>
+    ///     Parses a <see cref="CXIdentifier"/> AST node.
+    /// </summary>
+    /// <remarks>
+    ///     In the case that the identifier would belong to a fragment element, <see langword="null"/> is returned;
+    ///     otherwise normal identifier parsing happens, with diagnostics controlled by
+    ///     <paramref name="includeDiagnostics"/>.
+    /// </remarks>
+    /// <param name="includeDiagnostics">Whether to include diagnostics.</param>
+    /// <returns>The identifier AST node; <see langword="null"/> if it would belong to a fragment.</returns>
+    internal CXIdentifier? ParseIdentifier(bool includeDiagnostics = true)
+    {
+        // check for incremental node
+        if (TryEatASTNode<CXIdentifier>(out var node)) return node;
+
+        using var _ = Lexer.SetMode(CXLexer.LexMode.Identifier);
+
+        switch (CurrentToken.Kind)
+        {
+            // attribute start: the identifier belongs to a fragment
+            case CXTokenKind.Identifier when NextToken.Kind is CXTokenKind.Equals: return null;
+
+            // element ending tag, also a fragment
+            case CXTokenKind.GreaterThan: return null;
+
+            // interpolated identifier
+            case CXTokenKind.Interpolation:
+                return new CXIdentifier.Interpolated(
+                    Eat(),
+                    Expect(CXTokenKind.Qualifier),
+                    Expect(CXTokenKind.Identifier)
+                );
+
+
+            // simple identifier
+            case CXTokenKind.Identifier:
+            default:
+                return new CXIdentifier.Simple(
+                    Expect(CXTokenKind.Identifier, withDiagnostics: includeDiagnostics)
+                );
         }
     }
 
@@ -513,7 +533,7 @@ public sealed partial class CXParser
         using (Lexer.SetMode(CXLexer.LexMode.Attribute))
         {
             // the name of the attribute
-            var identifier = ParseIdentifier();
+            var identifier = ExpectIdentifier();
 
             // try to eat an equals token, attributes may not always have values
             if (!Eat(CXTokenKind.Equals, out var equalsToken))
@@ -657,14 +677,14 @@ public sealed partial class CXParser
     }
 
     /// <summary>
-    ///     Parses an identifier.
+    ///     Expects the current token to be an identifier.
     /// </summary>
     /// <param name="withDiagnostics">Whether to include an unexpected token diagnostic.</param>
     /// <returns>
     ///     A <see cref="CXToken"/> representing the identifier, with the flags of the <see cref="CXToken"/> indicating
     ///     whether one was found. 
     /// </returns>
-    internal CXToken ParseIdentifier(bool withDiagnostics = true)
+    internal CXToken ExpectIdentifier(bool withDiagnostics = true)
     {
         using (Lexer.SetMode(CXLexer.LexMode.Identifier))
         {

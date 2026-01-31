@@ -150,6 +150,16 @@ public abstract class BaseParsingTest(ITestOutputHelper output) : IDisposable
         return (T)current;
     }
 
+    public CXIdentifier SimpleIdentifier(string? content = null, CXTokenFlags? flags = null)
+    {
+        var node = Node<CXIdentifier.Simple>();
+        {
+            Identifier(content, flags);
+        }
+
+        return node;
+    }
+
     protected CXToken Identifier(string content, CXTokenFlags? flags = null)
         => Token(CXTokenKind.Identifier, content, flags: flags);
 

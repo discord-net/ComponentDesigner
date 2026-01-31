@@ -252,6 +252,7 @@ public sealed class CXGraph : IEquatable<CXGraph>
             var current = nodes[i];
 
             if (
+                !IsInterpolatedComponent(current, context) &&
                 TextControlElement.TryCreate(
                     context,
                     nodes,
@@ -305,6 +306,22 @@ public sealed class CXGraph : IEquatable<CXGraph>
 
         foreach (var diagnostic in diagnostics)
             context.Diagnostics.Add(diagnostic);
+
+        static bool IsInterpolatedComponent(
+            ICXNode node,
+            GraphInitializationContext context
+        ) => node switch
+        {
+            CXValue.Interpolation { InterpolationIndex: var index } => ComponentBuilderKind.IsValidComponentBuilderType(
+                context.CX.InterpolationInfos[index].Symbol,
+                context.Compilation
+            ),
+            CXToken { InterpolationIndex: { } index } => ComponentBuilderKind.IsValidComponentBuilderType(
+                context.CX.InterpolationInfos[index].Symbol,
+                context.Compilation
+            ),
+            _ => false
+        };
     }
 
     private static IEnumerable<GraphNode> CreateNodes(
@@ -381,6 +398,7 @@ public sealed class CXGraph : IEquatable<CXGraph>
             }
 
             if (
+                element.OpeningTag.Identifier is CXIdentifier.Interpolated ||
                 !ComponentNode.TryGetNode(element.Identifier, out var componentNode)
             )
             {

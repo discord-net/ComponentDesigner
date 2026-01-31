@@ -7,6 +7,39 @@ namespace UnitTests.ComponentTests;
 public sealed class FunctionalComponentTests(ITestOutputHelper output) : BaseComponentTest(output)
 {
     [Fact]
+    public void InstancedComponent()
+    {
+        Graph(
+            """
+            <{inst}.MyFunc />
+            """,
+            hasInterpolations: true,
+            pretext:
+            """
+            var inst = new TestInstanceComponent();
+            """,
+            additionalMethods:
+            """
+            public class TestInstanceComponent
+            {
+                public CXMessageComponent MyFunc() => CXMessageComponent.Empty;    
+            }
+            """
+        );
+        {
+            Node<FunctionalComponentNode>();
+
+            Validate(hasErrors: false);
+
+            Renders(
+                """
+                ..designer.GetValue<global::TestClass.TestInstanceComponent>(0).MyFunc().Builders
+                """
+            );
+        }
+    }
+    
+    [Fact]
     public void InterpolatedChildValue()
     {
         Graph(

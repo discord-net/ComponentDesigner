@@ -15,19 +15,31 @@ public delegate Result<string> CXValueGeneratorDelegate(
 
 public abstract class CXValueGenerator
 {
-    public static CXValueGeneratorDelegate Boolean => GetGenerator<BooleanGenerator>().Render;
-    public static CXValueGeneratorDelegate Color => GetGenerator<ColorGenerator>().Render;
-    public static CXValueGeneratorDelegate Component => GetGenerator<ComponentGenerator>().Render;
-    public static CXValueGeneratorDelegate Emoji => GetGenerator<EmojiGenerator>().Render;
-    public static CXValueGeneratorDelegate Integer => GetGenerator<IntegerGenerator>().Render;
-    public static CXValueGeneratorDelegate Snowflake => GetGenerator<SnowflakeGenerator>().Render;
-    public static CXValueGeneratorDelegate String => GetGenerator<StringGenerator>().Render;
+    public static CXValueGeneratorDelegate Boolean => BooleanGenerator.Create(allowNullable: false);
+    public static CXValueGeneratorDelegate NullableBoolean => BooleanGenerator.Create(allowNullable: true);
+    public static CXValueGeneratorDelegate Color => ColorGenerator.Create(allowNullable: false);
+    public static CXValueGeneratorDelegate NullableColor => ColorGenerator.Create(allowNullable: true);
+    public static CXValueGeneratorDelegate Component => GetGenerator<ComponentGenerator>();
+    public static CXValueGeneratorDelegate Emoji => EmojiGenerator.Create(allowNullable: false);
+    public static CXValueGeneratorDelegate NullableEmoji => EmojiGenerator.Create(allowNullable: true);
+    public static CXValueGeneratorDelegate Integer => IntegerGenerator.Create(allowNullable: false);
+    public static CXValueGeneratorDelegate NullableInteger => IntegerGenerator.Create(allowNullable: true);
+    public static CXValueGeneratorDelegate Snowflake => SnowflakeGenerator.Create(allowNullable: false);
+    public static CXValueGeneratorDelegate NullableSnowflake => SnowflakeGenerator.Create(allowNullable: true);
+    public static CXValueGeneratorDelegate String => GetGenerator<StringGenerator>();
 
     public static CXValueGeneratorDelegate UnfurledMediaItem
-        => GetGenerator<UnfurledMediaItemGenerator>().Render;
+        => GetGenerator<UnfurledMediaItemGenerator>();
 
-    public static CXValueGeneratorDelegate Enum(string qualifiedEnumName, bool renderAsSymbolReference = true)
-        => EnumGenerator.Create(qualifiedEnumName, renderAsSymbolReference).Render;
+    public static CXValueGeneratorDelegate Enum(
+        string qualifiedEnumName,
+        bool renderAsSymbolReference = true
+    ) => EnumGenerator.Create(qualifiedEnumName, renderAsSymbolReference, allowNullable: false);
+
+    public static CXValueGeneratorDelegate NullableEnum(
+        string qualifiedEnumName,
+        bool renderAsSymbolReference = true
+    ) => EnumGenerator.Create(qualifiedEnumName, renderAsSymbolReference, allowNullable: true);
 
     private static readonly Dictionary<Type, CXValueGenerator> _renderers;
 
@@ -66,21 +78,46 @@ public abstract class CXValueGenerator
         var knownTypes = compilation.GetKnownTypes();
 
         if (
-            knownTypes.ColorType?.Equals(symbol, SymbolEqualityComparer.Default) ?? false
-        ) return Color;
+            symbol is INamedTypeSymbol
+            {
+                IsValueType: true,
+                IsGenericType: true,
+                IsUnboundGenericType: false,
+                TypeArguments.Length: 1
+            } named &&
+            named.ConstructedFrom.Equals(knownTypes.NullableOfT, SymbolEqualityComparer.Default)
+        )
+        {
+            var inner = named.TypeArguments[0];
 
-        if (
-            knownTypes.IEmoteType?.Equals(symbol, SymbolEqualityComparer.Default) ?? false
-        ) return Emoji;
+            if (knownTypes.ColorType?.Equals(inner, SymbolEqualityComparer.Default) ?? false)
+                return NullableColor;
 
-        if (symbol.TypeKind is TypeKind.Enum)
-            return Enum(symbol.ToDisplayString());
+            if (inner.TypeKind is TypeKind.Enum)
+                return NullableEnum(inner.ToDisplayString());
 
-        if (allowComponents && ComponentBuilderKind.IsValidComponentBuilderType(symbol, compilation))
-            return Component;
+            switch (inner.SpecialType)
+            {
+                case SpecialType.System_Int32: return NullableInteger;
+                case SpecialType.System_UInt64: return NullableSnowflake;
+            }
+        }
+        else
+        {
+            if (knownTypes.ColorType?.Equals(symbol, SymbolEqualityComparer.Default) ?? false)
+                return Color;
 
+            if (knownTypes.IEmoteType?.Equals(symbol, SymbolEqualityComparer.Default) ?? false)
+                return Emoji;
 
-        return new InterpolationGenerator(symbol).Render;
+            if (symbol.TypeKind is TypeKind.Enum)
+                return Enum(symbol.ToDisplayString());
+
+            if (allowComponents && ComponentBuilderKind.IsValidComponentBuilderType(symbol, compilation))
+                return Component;
+        }
+
+        return new InterpolationGenerator(symbol);
     }
 
     public static Result<string> Default(
@@ -181,4 +218,6 @@ public abstract class CXValueGenerator
         Diagnostics.InvalidValue("multipart"),
         multipart
     );
+
+    public static implicit operator CXValueGeneratorDelegate(CXValueGenerator self) => self.Render;
 }

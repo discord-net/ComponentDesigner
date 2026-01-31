@@ -19,6 +19,11 @@ public class KnownTypes
         Compilation = compilation;
     }
 
+    public INamedTypeSymbol? NullableOfT
+        => GetOrResolveType("System.Nullable`1", ref _NullableOfT);
+    
+    public Optional<INamedTypeSymbol?> _NullableOfT;
+    
     public INamedTypeSymbol? IApplicationCommandType
         => GetOrResolveType("Discord.IApplicationCommand", ref _IApplicationCommand);
     

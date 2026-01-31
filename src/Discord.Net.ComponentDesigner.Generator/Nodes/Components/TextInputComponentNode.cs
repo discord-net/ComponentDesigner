@@ -43,7 +43,7 @@ public sealed class TextInputComponentNode : ComponentNode
                 "minLength",
                 aliases: ["min"],
                 isOptional: true,
-                renderer: CXValueGenerator.Integer,
+                renderer: CXValueGenerator.NullableInteger,
                 validators:
                 [
                     Validators.IntRange(
@@ -56,7 +56,7 @@ public sealed class TextInputComponentNode : ComponentNode
                 "maxLength",
                 aliases: ["max"],
                 isOptional: true,
-                renderer: CXValueGenerator.Integer,
+                renderer: CXValueGenerator.NullableInteger,
                 validators:
                 [
                     Validators.IntRange(
@@ -68,7 +68,7 @@ public sealed class TextInputComponentNode : ComponentNode
             Required = new(
                 "required",
                 isOptional: true,
-                renderer: CXValueGenerator.Boolean,
+                renderer: CXValueGenerator.NullableBoolean,
                 requiresValue: false
             ),
             Value = new(

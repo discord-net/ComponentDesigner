@@ -6,6 +6,16 @@ namespace Discord.CX.Nodes;
 
 public sealed class EmojiGenerator : CXValueGenerator
 {
+    private readonly bool _allowNullable;
+
+    private EmojiGenerator(bool allowNullable)
+    {
+        _allowNullable = allowNullable;
+    }
+    
+    public static EmojiGenerator Create(bool allowNullable)
+        => Memoize.Of(allowNullable, static a => new EmojiGenerator(a));
+    
     protected override Result<string> RenderInterpolation(
         IComponentContext context,
         CXValueGeneratorTarget target,
@@ -36,6 +46,9 @@ public sealed class EmojiGenerator : CXValueGenerator
 
             return builder.Build();
         }
+
+        if (info.Constant is { HasValue: true, Value: null } && _allowNullable)
+            return "null";
 
         return UseLibraryParse(
             context,
@@ -132,7 +145,7 @@ public sealed class EmojiGenerator : CXValueGenerator
                 $"""
                  global::Discord.Emoji.TryParse({code}, out var {varName})
                     ? (global::Discord.IEmote){varName}
-                    : global::Discord.Emote.Parse({context})
+                    : global::Discord.Emote.Parse({code})
                  """;
             
             builder.AddDiagnostic(

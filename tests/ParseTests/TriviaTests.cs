@@ -18,9 +18,9 @@ public sealed class TriviaTests(ITestOutputHelper output) : BaseParsingTest(outp
             Element();
             {
                 Token(CXTokenKind.LessThan);
-                var identToken = Token(CXTokenKind.Identifier, "foo");
+                var ident = SimpleIdentifier("foo");
 
-                TrailingTrivia(identToken);
+                TrailingTrivia(ident);
                 {
                     TriviaToken(CXTriviaTokenKind.Whitespace, value: " ");
                 }
@@ -46,7 +46,7 @@ public sealed class TriviaTests(ITestOutputHelper output) : BaseParsingTest(outp
             Element();
             {
                 Token(CXTokenKind.LessThan);
-                Identifier("foo");
+                SimpleIdentifier("foo");
                 TrailingTrivia(Token(CXTokenKind.GreaterThan));
                 {
                     Newline(value: Environment.NewLine);
@@ -59,7 +59,7 @@ public sealed class TriviaTests(ITestOutputHelper output) : BaseParsingTest(outp
                         Whitespace(length: 4);
                     }
 
-                    TrailingTrivia(Identifier("bar"));
+                    TrailingTrivia(SimpleIdentifier("bar"));
                     {
                         Whitespace(length: 1);
                     }
@@ -108,7 +108,7 @@ public sealed class TriviaTests(ITestOutputHelper output) : BaseParsingTest(outp
                     Newline(value: Environment.NewLine);
                 }
 
-                Identifier("foo");
+                SimpleIdentifier("foo");
                 TrailingTrivia(Token(CXTokenKind.GreaterThan));
                 {
                     Newline(value: Environment.NewLine);
@@ -130,7 +130,7 @@ public sealed class TriviaTests(ITestOutputHelper output) : BaseParsingTest(outp
                         Newline(value: Environment.NewLine);
                         Whitespace(length: 4);
                     }
-                    Identifier("bar");
+                    SimpleIdentifier("bar");
                     TrailingTrivia(Token(CXTokenKind.ForwardSlashGreaterThan));
                     {
                         Newline(value: Environment.NewLine);

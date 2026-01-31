@@ -62,7 +62,7 @@ partial class ASTFormatter
                     AddEdges(
                         i,
                         cxElement.OpeningTag.StartToken,
-                        cxElement.OpeningTag.IdentifierToken,
+                        cxElement.OpeningTag.Identifier,
                         cxElement.OpeningTag.Attributes,
                         cxElement.OpeningTag.EndToken,
                         cxElement.Children,
