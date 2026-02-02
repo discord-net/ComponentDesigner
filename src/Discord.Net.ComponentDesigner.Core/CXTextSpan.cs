@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Discord.CX.Parser;
+namespace Discord.CX;
 
 public readonly record struct CXTextSpan(
     int Start,
