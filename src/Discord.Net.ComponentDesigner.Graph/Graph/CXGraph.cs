@@ -1,4 +1,5 @@
 ﻿using Discord.CX.Nodes;
+using Discord.CX.Nodes.Text;
 using Discord.CX.Parser;
 using Discord.CX.Util;
 
@@ -105,7 +106,8 @@ public sealed class CXGraph : IEquatable<CXGraph>
             parameters.CX,
             parameters.CompilationProvider,
             parameters.Options,
-            diagnostics
+            diagnostics,
+            parameters.Renderer
         );
 
         CreateNodes(rootNodes, document.RootNodes, null, context, token);
@@ -126,22 +128,66 @@ public sealed class CXGraph : IEquatable<CXGraph>
         CancellationToken token = default
     )
     {
-        // TODO: text control
+        using var enumerator = GraphNodeEnumerator.GetNext(nodes).GetEnumerator();
 
-        foreach (var node in nodes)
+        while (enumerator.MoveNext())
         {
+            var node = enumerator.Current;
+            
+            if (
+                !context.IsInterpolatedComponent(node) &&
+                TextControlElement.TryCreate(
+                    context,
+                    enumerator,
+                    context.Diagnostics,
+                    out var result,
+                    out var enumeratorHasMore,
+                    token
+                )
+            )
+            {
+                if (context.Options.AllowAutoTextDisplays)
+                {
+                    var graphNode = new GraphNode(
+                        AutoTextDisplayComponentNode.Instance
+                    );
+
+                    graphNode.State = new TextDisplayState(
+                        graphNode,
+                        null,
+                        result
+                    );
+                    
+                    results.Add(graphNode);
+                }
+                else
+                {
+                    context.Diagnostics.Add(
+                        result.TextSpan.Report(
+                            Diagnostic.FeatureAutoTextDisplaysDisabled
+                        )
+                    );
+                }
+
+                // if the text control consumed all the nodes, return out
+                if (!enumeratorHasMore) return;
+
+                node = enumerator.Current;
+            }
+            
             CreateNodes(results, node, parent, context, token);
         }
     }
 
+
     private static void CreateNodes(
         IList<GraphNode> results,
-        CXNode cxNode,
+        ICXNode? cxNode,
         GraphNode? parent,
         GraphInitializationContext context,
         CancellationToken token = default
     )
-    {
+    { 
         switch (cxNode)
         {
             case CXValue.Interpolation interpolation:
@@ -164,11 +210,14 @@ public sealed class CXGraph : IEquatable<CXGraph>
                 return;
 
             default:
-                context.Diagnostics.Add(
-                    cxNode.Report(
-                        Diagnostic.UnsupportedSyntaxKindForGraphNode(cxNode)
-                    )
-                );
+                if (cxNode is not null)
+                {
+                    context.Diagnostics.Add(
+                        cxNode.Report(
+                            Diagnostic.UnsupportedSyntaxKindForGraphNode(cxNode)
+                        )
+                    );
+                }
                 return;
         }
     }
@@ -182,6 +231,7 @@ public sealed class CXGraph : IEquatable<CXGraph>
         CancellationToken token = default
     )
     {
+        
     }
 
     private static void CreateElementNodes(

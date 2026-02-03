@@ -3,5 +3,6 @@
 public sealed record CreateGraphParameters(
     ICXModel CX,
     GraphOptions Options,
-    ICompilationProvider CompilationProvider
+    ICompilationProvider CompilationProvider,
+    IComponentRenderer Renderer
 );

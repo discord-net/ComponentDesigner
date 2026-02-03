@@ -1,6 +1,3 @@
-﻿using Discord;
-using Discord.CX.Parser;
-using Sandbox.Examples.Spyfall;
-using static Discord.ComponentDesigner;
+﻿using Discord.CX;
 
-Console.WriteLine("Hello, World!");
+var graph = CXGraph.

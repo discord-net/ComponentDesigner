@@ -279,7 +279,7 @@ public sealed class StringGenerator : CSharpValueGenerator
             }
         }
 
-        return result;
+        return Math.Max(result, count);
     }
 
     private static string EscapeBackslashes(string text)

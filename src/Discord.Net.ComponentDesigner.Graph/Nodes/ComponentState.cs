@@ -22,6 +22,9 @@ public record ComponentState(
             return (_textSpan = current?.CXNode?.Span ?? default(CXTextSpan)).Value;
         }
     }
+
+    public CXTextSpan ElementIdentifierTextSpanOrBetter
+        => CXNode is CXElement { OpeningTag.Identifier: { } identifier } ? identifier.Span : TextSpan;
     
     public bool HasGraphChildren => GraphNode.HasChildren;
 

@@ -5,31 +5,54 @@ using Discord.CX.Util;
 
 namespace Discord.CX.Renderers.DiscordNet;
 
-public sealed class DiscordNetComponentRenderer : BaseComponentRenderer
+public sealed class DiscordNetComponentRenderer : IComponentRenderer
 {
     public const string CONTAINER_TYPE_NAME = "global::Discord.ContainerBuilder";
 
-    public override string Name => "Discord.Net";
+    public string Name => "Discord.Net";
 
-    protected override Result<string> Container(
+    public bool IsValidComponentType(
+        IComponentContext context,
+        ICSharpTypeSymbol? symbol,
+        CancellationToken cancellationToken = default
+    )
+    {
+        // TODO
+        return false;
+    }
+
+    public Result<string> RenderTextDisplay(
+        IRendererContext context,
+        TextDisplayComponentNode textDisplay,
+        TextDisplayState state,
+        ComponentPropertyValue id,
+        ComponentPropertyValue content,
+        CancellationToken cancellationToken = default
+    )
+    {
+        // TODO
+        return "text-display";
+    }
+
+    public Result<string> RenderContainer(
         IRendererContext context,
         ContainerComponentNode component,
         ComponentState state,
         ComponentPropertyValue id,
         ComponentPropertyValue accentColor,
         ComponentPropertyValue isSpoiler,
-        CancellationToken token = default
+        CancellationToken cancellationToken = default
     )
     {
         var properties = RenderProperties(
             context,
-            token,
+            cancellationToken,
             (id, IntegerGenerator.Get(allowNullable: true)),
             (accentColor, ColorGenerator.Get(allowNullable: true)),
             (isSpoiler, BooleanGenerator.Get(allowNullable: true))
         );
 
-        var children = RenderChildren(context, state, token);
+        var children = RenderChildren(context, state, cancellationToken);
 
         return children
             .Combine(properties, (children, properties) =>
@@ -52,11 +75,11 @@ public sealed class DiscordNetComponentRenderer : BaseComponentRenderer
 
                     initializers.Append(
                         $"""
-                            Components =
-                            [
-                                {string.Join(Environment.NewLine, children).WithNewlinePadding(8)}
-                            ]
-                        """
+                             Components =
+                             [
+                                 {string.Join(Environment.NewLine, children).WithNewlinePadding(8)}
+                             ]
+                         """
                     );
                 }
 
@@ -75,7 +98,8 @@ public sealed class DiscordNetComponentRenderer : BaseComponentRenderer
                 "id" => "Id",
                 "accentColor" => "AccentColor",
                 "spoiler" => "IsSpoiler",
-                _ => throw new InvalidOperationException($"The property '{property.Name}' isn't a known property of the container builder")
+                _ => throw new InvalidOperationException(
+                    $"The property '{property.Name}' isn't a known property of the container builder")
             };
     }
 
@@ -108,12 +132,12 @@ public sealed class DiscordNetComponentRenderer : BaseComponentRenderer
 
         foreach (var (propertyValue, generator) in properties)
         {
-            if(ShouldOmit(propertyValue)) continue;
+            if (ShouldOmit(propertyValue)) continue;
 
             var render = generator.Render(context, propertyValue, default, token);
-            
-            if(render.HasValue) result.Add((propertyValue.Property, render.Value));
-            
+
+            if (render.HasValue) result.Add((propertyValue.Property, render.Value));
+
             bag.AddDiagnostics(render.Diagnostics);
         }
 

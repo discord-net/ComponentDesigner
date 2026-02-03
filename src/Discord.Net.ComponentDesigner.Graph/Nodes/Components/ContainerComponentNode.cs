@@ -34,7 +34,7 @@ public sealed class ContainerComponentNode : ComponentNode
         ComponentState state,
         ComponentEmitContext context,
         ComponentOptions options,
-        CancellationToken token = default
+        CancellationToken cancellationToken = default
     )
     {
         var bag = DiagnosticBag.Get();
@@ -44,9 +44,17 @@ public sealed class ContainerComponentNode : ComponentNode
         foreach (var child in state.Children)
             ValidateChildIsAllowedInContainer(state, bag, child.Component);
 
-        return context.Renderer
-            .Render(context, this, state, token)
-            .AddDiagnostics(bag);
+        return context
+            .Renderer
+            .RenderContainer(
+                context,
+                this,
+                state,
+                state.GetPropertyValue(Id),
+                state.GetPropertyValue(AccentColor),
+                state.GetPropertyValue(IsSpoiler),
+                cancellationToken
+            );
     }
 
     private void ValidateChildIsAllowedInContainer(ComponentState state, IDiagnosticBag bag, IComponentNode child)
@@ -54,6 +62,7 @@ public sealed class ContainerComponentNode : ComponentNode
         // TODO: rest of components
         if (
             child is not IDynamicComponentNode
+            and not TextDisplayComponentNode
         )
         {
             bag.AddDiagnostics(

@@ -10,6 +10,8 @@ public readonly record struct ComponentPropertyValue(
     GraphNode? GraphNode
 )
 {
+    public string UsedName => Attribute?.Identifier ?? Property.Name;
+    
     public bool HasValue => Value is not null || GraphNode is not null;
 
     public bool IsSpecified => Attribute is not null || HasValue;

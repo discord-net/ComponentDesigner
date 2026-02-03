@@ -17,7 +17,12 @@ public static class DiagnosticFactory
         TypeMismatch,
         NullValueNotAllowed,
         EmptyValueNotAllowed,
-        MissingImplementationForRenderer
+        MissingImplementationForRenderer,
+        UnknownTextControlElement,
+        UnsupportedTextControlElement,
+        FeatureAutoTextDisplaysDisabled,
+        ChildSuppliedExclusivePropertyDuplicated,
+        UnknownPropertyOfComponent
     }
 
     private enum DiagnosticSource
@@ -114,6 +119,19 @@ public static class DiagnosticFactory
             $"'{child.Name}' is not a valid child of '{parent.Name}'"
         );
 
+        public static DiagnosticDescriptor InvalidChildOfComponent(
+            IComponentNode parent,
+            ICXNode child
+        ) => Create(
+            DiagnosticSource.Graph,
+            DiagnosticCode.InvalidChildOfComponent,
+            DiagnosticSeverity.Error,
+            $"'{(child switch {
+                CXElement element => element.Identifier,
+                _ => child.GetType().Name
+            })}' is not a valid child of '{parent.Name}'"
+        );
+
         public static DiagnosticDescriptor RequiredPropertyNotSpecified(
             IComponentNode component,
             ComponentProperty property
@@ -204,6 +222,46 @@ public static class DiagnosticFactory
             DiagnosticCode.MissingImplementationForRenderer,
             DiagnosticSeverity.Error,
             $"The renderer '{renderer.Name}' doesn't provide an implementation for the component '{node.Name}'"
+        );
+
+        public static DiagnosticDescriptor UnknownTextControlElement(
+            CXElement element
+        ) => Create(
+            DiagnosticSource.Graph,
+            DiagnosticCode.UnknownTextControlElement,
+            DiagnosticSeverity.Error,
+            $"'{element.Identifier}' is not a known text control element"
+        );
+
+        public static DiagnosticDescriptor UnsupportedTextControlElement(
+            ICXNode node
+        ) => Create(
+            DiagnosticSource.Graph,
+            DiagnosticCode.UnsupportedTextControlElement,
+            DiagnosticSeverity.Error,
+            $"'{node.GetType().Name}' is not supported syntax for text control elements"
+        );
+
+        public static DiagnosticDescriptor FeatureAutoTextDisplaysDisabled => Create(
+            DiagnosticSource.Graph,
+            DiagnosticCode.FeatureAutoTextDisplaysDisabled,
+            DiagnosticSeverity.Error,
+            $"Text must be wrapped in a 'text-display' component",
+            "Text related components must be wrapped in a 'text-display' component, you can enable auto text displays to automatically wrap text in a text-display"
+        );
+        
+        public static DiagnosticDescriptor ChildSuppliedExclusivePropertyDuplicated(string propertyName) => Create(
+            DiagnosticSource.Graph,
+            DiagnosticCode.ChildSuppliedExclusivePropertyDuplicated,
+            DiagnosticSeverity.Error,
+            $"'{propertyName}' cannot be specified both as an attribute and as children"
+        );
+        
+        public static DiagnosticDescriptor UnknownPropertyOfComponent(IComponentNode node, string propertyName) => Create(
+            DiagnosticSource.Graph,
+            DiagnosticCode.UnknownPropertyOfComponent,
+            DiagnosticSeverity.Warning,
+            $"'{node.Name}' doesn't contain a property named '{propertyName}'"
         );
     }
 }

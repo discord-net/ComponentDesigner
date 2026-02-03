@@ -5,11 +5,25 @@ namespace Discord.CX;
 public interface IComponentRenderer
 {
     string Name { get; }
+
+    bool IsValidComponentType(IComponentContext context, ICSharpTypeSymbol? symbol, CancellationToken cancellationToken = default);
     
-    Result<string> Render(
+    Result<string> RenderContainer(
         IRendererContext context,
-        IComponentNode component,
+        ContainerComponentNode container,
         ComponentState state,
-        CancellationToken token = default
+        ComponentPropertyValue id,
+        ComponentPropertyValue accentColor,
+        ComponentPropertyValue isSpoiler,
+        CancellationToken cancellationToken = default
+    );
+
+    Result<string> RenderTextDisplay(
+        IRendererContext context,
+        TextDisplayComponentNode textDisplay,
+        TextDisplayState state,
+        ComponentPropertyValue id,
+        ComponentPropertyValue content,
+        CancellationToken cancellationToken = default
     );
 }

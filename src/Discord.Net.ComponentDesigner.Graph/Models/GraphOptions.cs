@@ -3,4 +3,4 @@
 public sealed record GraphOptions(
     bool AllowAutoRows,
     bool AllowAutoTextDisplays
-    );
+);

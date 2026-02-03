@@ -4,21 +4,21 @@ namespace Discord.CX.Nodes;
 
 public readonly struct ComponentNodeInitializationContext
 {
-    public ICXModel CX => ComponentContext.CX;
-    public ICompilationProvider CompilationProvider => ComponentContext.CompilationProvider;
+    public ICXModel CX => GraphContext.CX;
+    public ICompilationProvider CompilationProvider => GraphContext.CompilationProvider;
 
     public readonly GraphNode GraphNode;
     public readonly ICXNode? CXNode;
-    public readonly IComponentContext ComponentContext;
+    public readonly IGraphContext GraphContext;
 
     public ComponentNodeInitializationContext(
         ICXNode? cxNode,
         GraphNode graphNode,
-        IComponentContext context
+        IGraphContext context
     )
     {
         GraphNode = graphNode;
         CXNode = cxNode;
-        ComponentContext = context;
+        GraphContext = context;
     }
 }

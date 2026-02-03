@@ -43,13 +43,14 @@ public abstract class ComponentNode<T> :
         T state,
         ComponentEmitContext context,
         ComponentOptions options,
-        CancellationToken token = default
+        CancellationToken cancellationToken = default
     );
 
     protected void Validate(ComponentState state, IDiagnosticBag bag)
     {
         ValidateElementStructure(state, bag);
         ValidateProperties(state, bag);
+        ReportDiagnosticsForUnknownProperties(state, bag);
     }
 
     protected void ValidateElementStructure(
@@ -71,6 +72,23 @@ public abstract class ComponentNode<T> :
                     Diagnostic.ComponentDoesntAllowChildren(this)
                 )
             );
+        }
+    }
+
+    protected void ReportDiagnosticsForUnknownProperties(ComponentState state, IDiagnosticBag bag)
+    {
+        if (state.CXNode is not CXElement element) return;
+
+        foreach (var attribute in element.Attributes)
+        {
+            if (Properties.All(x => !x.MatchesName(attribute.Identifier)))
+            {
+                bag.AddDiagnostics(
+                    attribute.Report(
+                        Diagnostic.UnknownPropertyOfComponent(this, attribute.Identifier)
+                    )
+                );
+            }
         }
     }
 
@@ -137,6 +155,6 @@ public abstract class ComponentNode<T> :
         ComponentState state,
         ComponentEmitContext context,
         ComponentOptions options,
-        CancellationToken token
-    ) => Emit((T)state, context, options, token);
+        CancellationToken cancellationToken
+    ) => Emit((T)state, context, options, cancellationToken);
 }

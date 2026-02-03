@@ -8,8 +8,9 @@ public sealed record GraphInitializationContext(
     ICXModel CX,
     ICompilationProvider CompilationProvider,
     GraphOptions Options,
-    IList<Diagnostic> Diagnostics
-) : IComponentContext
+    IList<Diagnostic> Diagnostics,
+    IComponentRenderer Renderer
+) : IGraphContext
 {
     public bool Equals(IComponentContext? other)
         => other is GraphInitializationContext ctx && Equals(ctx);
