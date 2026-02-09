@@ -16,9 +16,9 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\src\Discord.Net.ComponentDesigner.Core\Discord.Net.ComponentDesigner.Core.csproj" />
-      <ProjectReference Include="..\src\Discord.Net.ComponentDesigner.Graph\Discord.Net.ComponentDesigner.Graph.csproj" />
-      <ProjectReference Include="..\src\Discord.Net.ComponentDesigner.Parser\Discord.Net.ComponentDesigner.Parser.csproj" />
+      <ProjectReference Include="..\src\ComponentDesigner.Core\ComponentDesigner.Core.csproj" />
+      <ProjectReference Include="..\src\ComponentDesigner.Graph\ComponentDesigner.Graph.csproj" />
+      <ProjectReference Include="..\src\ComponentDesigner.Parser\ComponentDesigner.Parser.csproj" />
     </ItemGroup>
     
 <!--    <ItemGroup>-->

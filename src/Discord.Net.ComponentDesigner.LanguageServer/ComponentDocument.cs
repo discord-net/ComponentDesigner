@@ -1,4 +1,4 @@
-﻿using Discord.CX.Parser;
+﻿using ComponentDesigner.Parser;
 using Microsoft.CodeAnalysis.Text;
 using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;

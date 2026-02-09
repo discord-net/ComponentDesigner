@@ -1,0 +1,38 @@
+﻿namespace ComponentDesigner.Nodes;
+
+public class ActionRowComponentNode : ComponentNode
+{
+    public override string Name => "action-row";
+
+    public override IReadOnlyList<string> Aliases { get; } = ["row"];
+
+    public override bool IsParentOfOtherComponents => true;
+
+    public override IReadOnlyList<ComponentProperty> Properties { get; }
+
+    public ComponentProperty Id { get; }
+
+    public ActionRowComponentNode()
+    {
+        Properties =
+        [
+            Id = ComponentProperty.Id
+        ];
+    }
+
+    public override Result<RenderedComponent> Emit(
+        ComponentState state,
+        ComponentEmitContext context,
+        ComponentOptions options,
+        CancellationToken cancellationToken = default
+    )=> ValidateAndRender(
+        this,
+        state,
+        context,
+        options,
+        Validators.ValidateActionRow,
+        context.Renderer.RenderActionRow,
+        cancellationToken
+    );
+
+}

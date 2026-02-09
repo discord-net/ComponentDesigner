@@ -1,3 +1,3 @@
-﻿using Discord.CX;
+﻿using ComponentDesigner;
 
-var graph = CXGraph.
+var graph = CXComponentGraph.

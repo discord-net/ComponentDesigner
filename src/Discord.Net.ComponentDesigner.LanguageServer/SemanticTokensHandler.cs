@@ -1,5 +1,5 @@
 ﻿using Discord.ComponentDesigner.LanguageServer.CX;
-using Discord.CX.Parser;
+using ComponentDesigner.Parser;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;

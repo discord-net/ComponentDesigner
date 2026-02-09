@@ -36,10 +36,9 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference 
-                Include="..\Discord.Net.ComponentDesigner.Parser\Discord.Net.ComponentDesigner.Parser.csproj" 
-                PrivateAssets="all"
-        />
+        <ProjectReference Include="..\ComponentDesigner.CSharp\ComponentDesigner.CSharp.csproj" />
+        <ProjectReference Include="..\ComponentDesigner.Graph\ComponentDesigner.Graph.csproj" />
+        <ProjectReference Include="..\ComponentDesigner.Parser\ComponentDesigner.Parser.csproj" PrivateAssets="all" />
     </ItemGroup>
 
 </Project>

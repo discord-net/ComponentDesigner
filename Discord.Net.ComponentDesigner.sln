@@ -2,7 +2,7 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Discord.Net.ComponentDesigner", "src\Discord.Net.ComponentDesigner\Discord.Net.ComponentDesigner.csproj", "{92D3E48B-039D-48FC-9B85-C5429202D16F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Discord.Net.ComponentDesigner.Parser", "src\Discord.Net.ComponentDesigner.Parser\Discord.Net.ComponentDesigner.Parser.csproj", "{8C3767CC-4CC9-42A3-8798-8FF10EDDB7E1}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ComponentDesigner.Parser", "src\ComponentDesigner.Parser\ComponentDesigner.Parser.csproj", "{8C3767CC-4CC9-42A3-8798-8FF10EDDB7E1}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Discord.Net.ComponentDesigner.Generator", "src\Discord.Net.ComponentDesigner.Generator\Discord.Net.ComponentDesigner.Generator.csproj", "{E5A1D032-F6EB-4066-80EB-D1E4B80CB11C}"
 EndProject
@@ -18,9 +18,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Common", "Common", "{BAF4B1
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Implementation", "Implementation", "{C0F7B7F7-0182-4181-B3D3-EC97998D6382}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Discord.Net.ComponentDesigner.Graph", "src\Discord.Net.ComponentDesigner.Graph\Discord.Net.ComponentDesigner.Graph.csproj", "{B81BF949-AF11-46DA-94D0-F28CAF1007EB}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ComponentDesigner.Graph", "src\ComponentDesigner.Graph\ComponentDesigner.Graph.csproj", "{B81BF949-AF11-46DA-94D0-F28CAF1007EB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Discord.Net.ComponentDesigner.Core", "src\Discord.Net.ComponentDesigner.Core\Discord.Net.ComponentDesigner.Core.csproj", "{19989DFB-4DF9-45DA-9887-C930DEEED441}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ComponentDesigner.Core", "src\ComponentDesigner.Core\ComponentDesigner.Core.csproj", "{19989DFB-4DF9-45DA-9887-C930DEEED441}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Discord.Net", "Discord.Net", "{2CD05700-CAF2-4686-AA6E-B43B38337FC4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ComponentDesigner.CSharp", "src\ComponentDesigner.CSharp\ComponentDesigner.CSharp.csproj", "{7785168F-57D7-4FF8-9E42-2E2C9E0D8583}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -60,13 +64,19 @@ Global
 		{19989DFB-4DF9-45DA-9887-C930DEEED441}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{19989DFB-4DF9-45DA-9887-C930DEEED441}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{19989DFB-4DF9-45DA-9887-C930DEEED441}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7785168F-57D7-4FF8-9E42-2E2C9E0D8583}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7785168F-57D7-4FF8-9E42-2E2C9E0D8583}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7785168F-57D7-4FF8-9E42-2E2C9E0D8583}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7785168F-57D7-4FF8-9E42-2E2C9E0D8583}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{460851AC-1EFE-43D7-BCF1-396248CFB58D} = {96AB69A4-5452-4074-A31B-B467BCC1325C}
 		{8C3767CC-4CC9-42A3-8798-8FF10EDDB7E1} = {BAF4B1FB-35F5-4024-8911-C17D85994182}
-		{92D3E48B-039D-48FC-9B85-C5429202D16F} = {C0F7B7F7-0182-4181-B3D3-EC97998D6382}
-		{E5A1D032-F6EB-4066-80EB-D1E4B80CB11C} = {C0F7B7F7-0182-4181-B3D3-EC97998D6382}
 		{19989DFB-4DF9-45DA-9887-C930DEEED441} = {BAF4B1FB-35F5-4024-8911-C17D85994182}
 		{B81BF949-AF11-46DA-94D0-F28CAF1007EB} = {BAF4B1FB-35F5-4024-8911-C17D85994182}
+		{2CD05700-CAF2-4686-AA6E-B43B38337FC4} = {C0F7B7F7-0182-4181-B3D3-EC97998D6382}
+		{92D3E48B-039D-48FC-9B85-C5429202D16F} = {2CD05700-CAF2-4686-AA6E-B43B38337FC4}
+		{E5A1D032-F6EB-4066-80EB-D1E4B80CB11C} = {2CD05700-CAF2-4686-AA6E-B43B38337FC4}
+		{7785168F-57D7-4FF8-9E42-2E2C9E0D8583} = {C0F7B7F7-0182-4181-B3D3-EC97998D6382}
 	EndGlobalSection
 EndGlobal

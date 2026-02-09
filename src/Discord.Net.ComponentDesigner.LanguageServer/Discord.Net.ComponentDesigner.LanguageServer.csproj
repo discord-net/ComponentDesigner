@@ -11,7 +11,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Discord.Net.ComponentDesigner.Parser\Discord.Net.ComponentDesigner.Parser.csproj" />
+        <ProjectReference Include="..\ComponentDesigner.Parser\ComponentDesigner.Parser.csproj" />
     </ItemGroup>
 
     <ItemGroup>

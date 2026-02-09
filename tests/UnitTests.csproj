@@ -9,6 +9,8 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="Discord.Net.Core" Version="3.18.0" />
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0"/>
         <PackageReference Include="coverlet.collector" Version="6.0.0"/>
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0"/>
         <PackageReference Include="Verify.SourceGenerators" Version="2.5.0" />
@@ -24,9 +26,14 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\src\ComponentDesigner.Graph\ComponentDesigner.Graph.csproj" />
+      <ProjectReference Include="..\src\ComponentDesigner.Parser\ComponentDesigner.Parser.csproj" />
       <ProjectReference Include="..\src\Discord.Net.ComponentDesigner.Generator\Discord.Net.ComponentDesigner.Generator.csproj" />
-      <ProjectReference Include="..\src\Discord.Net.ComponentDesigner.Parser\Discord.Net.ComponentDesigner.Parser.csproj" />
       <ProjectReference Include="..\src\Discord.Net.ComponentDesigner\Discord.Net.ComponentDesigner.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Mock\" />
     </ItemGroup>
 
 </Project>
