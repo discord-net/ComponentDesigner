@@ -14,13 +14,19 @@ public sealed class SelectMenuOptionComponentNode : ComponentNode
 
     public ComponentProperty Label { get; }
     public ComponentProperty Value { get; }
+    public ComponentProperty Description { get; }
+    public ComponentProperty Emoji { get; }
+    public ComponentProperty IsDefault { get; }
 
     public SelectMenuOptionComponentNode()
     {
         Properties =
         [
             Label = new("label"),
-            Value = new("value")
+            Value = new("value"),
+            Description = new("description", isOptional: true),
+            Emoji = new("emoji", isOptional: true),
+            IsDefault = new("default", isOptional: true, requiresValue: false)
         ];
     }
     

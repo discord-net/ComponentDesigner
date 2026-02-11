@@ -1,6 +1,8 @@
 ﻿using System.Text;
 using ComponentDesigner.Nodes;
+using ComponentDesigner.Nodes.TextControls;
 using ComponentDesigner.Parser;
+using ComponentDesigner.Util;
 
 namespace ComponentDesigner.CSharp;
 
@@ -27,7 +29,7 @@ public abstract class BaseCSharpRenderer : IComponentRenderer
         CancellationToken cancellationToken = default
     )
     {
-        var bag = DiagnosticBag.Get();
+        var bag = PooledDiagnosticBag.Get();
 
         using var _ = ObjectPool<StringBuilder>.GetScoped(out var parameters);
         parameters.Clear();
@@ -44,7 +46,7 @@ public abstract class BaseCSharpRenderer : IComponentRenderer
             {
                 if (parameter.IsOptional)
                 {
-                    bag.AddDiagnostics(
+                    bag.Add(
                         state.ElementIdentifierTextSpanOrBetter.Report(
                             Diagnostic.RequiredPropertyNotSpecified(functionalComponent, parameter)
                         )
@@ -64,7 +66,7 @@ public abstract class BaseCSharpRenderer : IComponentRenderer
                         cancellationToken
                     );
 
-                    bag.AddDiagnostics(result.Diagnostics);
+                    bag.Add(result.Diagnostics);
 
                     if (result.HasValue) AppendParameter(parameters, parameter.Name, result.Value.Source);
 
@@ -79,7 +81,7 @@ public abstract class BaseCSharpRenderer : IComponentRenderer
 
                     var result = generator.Render(context, attributeValue, cancellationToken: cancellationToken);
 
-                    bag.AddDiagnostics(result.Diagnostics);
+                    bag.Add(result.Diagnostics);
 
                     if (result.HasValue) AppendParameter(parameters, parameter.Name, result.Value);
 
@@ -96,7 +98,7 @@ public abstract class BaseCSharpRenderer : IComponentRenderer
             }
         }
 
-        if (bag.HasErrors) return new(bag.Use());
+        if (bag.HasErrors) return new(bag.ToCollection());
 
         if (parameters.Length > 0)
         {
@@ -141,7 +143,133 @@ public abstract class BaseCSharpRenderer : IComponentRenderer
             info.Symbol
         );
     }
-    
+
+    public virtual Result<RenderedComponent> RenderTextControls(
+        IRendererContext context,
+        TextControlGraph textControlGraph,
+        RendererTypingContext? typingContext = null,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var startInterpolation = textControlGraph.ContainsInterpolations
+            ? new string('{', textControlGraph.InterpolationDollarSignRequirement)
+            : string.Empty;
+
+        var endInterpolation = textControlGraph.ContainsInterpolations
+            ? new string('}', textControlGraph.InterpolationDollarSignRequirement)
+            : string.Empty;
+
+        var options = new TextControlOptions(
+            startInterpolation,
+            endInterpolation
+        );
+
+        return textControlGraph
+            .RootElements
+            .Select(x => x.Render(context, options, cancellationToken))
+            .FlattenAll()
+            .Map(Join)
+            .Map(control =>
+                ToCSharpString(
+                    control,
+                    textControlGraph.ContainsInterpolations,
+                    textControlGraph.InterpolationDollarSignRequirement
+                )
+            )
+            .Map(source => new RenderedComponent(source, context.CompilationProvider.String));
+
+        static Result<string> ToCSharpString(
+            TextControl control,
+            bool hasInterpolations,
+            int interpolationDollarCount
+        )
+        {
+            var quoteCount = (StringGenerator.GetSequentialQuoteCount(control.Value) + 1) switch
+            {
+                2 => 3,
+                var r => r
+            };
+
+            var isMultiline = control.ContainsNewLines || quoteCount > 1;
+            var isMultilineInterpolation = isMultiline && hasInterpolations;
+
+            if (isMultiline)
+                quoteCount = Math.Max(3, quoteCount);
+
+            var dollars = hasInterpolations
+                ? new string(
+                    '$',
+                    interpolationDollarCount
+                )
+                : string.Empty;
+
+            var quotes = new string('"', quoteCount);
+
+            var pad = isMultilineInterpolation
+                ? new string(' ', interpolationDollarCount)
+                : string.Empty;
+
+            using var _ = ObjectPool<StringBuilder>.GetScoped(out var sb);
+            sb.Clear();
+
+            // start on newline if it's a multi-line string
+            if (isMultiline) sb.AppendLine();
+
+            sb.Append(dollars).Append(quotes);
+
+            if (isMultiline) sb.AppendLine();
+
+            var value = control.ToString().NormalizeIndentation().Trim(['\r', '\n']);
+
+            if (isMultilineInterpolation)
+                value = value.Indent(interpolationDollarCount);
+
+            sb.Append(value);
+
+            if (isMultiline) sb.AppendLine();
+
+            if (isMultilineInterpolation) sb.Append(pad);
+            sb.Append(quotes);
+
+            return sb.ToString();
+        }
+
+        static TextControl Join(EquatableArray<TextControl> elements)
+        {
+            if (elements.Count is 0) return TextControl.Empty;
+
+            var sb = new StringBuilder();
+            var containsNewLines = false;
+
+            for (var i = 0; i < elements.Count; i++)
+            {
+                var render = elements[i];
+
+                if (i is not 0)
+                {
+                    sb.Append(render.LeadingTrivia);
+                    containsNewLines |= render.LeadingTrivia.ContainsNewlines;
+                }
+
+                sb.Append(render.Value);
+                containsNewLines |= render.ValueContainsNewLines;
+
+                if (i < elements.Count - 1)
+                {
+                    sb.Append(render.TrailingTrivia);
+                    containsNewLines |= render.TrailingTrivia.ContainsNewlines;
+                }
+            }
+
+            return new TextControl(
+                elements[0].LeadingTrivia,
+                elements[elements.Count - 1].TrailingTrivia,
+                sb.ToString(),
+                containsNewLines
+            );
+        }
+    }
+
     public abstract bool IsValidComponentType(
         IComponentContext context,
         ICSharpTypeSymbol? symbol,
@@ -151,6 +279,46 @@ public abstract class BaseCSharpRenderer : IComponentRenderer
     public abstract Result<string> RenderComponents(
         CXComponentGraph graph,
         ComponentEmitContext context,
+        CancellationToken cancellationToken = default
+    );
+
+    public abstract Result<RenderedComponent> RenderMediaGalleryItem(
+        IRendererContext context,
+        MediaGalleryItemComponentNode mediaGalleryItem,
+        ComponentState state,
+        RendererTypingContext? typingContext = null,
+        CancellationToken cancellationToken = default
+    );
+
+    public abstract Result<RenderedComponent> RenderMediaGallery(
+        IRendererContext context,
+        MediaGalleryComponentNode mediaGallery,
+        ComponentState state,
+        RendererTypingContext? typingContext = null,
+        CancellationToken cancellationToken = default
+    );
+
+    public abstract Result<RenderedComponent> RenderSelectMenu(
+        IRendererContext context,
+        SelectMenuComponentNode selectMenu,
+        SelectMenuState state,
+        RendererTypingContext? typingContext = null,
+        CancellationToken cancellationToken = default
+    );
+
+    public abstract Result<RenderedComponent> RenderSelectMenuOption(
+        IRendererContext context,
+        SelectMenuOptionComponentNode option,
+        ComponentState state,
+        RendererTypingContext? typingContext = null,
+        CancellationToken cancellationToken = default
+    );
+
+    public abstract Result<RenderedComponent> RenderSelectMenuDefaultValue(
+        IRendererContext context,
+        SelectMenuDefaultValueComponentNode option,
+        DefaultValueState state,
+        RendererTypingContext? typingContext = null,
         CancellationToken cancellationToken = default
     );
 

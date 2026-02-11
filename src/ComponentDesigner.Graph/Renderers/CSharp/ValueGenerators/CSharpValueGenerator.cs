@@ -6,6 +6,15 @@ namespace ComponentDesigner;
 
 public abstract class CSharpValueGenerator
 {
+    public static CSharpValueGenerator Boolean => BooleanGenerator.Get(allowNullable: false);
+    public static CSharpValueGenerator NullableBoolean => BooleanGenerator.Get(allowNullable: true);
+    public static CSharpValueGenerator Integer => IntegerGenerator.Get(allowNullable: false);
+    public static CSharpValueGenerator NullableInteger => IntegerGenerator.Get(allowNullable: true);
+    public static CSharpValueGenerator Snowflake => SnowflakeGenerator.Get(allowNullable: false);
+    public static CSharpValueGenerator NullableSnowflake => SnowflakeGenerator.Get(allowNullable: true);
+    public static CSharpValueGenerator String => StringGenerator.Get(StringNullMode.DisallowNull);
+    public static CSharpValueGenerator NullableString => StringGenerator.Get(StringNullMode.AllowNull);
+    
     public static CSharpValueGenerator FromSymbol(
         ICompilationProvider compilationProvider,
         ICSharpTypeSymbol symbol

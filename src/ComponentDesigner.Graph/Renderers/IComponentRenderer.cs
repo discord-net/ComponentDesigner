@@ -1,4 +1,5 @@
 ﻿using ComponentDesigner.Nodes;
+using ComponentDesigner.Nodes.TextControls;
 
 namespace ComponentDesigner;
 
@@ -9,6 +10,13 @@ public interface IComponentRenderer
     bool IsValidComponentType(
         IComponentContext context, 
         ICSharpTypeSymbol? symbol, 
+        CancellationToken cancellationToken = default
+    );
+
+    Result<RenderedComponent> RenderTextControls(
+        IRendererContext context,
+        TextControlGraph textControlGraph,
+        RendererTypingContext? typingContext = null,
         CancellationToken cancellationToken = default
     );
 

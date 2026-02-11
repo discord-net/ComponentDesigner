@@ -11,12 +11,14 @@ public class ActionRowComponentNode : ComponentNode
     public override IReadOnlyList<ComponentProperty> Properties { get; }
 
     public ComponentProperty Id { get; }
+    public ComponentProperty Components { get; }
 
     public ActionRowComponentNode()
     {
         Properties =
         [
-            Id = ComponentProperty.Id
+            Id = ComponentProperty.Id,
+            Components = new("components")
         ];
     }
 

@@ -20,6 +20,10 @@
       <ProjectReference Include="..\src\ComponentDesigner.Graph\ComponentDesigner.Graph.csproj" />
       <ProjectReference Include="..\src\ComponentDesigner.Parser\ComponentDesigner.Parser.csproj" />
     </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Discord.Net.Core" Version="3.18.0" />
+    </ItemGroup>
     
 <!--    <ItemGroup>-->
 <!--        <ProjectReference Include="..\src\Discord.Net.ComponentDesigner.Generator\Discord.Net.ComponentDesigner.Generator.csproj" OutputItemType="Analyzer" />-->

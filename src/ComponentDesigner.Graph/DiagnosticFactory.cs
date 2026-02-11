@@ -36,7 +36,8 @@ public static class DiagnosticFactory
         TypelessSelectMenu,
         ExpectedAConstantValue,
         SelectMenuDefaultValueMustBeInASelectMenu,
-        SelectMenuOptionMustBeInASelectMenu
+        SelectMenuOptionMustBeInASelectMenu,
+        ValueCouldNotBeValidateAndARuntimeValidationCheckWillOccur
     }
 
     private enum DiagnosticSource
@@ -88,6 +89,12 @@ public static class DiagnosticFactory
     {
         public Diagnostic Report(DiagnosticDescriptor descriptor)
             => new(node.Span, descriptor);
+    }
+
+    extension(DiagnosticDescriptor descriptor)
+    {
+        public Diagnostic At(CXTextSpan textSpan) => new(textSpan, descriptor);
+        public Diagnostic At(ICXNode cxNode) => new(cxNode.Span, descriptor);
     }
 
     extension(CXDiagnostic diagnostic)
@@ -263,6 +270,16 @@ public static class DiagnosticFactory
             $"The renderer '{renderer.Name}' doesn't provide an implementation for the component '{node.Name}'"
         );
 
+        public static DiagnosticDescriptor MissingImplementationForRenderer(
+            ComponentProperty property,
+            IComponentRenderer renderer
+        ) => Create(
+            DiagnosticSource.Renderer,
+            DiagnosticCode.MissingImplementationForRenderer,
+            DiagnosticSeverity.Error,
+            $"The renderer '{renderer.Name}' doesn't provide an implementation for the property '{property.Name}'"
+        );
+
         public static DiagnosticDescriptor UnknownTextControlElement(
             CXElement element
         ) => Create(
@@ -421,7 +438,7 @@ public static class DiagnosticFactory
                 DiagnosticSeverity.Error,
                 $"'{component.Name}' can only contain at most one child"
             );
-        
+
         public static DiagnosticDescriptor TypeNotFound(string qualifiedName)
             => Create(
                 DiagnosticSource.Graph,
@@ -429,7 +446,7 @@ public static class DiagnosticFactory
                 DiagnosticSeverity.Error,
                 $"'{qualifiedName}' couldn't be found in your compilation"
             );
-        
+
         public static DiagnosticDescriptor NotAValidEnumVariant(string enumName, string variant)
             => Create(
                 DiagnosticSource.Graph,
@@ -437,7 +454,7 @@ public static class DiagnosticFactory
                 DiagnosticSeverity.Error,
                 $"'{variant}' is not a valid enum member of '{enumName}'"
             );
-        
+
         public static DiagnosticDescriptor InvalidSnowflake(string text)
             => Create(
                 DiagnosticSource.Graph,
@@ -445,7 +462,7 @@ public static class DiagnosticFactory
                 DiagnosticSeverity.Error,
                 $"'{text}' is not a valid snowflake"
             );
-        
+
         public static DiagnosticDescriptor TypelessSelectMenu
             => Create(
                 DiagnosticSource.Graph,
@@ -453,7 +470,7 @@ public static class DiagnosticFactory
                 DiagnosticSeverity.Error,
                 $"Unknown select menu type (user, role, etc;), please specify the 'type' of the select menu"
             );
-        
+
         public static DiagnosticDescriptor ExpectedAConstantValue
             => Create(
                 DiagnosticSource.Graph,
@@ -461,7 +478,7 @@ public static class DiagnosticFactory
                 DiagnosticSeverity.Error,
                 $"A constant value is expected"
             );
-        
+
         public static DiagnosticDescriptor SelectMenuDefaultValueMustBeInASelectMenu
             => Create(
                 DiagnosticSource.Graph,
@@ -469,13 +486,24 @@ public static class DiagnosticFactory
                 DiagnosticSeverity.Error,
                 $"A select menu default value must be within a select menu"
             );
-        
+
         public static DiagnosticDescriptor SelectMenuOptionMustBeInASelectMenu
             => Create(
                 DiagnosticSource.Graph,
                 DiagnosticCode.SelectMenuOptionMustBeInASelectMenu,
                 DiagnosticSeverity.Error,
                 $"A select menu option must be within a select menu"
+            );
+
+        public static DiagnosticDescriptor ValueCouldNotBeValidateAndARuntimeValidationCheckWillOccur(
+            string expected,
+            string value,
+            string runtimeCheckMethod
+        ) => Create(
+                DiagnosticSource.Graph,
+                DiagnosticCode.ValueCouldNotBeValidateAndARuntimeValidationCheckWillOccur,
+                DiagnosticSeverity.Warning,
+                $"'{value}' couldn't be validated against '{expected}', runtime validation check will be performed with '{runtimeCheckMethod}'"
             );
     }
 }

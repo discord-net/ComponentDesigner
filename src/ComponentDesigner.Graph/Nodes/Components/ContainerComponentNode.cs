@@ -11,6 +11,7 @@ public sealed class ContainerComponentNode : ComponentNode
     public ComponentProperty Id { get; }
     public ComponentProperty AccentColor { get; }
     public ComponentProperty IsSpoiler { get; }
+    public ComponentProperty Components { get; }
 
     public ContainerComponentNode()
     {
@@ -26,7 +27,8 @@ public sealed class ContainerComponentNode : ComponentNode
                 name: "spoiler",
                 isOptional: true,
                 requiresValue: false
-            )
+            ),
+            Components = new("components")
         ];
     }
 

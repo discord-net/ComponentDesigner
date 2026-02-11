@@ -6,8 +6,7 @@ public enum DefaultValueKind
 {
     User,
     Role,
-    Channel,
-    Mentionable
+    Channel
 }
 
 public sealed record DefaultValueState(
@@ -23,7 +22,7 @@ public sealed class SelectMenuDefaultValueComponentNode : ComponentNode<DefaultV
 {
     public override string Name => "<default value>";
 
-    public override IReadOnlyList<string> Aliases { get; } = ["user", "role", "channel", "mentionable", "mention"];
+    public override IReadOnlyList<string> Aliases { get; } = ["user", "role", "channel"];
 
     public override IReadOnlyList<ComponentProperty> Properties { get; }
     
@@ -60,9 +59,6 @@ public sealed class SelectMenuDefaultValueComponentNode : ComponentNode<DefaultV
         
         if (element.Identifier.Equals("channel", StringComparison.InvariantCultureIgnoreCase))
             return DefaultValueKind.Channel;
-        
-        if (element.Identifier.StartsWith("mention", StringComparison.InvariantCultureIgnoreCase))
-            return DefaultValueKind.Mentionable;
 
         return element.IdentifierTextSpanOrElementTextSpan.Report(
             Diagnostic.NotAValidEnumVariant("DefaultValueKind", element.Identifier)

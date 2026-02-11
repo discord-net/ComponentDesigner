@@ -12,13 +12,15 @@ public sealed class SectionComponentNode : ComponentNode
 
     public ComponentProperty Id { get; }
     public ComponentProperty Accessory { get; }
+    public ComponentProperty Components { get; }
 
     public SectionComponentNode()
     {
         Properties =
         [
             Id = ComponentProperty.Id,
-            Accessory = new("accessory")
+            Accessory = new("accessory"),
+            Components = new("components")
         ];
     }
 

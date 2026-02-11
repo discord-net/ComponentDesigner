@@ -2,7 +2,7 @@
 using ComponentDesigner.Parser.Util;
 using ComponentDesigner.Util;
 
-namespace ComponentDesigner.Nodes.Text.Controls;
+namespace ComponentDesigner.Nodes.TextControls;
 
 public sealed class BoldTextControlElement(
     CXElement element,
@@ -11,7 +11,7 @@ public sealed class BoldTextControlElement(
 {
     public override string Name => "Bold";
 
-    protected override Result<TextControl> Render(
+    public override Result<TextControl> Render(
         IRendererContext context,
         TextControlOptions options,
         CancellationToken token = default

@@ -1,5 +1,5 @@
 ﻿using ComponentDesigner.Nodes;
-using ComponentDesigner.Nodes.Text;
+using ComponentDesigner.Nodes.TextControls;
 using ComponentDesigner.Parser;
 using ComponentDesigner.Util;
 
@@ -176,17 +176,25 @@ public sealed class CXComponentGraph : IEquatable<CXComponentGraph>
             {
                 if (context.Options.AllowAutoTextDisplays)
                 {
-                    var graphNode = new GraphNode(
+                    var autoTextDisplayGraphNode = new GraphNode(
                         AutoTextDisplayComponentNode.Instance
                     );
+                    
+                    autoTextDisplayGraphNode.State = new TextDisplayState(
+                        autoTextDisplayGraphNode,
+                        null
+                    );
 
-                    graphNode.State = new TextDisplayState(
-                        graphNode,
+                    var textControlGraphNode = new GraphNode(TextControlNode.Instance);
+
+                    textControlGraphNode.State = new TextControlState(
+                        textControlGraphNode,
                         null,
                         result
                     );
-
-                    results.Add(graphNode);
+                    
+                    autoTextDisplayGraphNode.Children.Add(textControlGraphNode);
+                    results.Add(autoTextDisplayGraphNode);
                 }
                 else
                 {

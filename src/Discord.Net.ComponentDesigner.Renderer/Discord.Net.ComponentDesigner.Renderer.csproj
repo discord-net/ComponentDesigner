@@ -5,11 +5,11 @@
         <LangVersion>latestmajor</LangVersion>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <RootNamespace>ComponentDesigner</RootNamespace>
+        <RootNamespace>Discord.ComponentDesigner</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\ComponentDesigner.Parser\ComponentDesigner.Parser.csproj" />
+      <ProjectReference Include="..\ComponentDesigner.Graph\ComponentDesigner.Graph.csproj" />
     </ItemGroup>
 
 </Project>

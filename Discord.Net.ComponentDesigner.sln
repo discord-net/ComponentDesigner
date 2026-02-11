@@ -26,6 +26,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Discord.Net", "Discord.Net"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ComponentDesigner.CSharp", "src\ComponentDesigner.CSharp\ComponentDesigner.CSharp.csproj", "{7785168F-57D7-4FF8-9E42-2E2C9E0D8583}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Discord.Net.ComponentDesigner.Renderer", "src\Discord.Net.ComponentDesigner.Renderer\Discord.Net.ComponentDesigner.Renderer.csproj", "{C5B1B427-EB96-47F3-A5A5-A3196BABDBA0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -68,6 +70,10 @@ Global
 		{7785168F-57D7-4FF8-9E42-2E2C9E0D8583}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7785168F-57D7-4FF8-9E42-2E2C9E0D8583}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7785168F-57D7-4FF8-9E42-2E2C9E0D8583}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C5B1B427-EB96-47F3-A5A5-A3196BABDBA0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C5B1B427-EB96-47F3-A5A5-A3196BABDBA0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C5B1B427-EB96-47F3-A5A5-A3196BABDBA0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C5B1B427-EB96-47F3-A5A5-A3196BABDBA0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{460851AC-1EFE-43D7-BCF1-396248CFB58D} = {96AB69A4-5452-4074-A31B-B467BCC1325C}
@@ -78,5 +84,6 @@ Global
 		{92D3E48B-039D-48FC-9B85-C5429202D16F} = {2CD05700-CAF2-4686-AA6E-B43B38337FC4}
 		{E5A1D032-F6EB-4066-80EB-D1E4B80CB11C} = {2CD05700-CAF2-4686-AA6E-B43B38337FC4}
 		{7785168F-57D7-4FF8-9E42-2E2C9E0D8583} = {C0F7B7F7-0182-4181-B3D3-EC97998D6382}
+		{C5B1B427-EB96-47F3-A5A5-A3196BABDBA0} = {2CD05700-CAF2-4686-AA6E-B43B38337FC4}
 	EndGlobalSection
 EndGlobal

@@ -8,7 +8,7 @@ public record ComponentState(
     ICXNode? CXNode
 )
 {
-    public CXTextSpan TextSpan
+    public virtual CXTextSpan TextSpan
     {
         get
         {
@@ -80,18 +80,18 @@ public record ComponentState(
     internal void SetPropertyValueToChildren(ComponentProperty property)
         => SetPropertyValueToChildren(
             property,
-            CXNode is CXElement element
-                ? element.Children.Span
-                : TextSpan,
             GraphNode.Children
         );
 
     internal void SetPropertyValueToChildren(
         ComponentProperty property,
-        CXTextSpan textSpan,
         params IReadOnlyList<GraphNode> children
     )
     {
+        var textSpan = children.Count > 0
+            ? CXTextSpan.FromBounds(children[0].State.TextSpan.Start, children[children.Count - 1].State.TextSpan.End)
+            : TextSpan;
+        
         _propertyValues ??= [];
         _propertyValues[property] = new ComponentPropertyValue.Children(property, textSpan, children);
     }

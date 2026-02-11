@@ -1,12 +1,11 @@
-﻿using ComponentDesigner.Nodes.Text;
+﻿using ComponentDesigner.Nodes.TextControls;
 using ComponentDesigner.Parser;
 
 namespace ComponentDesigner.Nodes;
 
 public sealed record TextDisplayState(
     GraphNode GraphNode,
-    ICXNode? CXNode,
-    TextControlElement? Content
+    ICXNode? CXNode
 ) : ComponentState(GraphNode, CXNode);
 
 public class TextDisplayComponentNode : ComponentNode<TextDisplayState>
@@ -49,62 +48,26 @@ public class TextDisplayComponentNode : ComponentNode<TextDisplayState>
         ComponentNodeInitializationContext context,
         IDiagnosticBag diagnostics,
         CancellationToken cancellationToken = default
-    ) => new TextDisplayState(
-        context.GraphNode,
-        context.CXNode,
-        context.CXNode is CXElement element
-            ? CreateTextControl(context.GraphContext, element, diagnostics, cancellationToken)
-            : null
-    );
-
-    private TextControlElement? CreateTextControl(
-        IGraphContext context,
-        CXElement element,
-        IDiagnosticBag diagnostics,
-        CancellationToken token
     )
     {
-        if (element.Children.Count is 0) return null;
+        if (context.CXNode is not CXElement element) return null;
 
-        using var enumerator = GraphNodeEnumerator.GetNext(element.Children).GetEnumerator();
-
-        if (!enumerator.MoveNext()) return null;
-
-        var textControlWasCreated = TextControlElement.TryCreate(
-            context,
-            enumerator,
-            diagnostics,
-            out var textControlElement,
-            out var hasMoreInEnumerator,
-            token
-        );
-
-        if (!textControlWasCreated)
+        var state = new TextDisplayState(context.GraphNode, element);
+        
+        if (element.Children.Count > 0)
         {
-            // all children are invalid
-            foreach (var child in element.Children)
-            {
-                diagnostics.Add(
-                    child.Report(
-                        Diagnostic.InvalidChildOfComponent(this, child)
-                    )
-                );
-            }
-        }
-        else if (hasMoreInEnumerator && enumerator.Current is not null)
-        {
-            do
-            {
-                diagnostics.Add(
-                    enumerator.Current.Report(
-                        Diagnostic.InvalidChildOfComponent(this, enumerator.Current)
-                    )
-                );
-            } while (enumerator.MoveNext());
+            context.Push(
+                TextControlNode.Instance,
+                cxNode: element.Children,
+                parent: context.GraphNode
+            );
+            
+            state.SetPropertyValueToChildren(Content);
         }
 
-        return textControlElement;
+        return state;
     }
+    
 
     public override Result<RenderedComponent> Emit(
         TextDisplayState state,

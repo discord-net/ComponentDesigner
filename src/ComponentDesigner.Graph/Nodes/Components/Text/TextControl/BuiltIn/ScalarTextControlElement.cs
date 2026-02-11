@@ -1,12 +1,12 @@
 ﻿using ComponentDesigner.Parser;
 
-namespace ComponentDesigner.Nodes.Text.Controls;
+namespace ComponentDesigner.Nodes.TextControls;
 
 public sealed class ScalarTextControlElement(CXToken token) : TextControlElement(token)
 {
     public override string Name => token.Kind.ToString();
 
-    protected override Result<TextControl> Render(
+    public override Result<TextControl> Render(
         IRendererContext context,
         TextControlOptions options,
         CancellationToken cancellationToken = default

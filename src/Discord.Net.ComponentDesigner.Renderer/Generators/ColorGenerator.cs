@@ -1,10 +1,10 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
+using ComponentDesigner;
 using ComponentDesigner.Parser;
-using ComponentDesigner.Parser.Util;
 using ComponentDesigner.Util;
 
-namespace ComponentDesigner.Renderers.DiscordNet;
+namespace Discord.ComponentDesigner;
 
 public sealed class ColorGenerator : CSharpValueGenerator
 {

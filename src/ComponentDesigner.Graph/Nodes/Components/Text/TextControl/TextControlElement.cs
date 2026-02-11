@@ -1,90 +1,69 @@
-﻿using System.Collections.Immutable;
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 using System.Text;
-using ComponentDesigner.Nodes.Text.Controls;
 using ComponentDesigner.Parser;
 
-namespace ComponentDesigner.Nodes.Text;
-
-public readonly record struct TextControl(
-    LexedCXTrivia LeadingTrivia,
-    LexedCXTrivia TrailingTrivia,
-    string Value,
-    bool ValueContainsNewLines
-)
-{
-    public bool ContainsNewLines
-        => ValueContainsNewLines || LeadingTrivia.ContainsNewlines || TrailingTrivia.ContainsNewlines;
-
-    public static readonly TextControl Empty = new(LexedCXTrivia.Empty, LexedCXTrivia.Empty, string.Empty, false);
-
-    public override string ToString()
-        => $"{LeadingTrivia}{Value}{TrailingTrivia}";
-}
-
-public readonly record struct TextControlOptions(
-    string StartInterpolationMarker,
-    string EndInterpolationMarker,
-    bool AsCSharpString
-)
-{
-    public static readonly TextControlOptions Default = new(string.Empty, string.Empty, false);
-}
+namespace ComponentDesigner.Nodes.TextControls;
 
 public abstract class TextControlElement(CXTextSpan textSpan, IReadOnlyList<TextControlElement>? children = null)
 {
-    public CXTextSpan TextSpan { get; } = textSpan;
+    public CXTextSpan TextSpan => textSpan;
 
     public abstract string Name { get; }
 
+    public virtual IReadOnlyList<TextControlElement>? Children { get; } = children;
+
     public virtual IReadOnlyList<Type>? AllowedChildren => null;
 
-    public IReadOnlyList<TextControlElement>? Children { get; } = children;
-
-    public TextControlElement(ICXNode node, IReadOnlyList<TextControlElement>? children = null)
+    protected TextControlElement(ICXNode node, IReadOnlyList<TextControlElement>? children = null) 
         : this(node.Span, children)
     {
     }
 
+    public abstract Result<TextControl> Render(
+        IRendererContext context,
+        TextControlOptions options,
+        CancellationToken cancellationToken = default
+    );
+
     public static bool TryCreate(
         IGraphContext context,
-        IEnumerator<ICXNode> nodes,
+        IEnumerator<ICXNode> enumerator,
         IDiagnosticBag bag,
-        [MaybeNullWhen(false)] out TextControlElement result,
-        out bool hasMore,
+        out TextControlGraph result,
+        out bool enumeratorHasMore,
         CancellationToken cancellationToken = default
     )
     {
-        hasMore = true;
-        
-        var elements = new List<TextControlElement>();
-        var tokens = ObjectPool<List<CXToken>>.Get();
-        tokens.Clear();
-        elements.Clear();
+        enumeratorHasMore = true;
+
+        var rootElements = new List<TextControlElement>();
+        using var _ = ObjectPool<List<CXToken>>.GetScoped(out var tokens);
 
         do
         {
-            if (!TryCreateNode(elements, context, nodes.Current, tokens, bag, cancellationToken, isRoot: true))
+            if (!TryAddNodes(context, rootElements, enumerator.Current, tokens, bag, cancellationToken, isRoot: true))
                 break;
-        } while (hasMore = nodes.MoveNext());
+        } while (enumeratorHasMore = enumerator.MoveNext());
 
-        if (elements.Count is 0)
+        if (rootElements.Count is 0)
         {
-            result = null;
+            result = default;
             return false;
         }
 
-        result = RootTextControlElement.Create(
-            tokens,
-            elements
-        );
+        CalculateInterpolationDetails(tokens, out bool hasInterpolations, out var interpolationDollarCount);
 
+        result = new(
+            rootElements,
+            hasInterpolations,
+            interpolationDollarCount
+        );
         return true;
 
-        static bool TryCreateNode(
-            List<TextControlElement> results,
+        static bool TryAddNodes(
             IGraphContext context,
-            ICXNode? node,
+            List<TextControlElement> results,
+            ICXNode? cxNode,
             List<CXToken> tokens,
             IDiagnosticBag bag,
             CancellationToken cancellationToken,
@@ -92,42 +71,42 @@ public abstract class TextControlElement(CXTextSpan textSpan, IReadOnlyList<Text
         )
         {
             var i = results.Count;
-            Create(results, context, node, tokens, bag, cancellationToken, isRoot);
+            AddNodes(context, results, cxNode, tokens, bag, cancellationToken, isRoot);
             return i != results.Count;
         }
 
-        static void Create(
-            List<TextControlElement> results,
+        static void AddNodes(
             IGraphContext context,
-            ICXNode? node,
+            List<TextControlElement> results,
+            ICXNode? cxNode,
             List<CXToken> tokens,
             IDiagnosticBag bag,
             CancellationToken cancellationToken,
             bool isRoot = false
         )
         {
-            if (node is null) return;
-            
-            switch (node)
+            switch (cxNode)
             {
+                case null: return;
+
                 case CXToken token:
                     results.Add(new ScalarTextControlElement(token));
                     tokens.Add(token);
-                    return;
+                    break;
 
                 case CXValue.Scalar scalar:
                     results.Add(new ScalarTextControlElement(scalar.Token));
                     tokens.Add(scalar.Token);
-                    return;
+                    break;
 
                 case CXValue.Interpolation interpolation:
                     results.Add(new ScalarTextControlElement(interpolation.Token));
                     tokens.Add(interpolation.Token);
-                    return;
+                    break;
 
-                case CXValue.Multipart multipart:
-                    // we shouldn't ever see a multi-part
-                    throw new InvalidOperationException("multi-parts not allowed in text-control");
+                case CXValue.Multipart:
+                    // should never occur, api surface expects an enumerator that flattens multipart nodes
+                    throw new InvalidOperationException("multipart values are not allowed");
 
                 case CXElement element:
                     var control = element.Identifier.ToLowerInvariant() switch
@@ -138,30 +117,16 @@ public abstract class TextControlElement(CXTextSpan textSpan, IReadOnlyList<Text
 
                     if (control is null)
                     {
-                        if (!isRoot)
-                        {
-                            bag.Add(
-                                element.Report(
-                                    Diagnostic.UnknownTextControlElement(element)
-                                )
-                            );
-                        }
+                        if (!isRoot) bag.Add(Diagnostic.UnknownTextControlElement(element).At(element));
 
                         return;
                     }
-                    
-                    results.Add(control);
-                    return;
-                default:
-                    if (!isRoot)
-                    {
-                        bag.Add(
-                            node.Report(
-                                Diagnostic.UnsupportedTextControlElement(node)
-                            )
-                        );
-                    }
 
+                    results.Add(control);
+                    break;
+
+                default:
+                    if (!isRoot) bag.Add(Diagnostic.UnsupportedTextControlElement(cxNode).At(cxNode));
                     return;
             }
 
@@ -169,29 +134,49 @@ public abstract class TextControlElement(CXTextSpan textSpan, IReadOnlyList<Text
             {
                 if (element.Children.Count is 0) return [];
 
-                var children = new List<TextControlElement>();
+                var results = new List<TextControlElement>();
 
-                foreach (var child in element.Children)
+                foreach (var child in GraphNodeEnumerator.GetNext(element.Children))
                 {
-                    if (!TryCreateNode(children, context, child, tokens, bag, cancellationToken))
+                    if (!TryAddNodes(context, results, child, tokens, bag, cancellationToken))
                         break;
                 }
 
-                return children;
+                return results;
+            }
+        }
+
+        static void CalculateInterpolationDetails(
+            List<CXToken> tokens,
+            out bool hasInterpolations,
+            out int interpolationDollarCount
+        )
+        {
+            hasInterpolations = false;
+            interpolationDollarCount = 0;
+
+            for (var i = 0; i < tokens.Count; i++)
+            {
+                var token = tokens[i];
+
+                switch (token.Kind)
+                {
+                    case CXTokenKind.Interpolation:
+                        hasInterpolations = true;
+                        continue;
+
+                    case CXTokenKind.Text:
+                        interpolationDollarCount = Math
+                            .Max(
+                                interpolationDollarCount,
+                                StringGenerator.GetInterpolationDollarRequirement(token.Value)
+                            );
+                        continue;
+                }
             }
         }
     }
-
-    public Result<string> RenderToCSharpString(IRendererContext context, CancellationToken token = default)
-        => Render(context, TextControlOptions.Default with { AsCSharpString = true }, token)
-            .Map(x => x.ToString());
-
-    protected abstract Result<TextControl> Render(
-        IRendererContext context,
-        TextControlOptions options,
-        CancellationToken token = default
-    );
-
+    
     protected Result<EquatableArray<TextControl>> RenderChildren(
         IRendererContext context,
         TextControlOptions options,
@@ -203,8 +188,7 @@ public abstract class TextControlElement(CXTextSpan textSpan, IReadOnlyList<Text
         var result = new TextControl[Children.Count];
         using var bag = PooledDiagnosticBag.Get();
         var anyFailed = false;
-
-
+        
         for (var i = 0; i < Children.Count; i++)
         {
             var childResult = Children[i].Render(context, options, token);

@@ -40,7 +40,7 @@ public readonly struct ComponentNodeInitializationContext
             GraphNode.Children.Add(node);
         }
     }
-
+    
     public void Push<T>(
         T component,
         ICXNode? cxNode = null,

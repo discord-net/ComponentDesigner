@@ -9,7 +9,7 @@ public sealed class FileComponentNode : ComponentNode
     public override IReadOnlyList<ComponentProperty> Properties { get; }
 
     public ComponentProperty Id { get; }
-    public ComponentProperty Url { get; }
+    public ComponentProperty Media { get; }
     public ComponentProperty IsSpoiler { get; }
 
     public FileComponentNode()
@@ -17,9 +17,9 @@ public sealed class FileComponentNode : ComponentNode
         Properties =
         [
             Id = ComponentProperty.Id,
-            Url = new(
-                "url",
-                aliases: ["media"]
+            Media = new(
+                "media",
+                aliases: ["url"]
             ),
             IsSpoiler = new(
                 "spoiler",
