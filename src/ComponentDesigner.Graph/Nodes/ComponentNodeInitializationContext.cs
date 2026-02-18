@@ -32,20 +32,72 @@ public readonly struct ComponentNodeInitializationContext
             cancellationToken
         );
     }
-    
-    public void Push(GraphNodeInitializationRequest request)
+
+    public GraphNode? Push(
+        GraphNodeInitializationRequest request,
+        CancellationToken cancellationToken = default
+    )
     {
-        if (CXComponentGraph.CreateFromInitializationRequest(request, GraphContext) is { } node)
+        if (CXComponentGraph.CreateFromInitializationRequest(request, GraphContext, cancellationToken) is { } node)
         {
-            GraphNode.Children.Add(node);
+            if (node.Parent is null) GraphNode.Children.Add(node);
+
+            return node;
         }
+
+        return null;
     }
-    
-    public void Push<T>(
+
+    public IReadOnlyList<GraphNode> PushAsChildren(
+        CXElement element,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var start = GraphNode.Children.Count;
+
+        CXComponentGraph.CreateElementNodes(
+            GraphNode.Children,
+            element,
+            GraphNode,
+            GraphContext,
+            cancellationToken
+        );
+
+        var end = GraphNode.Children.Count;
+
+        if (start == end) return [];
+
+        return [..GraphNode.Children.Skip(start).Take(end - start)];
+    }
+
+    public IReadOnlyList<GraphNode> PushAsChildren(
+        IReadOnlyList<ICXNode> syntaxNodes,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var start = GraphNode.Children.Count;
+
+        CXComponentGraph.CreateNodes(
+            GraphNode.Children,
+            syntaxNodes,
+            GraphNode,
+            GraphContext,
+            cancellationToken
+        );
+
+        var end = GraphNode.Children.Count;
+
+        if (start == end) return [];
+
+        return [..GraphNode.Children.Skip(start).Take(end - start)];
+    }
+
+    public GraphNode? Push<T>(
         T component,
         ICXNode? cxNode = null,
         IReadOnlyList<CXNode>? children = null,
-        GraphNode? parent = null
+        GraphNode? parent = null,
+        CancellationToken cancellationToken = default
     ) where T : IComponentNode
-        => Push(new(component, cxNode, parent, children));
+        => Push(new(component, cxNode, parent, children), cancellationToken);
 }

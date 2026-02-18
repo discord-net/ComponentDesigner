@@ -18,25 +18,25 @@ partial class Validators
         var contentProperty = state.GetPropertyValue(textDisplay.Content);
         
         // the property is exclusive with the states text control
-        if (contentProperty.IsSpecified && state.Content is not null)
-        {
-            bag.Add(
-                contentProperty.TextSpan.Report(
-                    Diagnostic.ChildSuppliedExclusivePropertyDuplicated(contentProperty.UsedName)
-                )
-            );
-            
-            return;
-        }
+        // if (contentProperty.IsSpecified && state.Content is not null)
+        // {
+        //     bag.Add(
+        //         contentProperty.TextSpan.Report(
+        //             Diagnostic.ChildSuppliedExclusivePropertyDuplicated(contentProperty.UsedName)
+        //         )
+        //     );
+        //     
+        //     return;
+        // }
         
-        if (!contentProperty.HasValue && state.Content is null)
-        {
-            bag.Add(
-                state.ElementIdentifierTextSpanOrBetter.Report(
-                    Diagnostic.RequiredPropertyNotSpecified(textDisplay, textDisplay.Content)
-                )
-            );
-            return;
-        }
+        // if (!contentProperty.HasValue && state.Content is null)
+        // {
+        //     bag.Add(
+        //         state.ElementIdentifierTextSpanOrBetter.Report(
+        //             Diagnostic.RequiredPropertyNotSpecified(textDisplay, textDisplay.Content)
+        //         )
+        //     );
+        //     return;
+        // }
     }
 }

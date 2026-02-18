@@ -6,6 +6,8 @@ public sealed class ContainerComponentNode : ComponentNode
 {
     public override string Name => "container";
 
+    public override bool IsParentOfOtherComponents => true;
+
     public override IReadOnlyList<ComponentProperty> Properties { get; }
 
     public ComponentProperty Id { get; }
@@ -30,6 +32,19 @@ public sealed class ContainerComponentNode : ComponentNode
             ),
             Components = new("components")
         ];
+    }
+
+    public override ComponentState? Initialize(
+        ComponentNodeInitializationContext context,
+        IDiagnosticBag diagnostics,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var state = base.Initialize(context, diagnostics, cancellationToken);
+        
+        state?.SetPropertyValueToChildren(Components);
+
+        return state;
     }
 
     public override Result<RenderedComponent> Emit(

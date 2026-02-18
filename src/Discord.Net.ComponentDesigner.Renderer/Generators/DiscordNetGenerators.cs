@@ -1,6 +1,6 @@
 ﻿using ComponentDesigner;
 
-namespace Discord.ComponentDesigner;
+namespace Discord;
 
 public static class DiscordNetGenerators
 {
@@ -19,6 +19,28 @@ public static class DiscordNetGenerators
             bool allowNullable = false
         ) => compilationProvider
             .SeparatorSpacingSize(textSpan, cancellationToken)
+            .Map(CSharpValueGenerator (symbol) =>
+                EnumGenerator.Get(symbol, renderAsSymbolReference: true, allowNullable)
+            );
+        
+        public static Result<CSharpValueGenerator> ButtonStyle(
+            ICompilationProvider compilationProvider,
+            CXTextSpan textSpan,
+            CancellationToken cancellationToken = default,
+            bool allowNullable = false
+        ) => compilationProvider
+            .ButtonStyle(textSpan, cancellationToken)
+            .Map(CSharpValueGenerator (symbol) =>
+                EnumGenerator.Get(symbol, renderAsSymbolReference: true, allowNullable)
+            );
+        
+        public static Result<CSharpValueGenerator> TextInputStyle(
+            ICompilationProvider compilationProvider,
+            CXTextSpan textSpan,
+            CancellationToken cancellationToken = default,
+            bool allowNullable = false
+        ) => compilationProvider
+            .TextInputStyle(textSpan, cancellationToken)
             .Map(CSharpValueGenerator (symbol) =>
                 EnumGenerator.Get(symbol, renderAsSymbolReference: true, allowNullable)
             );

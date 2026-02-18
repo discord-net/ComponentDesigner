@@ -1,7 +1,7 @@
 ﻿using ComponentDesigner;
 using ComponentDesigner.Nodes;
 
-namespace Discord.ComponentDesigner;
+namespace Discord;
 
 partial class DiscordNetRenderer
 {
@@ -39,6 +39,9 @@ partial class DiscordNetRenderer
         CancellationToken cancellationToken
     )
     {
+        // TODO: node or interpolation
+        
+        return string.Empty;
     }
 
     private static Result<string> RenderSelectMenuOptionProperty(
@@ -47,11 +50,13 @@ partial class DiscordNetRenderer
         CancellationToken cancellationToken
     )
     {
-        // TODO
+        // TODO: node or interpolation
+
+        return string.Empty;
     }
 
     private static string ToDiscordNetComponentTypeEnum(SelectMenuKind kind)
-        => $"Discord.ComponentType.{kind switch {
+        => $"global::Discord.ComponentType.{kind switch {
             SelectMenuKind.Channel => "ChannelSelect",
             SelectMenuKind.Mentionable => "MentionableSelect",
             SelectMenuKind.Role => "RoleSelect",

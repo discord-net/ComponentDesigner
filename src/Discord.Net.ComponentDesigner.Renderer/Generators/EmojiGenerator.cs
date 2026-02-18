@@ -3,7 +3,7 @@ using ComponentDesigner;
 using ComponentDesigner.Parser;
 using ComponentDesigner.Util;
 
-namespace Discord.ComponentDesigner;
+namespace Discord;
 
 public sealed class EmojiGenerator : CSharpValueGenerator
 {
@@ -23,7 +23,7 @@ public sealed class EmojiGenerator : CSharpValueGenerator
         CXToken token,
         CSharpValueGeneratorOptions options,
         CancellationToken cancellationToken = default
-    ) => FromText(context, token.Span, token.Value);
+    ) => FromText(context, token.TextSpan, token.Value);
 
     protected override Result<string> RenderInterpolation(
         IRendererContext context,
@@ -43,7 +43,7 @@ public sealed class EmojiGenerator : CSharpValueGenerator
                 return Diagnostic.NullValueNotAllowed.At(token);
             }
 
-            if (info.ConstantValue.Value is string str) return FromText(context, token.Span, str);
+            if (info.ConstantValue.Value is string str) return FromText(context, token.TextSpan, str);
         }
 
         return context.CompilationProvider
@@ -60,7 +60,7 @@ public sealed class EmojiGenerator : CSharpValueGenerator
                     return Result<string>.FromValue(context.GetReferenceToDesignerValue(info, emoteSymbol));
                 }
 
-                return Diagnostic.TypeMismatch(emoteSymbol, info.Symbol!).At(token.Span);
+                return Diagnostic.TypeMismatch(emoteSymbol, info.Symbol!).At(token.TextSpan);
             });
     }
 

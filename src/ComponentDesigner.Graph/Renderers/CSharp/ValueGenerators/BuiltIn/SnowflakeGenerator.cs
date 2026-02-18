@@ -65,7 +65,7 @@ public sealed class SnowflakeGenerator : CSharpValueGenerator
         CXToken token,
         CSharpValueGeneratorOptions options,
         CancellationToken cancellationToken = default
-    ) => FromText(token.Span, token.Value);
+    ) => FromText(token.TextSpan, token.Value);
 
     protected override Result<string> RenderMultipart(
         IRendererContext context,

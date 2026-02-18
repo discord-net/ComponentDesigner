@@ -77,7 +77,7 @@ public static partial class ASTFormatter
                 {
                     sb.Append(token.Kind.ToString().Orange())
                         .Append("(".Orange())
-                        .Append($"{token.Span.Start}..{token.Span.End}".Aqua());
+                        .Append($"{token.TextSpan.Start}..{token.TextSpan.End}".Aqua());
 
                     if (token.Flags is not CXTokenFlags.None)
                     {
@@ -140,7 +140,7 @@ public static partial class ASTFormatter
                             or nameof(CXElement.IsFragment)
                             or nameof(CXElement.Identifier)
                             or nameof(ICXNode.HasErrors)
-                            or nameof(ICXNode.FullSpan)
+                            or nameof(ICXNode.FullTextSpan)
                             or nameof(CXValue.Multipart.HasInterpolations)
                         )
                         {

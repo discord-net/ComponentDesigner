@@ -5,7 +5,7 @@ namespace ComponentDesigner;
 public readonly record struct CXTextSpan(
     int Start,
     int Length
-) : IComparable<CXTextSpan>
+) : IComparable<CXTextSpan>, ISourceLocatable
 {
     /// <summary>
     ///     End of the span.
@@ -156,4 +156,6 @@ public readonly record struct CXTextSpan(
 
         return Length - other.Length;
     }
+
+    CXTextSpan ISourceLocatable.TextSpan => this;
 }

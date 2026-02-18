@@ -7,17 +7,17 @@ namespace ComponentDesigner.Parser;
 /// <summary>
 ///     Represents any AST node within a syntax tree, including terminal nodes.
 /// </summary>
-public interface ICXNode : IEquatable<ICXNode>, ICloneable
+public interface ICXNode : IEquatable<ICXNode>, ICloneable, ISourceLocatable
 {
     /// <summary>
     ///     Gets the full span, including trivia, that this node was parsed from in the source.
     /// </summary>
-    CXTextSpan FullSpan { get; }
+    CXTextSpan FullTextSpan { get; }
     
     /// <summary>
     ///     Gets the span representing this node in the source.
     /// </summary>
-    CXTextSpan Span { get; }
+    new CXTextSpan TextSpan { get; }
 
     /// <summary>
     ///     Gets the full width in characters of this node.

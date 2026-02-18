@@ -89,7 +89,7 @@ public sealed record FunctionalState(
         => symbol
             .GetAttributes()
             .Any(x => x
-                .Type.Name is "CXChildrenAttribute"
+                .Type?.Name is "CXChildrenAttribute"
             );
 
     private int MakeSymbolDependencyKey()

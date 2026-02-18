@@ -5,65 +5,72 @@ namespace ComponentDesigner.CSharp;
 
 public sealed class CSharpTypeSymbol : ICSharpTypeSymbol, IEquatable<CSharpTypeSymbol>
 {
-    public string Namespace => _inner.ContainingNamespace.ToDisplayString();
+    public TypeKind TypeKind => (TypeKind)InnerSymbol.TypeKind;
+
+    public string Namespace => InnerSymbol.ContainingNamespace.ToDisplayString();
 
     public ICSharpTypeSymbol? BaseType
-        => _inner.BaseType is null ? null : _provider.GetTypeSymbol(_inner.BaseType);
+        => InnerSymbol.BaseType is null ? null : _provider.GetTypeSymbol(InnerSymbol.BaseType);
 
     [field: MaybeNull]
     public IReadOnlyList<ICSharpTypeSymbol> Interfaces
-        => field ??= [.._inner.Interfaces.Select(x => _provider.GetTypeSymbol(x))];
+        => field ??= [..InnerSymbol.Interfaces.Select(x => _provider.GetTypeSymbol(x))];
 
     [field: MaybeNull]
     public IReadOnlyList<ICSharpTypeSymbol> TypeArguments
         => field ??=
-            _inner is INamedTypeSymbol named
+            InnerSymbol is INamedTypeSymbol named
                 ? [..named.TypeArguments.Select(x => _provider.GetTypeSymbol(x))]
                 : [];
 
-    public bool IsGeneric => _inner is INamedTypeSymbol { IsGenericType: true };
+    public bool IsGeneric => InnerSymbol is INamedTypeSymbol { IsGenericType: true };
 
-    public bool IsBoundGeneric => IsGeneric && _inner is INamedTypeSymbol { IsUnboundGenericType: false };
+    public bool IsBoundGeneric => IsGeneric && InnerSymbol is INamedTypeSymbol { IsUnboundGenericType: false };
 
-    public bool IsValueType => _inner.IsValueType;
+    public bool IsValueType => InnerSymbol.IsValueType;
 
     [field: MaybeNull]
     public IReadOnlyList<ICSharpFieldSymbol> Fields
         => field ??=
         [
-            .._inner
+            ..InnerSymbol
                 .GetMembers()
                 .OfType<IFieldSymbol>()
                 .Select(x => _provider.GetFieldSymbol(this, x))
         ];
 
-    public ICSharpTypeSymbol? ConstructedFrom => _inner is INamedTypeSymbol named
+    public ICSharpTypeSymbol? ConstructedFrom => InnerSymbol is INamedTypeSymbol named
         ? _provider.GetTypeSymbol(named.ConstructedFrom)
         : null;
 
     public SymbolModifiers Modifiers { get; }
 
-    public string Name => _inner.Name;
+    public string Name => InnerSymbol.Name;
 
-    private readonly ITypeSymbol _inner;
+    public ITypeSymbol InnerSymbol { get; }
     private readonly CSharpCompilationProvider _provider;
 
     public CSharpTypeSymbol(CSharpCompilationProvider provider, ITypeSymbol inner)
     {
         _provider = provider;
-        _inner = inner;
+        InnerSymbol = inner;
 
         Modifiers = SymbolModifiers.From(inner);
     }
 
 
-    public string ToQualifiedName() => _inner.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+    public string ToQualifiedName() => InnerSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+
+    public override string ToString()
+        => InnerSymbol.ToDisplayString();
+
+    public IReadOnlyList<ICSharpAttributeData> GetAttributes()
+        => [..InnerSymbol.GetAttributes().Select(x => new CSharpAttributeData(_provider, x))];
 
     public bool Equals(CSharpTypeSymbol? symbol)
         => symbol is not null &&
-           _inner.Equals(symbol._inner, SymbolEqualityComparer.Default);
-
-
+           InnerSymbol.Equals(symbol.InnerSymbol, SymbolEqualityComparer.Default);
+    
     public bool Equals(ICSharpTypeSymbol? obj)
         => obj is CSharpTypeSymbol other && Equals(other);
 

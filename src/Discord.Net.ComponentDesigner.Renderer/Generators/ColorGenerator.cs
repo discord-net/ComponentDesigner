@@ -4,7 +4,7 @@ using ComponentDesigner;
 using ComponentDesigner.Parser;
 using ComponentDesigner.Util;
 
-namespace Discord.ComponentDesigner;
+namespace Discord;
 
 public sealed class ColorGenerator : CSharpValueGenerator
 {
@@ -31,7 +31,7 @@ public sealed class ColorGenerator : CSharpValueGenerator
     {
         if (info.ConstantValue.IsSpecified)
         {
-            if (info.ConstantValue.Value is string str) return FromText(context, token.Span, str);
+            if (info.ConstantValue.Value is string str) return FromText(context, token.TextSpan, str);
 
             if (
                 info.ConstantValue.Value?.GetType().IsNumeric is true &&
@@ -63,7 +63,7 @@ public sealed class ColorGenerator : CSharpValueGenerator
 
         return UseLibraryParseFunction(
             context,
-            token.Span,
+            token.TextSpan,
             context.GetReferenceToDesignerValue(info),
             valueIsNullable: info.Symbol.CanNullPatternMatch
         );
@@ -75,7 +75,7 @@ public sealed class ColorGenerator : CSharpValueGenerator
         CXToken token,
         CSharpValueGeneratorOptions options,
         CancellationToken cancellationToken = default
-    ) => FromText(context, token.Span, token.Value);
+    ) => FromText(context, token.TextSpan, token.Value);
 
     protected override Result<string> RenderMultipart(
         IRendererContext context,
@@ -85,14 +85,15 @@ public sealed class ColorGenerator : CSharpValueGenerator
         CancellationToken cancellationToken = default
     ) => UseLibraryParseFunction(
         context,
-        multipart.Span,
+        multipart.TextSpan,
         StringGenerator.ToCSharpString(multipart),
         valueIsNullable: false
     );
 
     private Result<string> FromText(IRendererContext context, CXTextSpan textSpan, string text)
     {
-        if (TryGetColorPreset(context, text, out var preset)) return preset;
+        if (TryGetColorPreset(context, text, out var preset)) 
+            return $"global::Discord.Color.{preset}";
 
         var hex = text;
 

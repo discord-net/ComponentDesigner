@@ -6,6 +6,8 @@ public static class CSharpTypeSymbolExtensions
 {
     extension(ICSharpTypeSymbol symbol)
     {
+        public bool IsEnum => symbol.TypeKind is TypeKind.Enum;
+        
         public IReadOnlyList<ICSharpTypeSymbol> AllInterfaces
         {
             get

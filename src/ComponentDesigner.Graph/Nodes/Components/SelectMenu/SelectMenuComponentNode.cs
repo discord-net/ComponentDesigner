@@ -73,6 +73,15 @@ public sealed class SelectMenuComponentNode : ComponentNode<SelectMenuState>
         ];
     }
 
+    public override void RegisterGraphNode(
+        ComponentGraphInitializationContext context,
+        CancellationToken cancellationToken = default
+    )
+    {
+        if (!AutoActionRowComponentNode.TryInsertActionRow(this, context))
+            base.RegisterGraphNode(context, cancellationToken);
+    }
+
     public override SelectMenuState? Initialize(
         ComponentNodeInitializationContext context,
         IDiagnosticBag diagnostics,
@@ -136,7 +145,7 @@ public sealed class SelectMenuComponentNode : ComponentNode<SelectMenuState>
             );
         }
 
-        if (!Enum.TryParse<SelectMenuKind>(literal.Tokens.ToValueString(), out var kind))
+        if (!Enum.TryParse<SelectMenuKind>(literal.Tokens.ToValueString(), ignoreCase: true, out var kind))
         {
             return typeAttribute.Value.Report(
                 Diagnostic.NotAValidEnumVariant(

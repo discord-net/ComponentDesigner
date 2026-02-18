@@ -14,7 +14,9 @@ public sealed class CSharpFieldSymbol : ICSharpFieldSymbol, IEquatable<CSharpFie
     [field: MaybeNull]
     public ICSharpTypeSymbol Type
         => field ??= _provider.GetTypeSymbol(_inner.Type);
-    
+
+    public Optional<object> ConstantValue => _inner.HasConstantValue ? new(_inner.ConstantValue) : default;
+
     private readonly CSharpCompilationProvider _provider;
     private readonly IFieldSymbol _inner;
 
@@ -27,7 +29,14 @@ public sealed class CSharpFieldSymbol : ICSharpFieldSymbol, IEquatable<CSharpFie
         Modifiers = SymbolModifiers.From(inner);
     }
 
-    public string ToQualifiedName() => _inner.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+    public string ToQualifiedName()
+        => $"{ContainingType.ToQualifiedName()}.{Name}";
+
+    public override string ToString()
+        => _inner.ToDisplayString();
+    
+    public IReadOnlyList<ICSharpAttributeData> GetAttributes()
+        => [.._inner.GetAttributes().Select(x => new CSharpAttributeData(_provider, x))];
 
     public bool Equals(CSharpFieldSymbol? other)
         => other is not null && _inner.Equals(other._inner, SymbolEqualityComparer.Default);

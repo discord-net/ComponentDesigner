@@ -14,5 +14,5 @@ public interface ICSharpSymbol : IEquatable<ICSharpSymbol>
 
 public interface ICSharpAttributeData : IEquatable<ICSharpAttributeData>
 {
-    ICSharpTypeSymbol Type { get; }
+    ICSharpTypeSymbol? Type { get; }
 }

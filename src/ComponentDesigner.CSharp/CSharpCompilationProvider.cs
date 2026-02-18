@@ -19,9 +19,9 @@ public sealed class CSharpCompilationProvider : ICompilationProvider
 
     public static CSharpCompilationProvider Get(Compilation compilation)
     {
-        if(!_cache.TryGetValue(compilation, out var provider))
+        if (!_cache.TryGetValue(compilation, out var provider))
             _cache.Add(compilation, provider = new(compilation));
-        
+
         return provider;
     }
 
@@ -42,10 +42,10 @@ public sealed class CSharpCompilationProvider : ICompilationProvider
     }
 
     [return: NotNullIfNotNull(nameof(symbol))]
-    public ICSharpTypeSymbol? GetTypeSymbol(ITypeSymbol? symbol)
+    public CSharpTypeSymbol? GetTypeSymbol(ITypeSymbol? symbol)
     {
         if (symbol is null) return null;
-        
+
         return GetSymbol(
             Hash.Combine(
                 typeof(ICSharpTypeSymbol),
@@ -55,7 +55,7 @@ public sealed class CSharpCompilationProvider : ICompilationProvider
             () => new CSharpTypeSymbol(this, symbol)
         );
     }
-    
+
     internal ICSharpFieldSymbol GetFieldSymbol(CSharpTypeSymbol containingType, IFieldSymbol symbol)
         => GetSymbol(
             Hash.Combine(
@@ -67,14 +67,101 @@ public sealed class CSharpCompilationProvider : ICompilationProvider
         );
 
 
-    public ICSharpTypeSymbol? GetTypeFromQualifiedName(string name)
+    public CSharpTypeSymbol? GetTypeFromQualifiedName(string name, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        var symbol = _inner.GetTypeByMetadataName(name);
+
+        if (symbol is not null) return GetTypeSymbol(symbol);
+
+        
+        return null;
     }
 
-    public bool HasImplicitConversionBetween(ICSharpTypeSymbol? from, ICSharpTypeSymbol? to,
-        CancellationToken cancellationToken = default)
+    public bool HasImplicitConversionBetween(
+        ICSharpTypeSymbol? from,
+        ICSharpTypeSymbol? to,
+        CancellationToken cancellationToken = default
+    ) => _inner.HasImplicitConversion(
+        GetTypeFromImplementation(from, cancellationToken),
+        GetTypeFromImplementation(to, cancellationToken)
+    );
+
+    public IReadOnlyList<ICSharpSymbol> LookupSymbols(
+        LocationInfo location,
+        string name,
+        ICSharpTypeSymbol? container = null,
+        CancellationToken cancellationToken = default
+    )
     {
-        throw new NotImplementedException();
+        var tree = FindSyntaxTree(location);
+
+        if (tree is null) return [];
+
+        return
+        [
+            .._inner
+                .GetSemanticModel(tree)
+                .LookupSymbols(
+                    location.TextSpan.Start,
+                    GetTypeFromImplementation(container, cancellationToken),
+                    name
+                )
+                .Select(ToCSharpSymbol)
+                .Where(x => x is not null)!
+        ];
     }
+
+    private ICSharpSymbol? ToCSharpSymbol(ISymbol symbol)
+    {
+        return symbol switch
+        {
+            ITypeSymbol typeSymbol => GetTypeSymbol(typeSymbol),
+            IFieldSymbol field => GetFieldSymbol(GetTypeSymbol(field.ContainingType), field),
+            _ => null
+        };
+    }
+
+    private SyntaxTree? FindSyntaxTree(LocationInfo locationInfo)
+    {
+        foreach (var tree in _inner.SyntaxTrees)
+        {
+            try
+            {
+                var lineSpan = tree.GetLineSpan(locationInfo.TextSpan.AsRoslynTextSpan);
+
+                if (
+                    locationInfo.LineSpan.Start.Line != lineSpan.StartLinePosition.Line ||
+                    locationInfo.LineSpan.Start.Character != lineSpan.StartLinePosition.Character ||
+                    locationInfo.LineSpan.End.Line != lineSpan.EndLinePosition.Line ||
+                    locationInfo.LineSpan.End.Character != lineSpan.EndLinePosition.Character
+                ) continue;
+            }
+            catch
+            {
+                continue;
+            }
+
+            if (tree.FilePath == locationInfo.FilePath) return tree;
+        }
+
+        return null;
+    }
+
+    private ITypeSymbol? GetTypeFromImplementation(
+        ICSharpTypeSymbol? symbol,
+        CancellationToken cancellationToken = default
+    )
+    {
+        if (symbol is null) return null;
+
+        if (symbol is CSharpTypeSymbol { InnerSymbol: { } innerSymbol })
+        {
+            return innerSymbol;
+        }
+
+        return GetTypeFromQualifiedName(symbol.ToString(), cancellationToken)?.InnerSymbol;
+    }
+
+    ICSharpTypeSymbol? ICompilationProvider.GetTypeFromQualifiedName(string name, CancellationToken cancellationToken)
+        => GetTypeFromQualifiedName(name, cancellationToken);
 }

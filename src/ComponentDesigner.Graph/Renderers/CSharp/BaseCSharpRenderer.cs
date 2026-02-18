@@ -58,7 +58,7 @@ public abstract class BaseCSharpRenderer : IComponentRenderer
 
             switch (parameterValue)
             {
-                case ComponentPropertyValue.AttributeElement attributeElement:
+                case ComponentPropertyValue.AttributeComponent attributeElement:
                 {
                     var result = context.RenderGraphNode(
                         attributeElement.GraphNode,
@@ -88,7 +88,7 @@ public abstract class BaseCSharpRenderer : IComponentRenderer
                     break;
                 }
 
-                case ComponentPropertyValue.Children children:
+                case ComponentPropertyValue.Component children:
                 {
                     // TODO: figure out collection conversion and builder conversion etc
                     break;
@@ -169,6 +169,11 @@ public abstract class BaseCSharpRenderer : IComponentRenderer
             .Select(x => x.Render(context, options, cancellationToken))
             .FlattenAll()
             .Map(Join)
+            .Map(x => x with
+            {
+                LeadingTrivia = x.LeadingTrivia.TrimLeadingSyntaxIndentation(),
+                TrailingTrivia = x.TrailingTrivia.TrimTrailingSyntaxIndentation()
+            })
             .Map(control =>
                 ToCSharpString(
                     control,

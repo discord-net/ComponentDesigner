@@ -114,9 +114,9 @@ public sealed class CXElement : CXNode
     {
         if (descriptor.Code is CXErrorCode.MissingElementClosingTag)
         {
-            var span = OpeningTag.Identifier?.Span ?? CXTextSpan.FromBounds(
-                OpeningTag.StartToken.Span.Start,
-                OpeningTag.EndToken.Span.End
+            var span = OpeningTag.Identifier?.TextSpan ?? CXTextSpan.FromBounds(
+                OpeningTag.StartToken.TextSpan.Start,
+                OpeningTag.EndToken.TextSpan.End
             );
 
             return new(descriptor, span);

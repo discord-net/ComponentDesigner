@@ -3,17 +3,33 @@ using ComponentDesigner;
 using ComponentDesigner.Nodes;
 using ComponentDesigner.Util;
 
-namespace Discord.ComponentDesigner;
+namespace Discord;
 
 partial class DiscordNetRenderer
 {
     private readonly struct PropertyRenderer
     {
+        private readonly string? _value;
         private readonly CSharpValueGenerator? _generator;
         private readonly Func<IRendererContext, ComponentPropertyValue, CancellationToken, Result<string>>? _callback;
 
+        private readonly Result<CSharpValueGenerator>? _generatorResult;
+
+        public PropertyRenderer(Result<CSharpValueGenerator> generator)
+        {
+            _generatorResult = generator;
+        }
+
         public PropertyRenderer(
-            Func<IRendererContext, ComponentPropertyValue, CancellationToken, Result<string>> callback)
+            string value
+        )
+        {
+            _value = value;
+        }
+
+        public PropertyRenderer(
+            Func<IRendererContext, ComponentPropertyValue, CancellationToken, Result<string>> callback
+        )
         {
             _callback = callback;
         }
@@ -29,18 +45,28 @@ partial class DiscordNetRenderer
             CancellationToken cancellationToken
         )
         {
+            if (_value is not null) return _value;
+
             if (_generator is not null) return _generator.Render(context, value, cancellationToken: cancellationToken);
 
             if (_callback is not null) return _callback(context, value, cancellationToken);
+
+            if (_generatorResult is not null)
+                return _generatorResult.Value
+                    .Map(x => x.Render(context, value, cancellationToken: cancellationToken));
 
             return default;
         }
 
         public static implicit operator PropertyRenderer(CSharpValueGenerator generator)
             => new(generator);
+
+        public static implicit operator PropertyRenderer(Result<CSharpValueGenerator> generator)
+            => new(generator);
+
         public static implicit operator PropertyRenderer(
             Func<IRendererContext, ComponentPropertyValue, CancellationToken, Result<string>> callback
-            ) => new(callback);
+        ) => new(callback);
     }
 
     private static Result<string> RenderAsSingleChildComponent(
@@ -49,48 +75,88 @@ partial class DiscordNetRenderer
         CancellationToken cancellationToken
     )
     {
-        if (value is not ComponentPropertyValue.Children { GraphNodes: {Count: 1} children }) return default;
+        if (value.GraphNode is not { } graphNode)
+        {
+            return Diagnostic
+                .InvalidPropertyValue(
+                    value,
+                    ComponentPropertyValueKind.Component
+                )
+                .At(value);
+        }
 
-        return context.RenderGraphNode(
-            children[0],
-            cancellationToken: cancellationToken
-        ).Map(x => x.Source);
+        return context
+            .RenderGraphNode(
+                graphNode,
+                cancellationToken: cancellationToken
+            )
+            .Map(x => x.Source);
     }
-    
+
     private static Result<string> RenderAsChildComponents(
         IRendererContext context,
         ComponentPropertyValue value,
         CancellationToken cancellationToken
+    ) => RenderAsChildComponents(context, value, cancellationToken, true);
+
+    private static Result<string> RenderAsChildComponents(
+        IRendererContext context,
+        ComponentPropertyValue value,
+        CancellationToken cancellationToken,
+        bool withinCollectionExpression
     )
     {
-        if (value is not ComponentPropertyValue.Children { GraphNodes: {} children }) return default;
+        var children = value switch
+        {
+            ComponentPropertyValue.Many many => many.Values
+                .OfType<ComponentPropertyValue.Component>()
+                .Select(x => x.GraphNode)
+                .ToArray(),
+            ComponentPropertyValue.Component component => [component.GraphNode],
+            _ => []
+        };
 
-        if (children.Count is 0) return "[]";
+        //if (value is not ComponentPropertyValue.Component { GraphNodes: { } children }) return default;
+
+        if (children.Length is 0) return withinCollectionExpression ? "[]" : string.Empty;
 
         var sb = new StringBuilder();
         using var bag = PooledDiagnosticBag.Get();
-        
+
         foreach (var child in children)
         {
             var result = context.RenderGraphNode(
                 child,
                 cancellationToken: cancellationToken
             );
-            
+
             bag.Add(result.Diagnostics);
-            
-            if(!result.HasValue) continue;
+
+            if (!result.HasValue) continue;
 
             if (sb.Length > 0) sb.AppendLine(",");
 
-            sb.Append("    ").Append(result.Value.Source.WithNewlinePadding(4));
+            var source = result.Value.Source;
+
+            if (withinCollectionExpression)
+            {
+                sb.Append("    ");
+                source = source.WithNewlinePadding(4);
+            }
+
+            sb.Append(source);
         }
 
-        if (sb.Length is 0) return new("[]", bag.ToCollection());
+        if (sb.Length is 0)
+            return new(withinCollectionExpression ? "[]" : string.Empty, bag.ToCollection());
 
-        sb.Insert(0, Environment.NewLine).AppendLine();
+        if (withinCollectionExpression)
+            sb.Insert(0, Environment.NewLine).AppendLine();
 
-        return new($"[{sb}]", bag.ToCollection());
+        return new(
+            withinCollectionExpression ? $"{Environment.NewLine}[{sb}]" : sb.ToString(),
+            bag.ToCollection()
+        );
     }
 
     private static Result<string> RenderPropertiesAsParameters(
@@ -99,7 +165,7 @@ partial class DiscordNetRenderer
         CancellationToken cancellationToken,
         params IEnumerable<(string Name, ComponentProperty Property, PropertyRenderer Renderer)> properties
     ) => RenderPropertiesAsParameters(context, state, cancellationToken, explicitParameters: null, properties);
-    
+
     private static Result<string> RenderPropertiesAsParameters(
         IRendererContext context,
         ComponentState state,
@@ -118,7 +184,7 @@ partial class DiscordNetRenderer
                 AppendProperty(sb, name, value);
             }
         }
-        
+
         foreach (var (name, property, generator) in properties)
         {
             var value = state.GetPropertyValue(property);
@@ -134,6 +200,8 @@ partial class DiscordNetRenderer
             AppendProperty(sb, name, render.Value);
         }
 
+        if (bag.HasErrors) return new(bag.ToCollection());
+
         if (sb.Length > 0)
             sb.Insert(0, Environment.NewLine).AppendLine();
 
@@ -142,12 +210,11 @@ partial class DiscordNetRenderer
         static void AppendProperty(StringBuilder builder, string name, string value)
         {
             if (builder.Length > 0) builder.AppendLine(",");
-            
+
             builder.Append("    ").Append(name).Append(": ").Append(value.WithNewlinePadding(4));
         }
-            
     }
-    
+
 
     private static bool ShouldOmit(ComponentPropertyValue propertyValue)
         => propertyValue.Property.IsSynthetic || propertyValue is { IsOptional: true, IsSpecified: false };

@@ -59,8 +59,8 @@ public sealed class SemanticTokensHandler : SemanticTokensHandlerBase
 
         foreach (var token in cx.Tokens)
         {
-            var startInfo = cx.Source.Lines.GetSourceLocation(token.Span.Start);
-            var endInfo = cx.Source.Lines.GetSourceLocation(token.Span.End);
+            var startInfo = cx.Source.Lines.GetSourceLocation(token.TextSpan.Start);
+            var endInfo = cx.Source.Lines.GetSourceLocation(token.TextSpan.End);
 
             var modifiers = token.Kind switch
             {

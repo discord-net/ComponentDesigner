@@ -4,6 +4,11 @@ namespace ComponentDesigner;
 
 partial class Validators
 {
+    public const int BUTTON_LABEL_MAX_LENGTH = 80;
+    public const int BUTTON_URL_MAX_LENGTH = 512;
+    public const int BUTTON_CUSTOM_ID_MIN_LENGTH = 1;
+    public const int BUTTON_CUSTOM_ID_MAX_LENGTH = 100;
+
     public static void ValidateButton(
         IComponentContext context,
         ButtonComponentNode button,
@@ -14,6 +19,20 @@ partial class Validators
         ValidateGenericComponent(button, state, bag);
 
         LabelIsNotDuplicatedInChildrenOfElement();
+
+        ValueValidators.StringRange(
+            context, state, button.Label, bag,
+            upper: BUTTON_LABEL_MAX_LENGTH
+        );
+        ValueValidators.StringRange(
+            context, state, button.CustomId, bag,
+            lower: BUTTON_CUSTOM_ID_MIN_LENGTH,
+            upper: BUTTON_CUSTOM_ID_MAX_LENGTH
+        );
+        ValueValidators.StringRange(
+            context, state, button.Url, bag,
+            upper: BUTTON_URL_MAX_LENGTH
+        );
 
         switch (state.InferredKind)
         {
@@ -49,7 +68,7 @@ partial class Validators
 
         void DisallowProperty(ComponentProperty property)
             => PropertyNotAllowed(
-                ButtonKind.Link,
+                state.InferredKind ?? ButtonKind.Default,
                 state.GetPropertyValue(property),
                 bag
             );

@@ -36,6 +36,12 @@ public sealed class ButtonComponentNode : ComponentNode<ButtonState>
 
     public override string Name => "button";
 
+    public override IReadOnlyList<string> Aliases { get; } =
+    [
+        "link-button",
+        "premium-button"
+    ];
+
     // label can be in children
     public override bool AllowChildrenInCX => true;
 
@@ -88,6 +94,15 @@ public sealed class ButtonComponentNode : ComponentNode<ButtonState>
         ];
     }
 
+    public override void RegisterGraphNode(
+        ComponentGraphInitializationContext context,
+        CancellationToken cancellationToken = default
+    )
+    {
+        if (!AutoActionRowComponentNode.TryInsertActionRow(this, context))
+            base.RegisterGraphNode(context, includeElementChildren: false, cancellationToken);
+    }
+
     public override ButtonState? Initialize(
         ComponentNodeInitializationContext context,
         IDiagnosticBag diagnostics,
@@ -98,18 +113,25 @@ public sealed class ButtonComponentNode : ComponentNode<ButtonState>
 
         var state = new ButtonState(context.GraphNode, element);
 
+        // label can be ingested from children
+        state.IngestChildrenAsScalarValueForProperty(Label);
+        
         return state with
         {
-            InferredKind = InferButtonKindFromUsage(context.GraphContext, state, diagnostics)
+            InferredKind = InferButtonKindFromUsage(context.GraphContext, element, state, diagnostics)
         };
     }
 
     private ButtonKind? InferButtonKindFromUsage(
         IComponentContext context,
+        CXElement element,
         ButtonState state,
         IDiagnosticBag diagnostics
     )
     {
+        if (element.Identifier is "premium-button") return ButtonKind.Premium;
+        if (element.Identifier is "link-button") return ButtonKind.Link;
+
         if (
             state.GetPropertyValue(Url).IsSpecified &&
             !state.GetPropertyValue(CustomId).IsSpecified &&

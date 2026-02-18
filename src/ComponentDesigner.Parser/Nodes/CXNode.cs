@@ -117,13 +117,13 @@ public abstract class CXNode : ICXNode
     }
 
     /// <inheritdoc/>
-    public CXTextSpan FullSpan => new(this.Offset, Width);
+    public CXTextSpan FullTextSpan => new(this.Offset, Width);
 
     /// <inheritdoc/>
-    public CXTextSpan Span
+    public CXTextSpan TextSpan
         => FirstTerminal is { } first && LastTerminal is { } last
-            ? CXTextSpan.FromBounds(first.Span.Start, last.Span.End)
-            : FullSpan;
+            ? CXTextSpan.FromBounds(first.TextSpan.Start, last.TextSpan.End)
+            : FullTextSpan;
     
     /// <inheritdoc/>
     public IReadOnlyList<ICXNode> Slots => _slots;
@@ -286,7 +286,7 @@ public abstract class CXNode : ICXNode
     }
 
     protected internal virtual CXDiagnostic CreateDiagnostic(CXDiagnosticDescriptor descriptor)
-        => new(descriptor, Span);
+        => new(descriptor, TextSpan);
 
     /// <inheritdoc/>
     public bool Equals(ICXNode? other)

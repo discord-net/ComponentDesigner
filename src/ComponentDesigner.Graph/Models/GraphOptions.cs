@@ -1,9 +1,9 @@
 ﻿namespace ComponentDesigner;
 
 public sealed record GraphOptions(
-    bool AllowAutoRows,
-    bool AllowAutoTextDisplays
+    bool AllowAutoRows = false,
+    bool AllowAutoTextDisplays = false
 )
 {
-    public static readonly GraphOptions Default = new(false, false);
+    public static readonly GraphOptions Default = new();
 }

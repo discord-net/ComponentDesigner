@@ -29,8 +29,9 @@ public static class SymbolModifierExtensions
             if (symbol.IsStatic) modifiers |= SymbolModifiers.Static;
 
             if (
-                symbol is IFieldSymbol { IsReadOnly: true }
-                or IPropertySymbol
+                (symbol is IFieldSymbol field && (field.IsConst || field.IsReadOnly))
+                ||
+                symbol is IPropertySymbol
                 {
                     SetMethod: null or
                     { DeclaredAccessibility: not Accessibility.Public and not Accessibility.Internal }

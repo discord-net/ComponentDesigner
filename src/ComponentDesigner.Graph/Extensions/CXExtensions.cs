@@ -89,6 +89,6 @@ public static class CXExtensions
     extension(CXElement element)
     {
         public CXTextSpan IdentifierTextSpanOrElementTextSpan
-            => element is { OpeningTag.Identifier: { } identifier } ? identifier.Span : element.Span;
+            => element is { OpeningTag.Identifier: { } identifier } ? identifier.TextSpan : element.TextSpan;
     }
 }

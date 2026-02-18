@@ -5,12 +5,12 @@ namespace ComponentDesigner;
 
 public sealed class EnumGenerator : CSharpValueGenerator
 {
-    private readonly ICSharpEnumSymbol _enumSymbol;
+    private readonly ICSharpTypeSymbol _enumSymbol;
     private readonly bool _renderAsSymbolReference;
     private readonly bool _allowNullable;
 
     private EnumGenerator(
-        ICSharpEnumSymbol enumSymbol,
+        ICSharpTypeSymbol enumSymbol,
         bool renderAsSymbolReference,
         bool allowNullable
     )
@@ -21,7 +21,7 @@ public sealed class EnumGenerator : CSharpValueGenerator
     }
 
     public static EnumGenerator Get(
-        ICSharpEnumSymbol symbol,
+        ICSharpTypeSymbol symbol,
         bool renderAsSymbolReference,
         bool allowNullable
     ) => WeakMemoize.Of(
@@ -37,7 +37,7 @@ public sealed class EnumGenerator : CSharpValueGenerator
         CXToken token,
         CSharpValueGeneratorOptions options,
         CancellationToken cancellationToken = default
-    ) => FromText(context, token.Span, token.Value, cancellationToken);
+    ) => FromText(context, token.TextSpan, token.Value, cancellationToken);
 
     protected override Result<string> RenderInterpolation(
         IRendererContext context,
@@ -60,7 +60,7 @@ public sealed class EnumGenerator : CSharpValueGenerator
             }
 
             if (info.ConstantValue.Value is string str)
-                return FromText(context, token.Span, str, cancellationToken);
+                return FromText(context, token.TextSpan, str, cancellationToken);
 
             // check for conversion of numbers
             if (
@@ -122,7 +122,11 @@ public sealed class EnumGenerator : CSharpValueGenerator
     )
     {
         var field = _enumSymbol
-            .EnumMembers
+            .Fields
+            .Where(x =>
+                x.Type.Equals(_enumSymbol) &&
+                x is { IsStatic: true, IsReadOnly: true, IsPublic: true } 
+            )
             .FirstOrDefault(x => x
                 .Name.Equals(text, StringComparison.InvariantCultureIgnoreCase)
             );

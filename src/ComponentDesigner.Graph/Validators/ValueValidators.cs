@@ -151,15 +151,15 @@ public static class ValueValidators
                         asString
                             ? Diagnostic.StringOutOfRange(
                                 property,
+                                target,
                                 lower,
-                                upper,
-                                target
+                                upper
                             )
                             : Diagnostic.IntegerOutOfRange(
                                 property,
+                                target,
                                 lower,
-                                upper,
-                                target
+                                upper
                             )
                     )
                 );

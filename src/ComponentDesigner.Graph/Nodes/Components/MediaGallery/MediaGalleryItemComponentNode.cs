@@ -14,7 +14,7 @@ public sealed class MediaGalleryItemComponentNode : ComponentNode
     {
         Properties =
         [
-            Media = new("media"),
+            Media = new("media", aliases: ["url"]),
             Description = new("description", isOptional: true),
             IsSpoiler = new("spoiler", isOptional: true, requiresValue: false)
         ];

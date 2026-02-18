@@ -4,8 +4,8 @@ using ComponentDesigner;
 using ComponentDesigner.CSharp;
 using ComponentDesigner.Nodes;
 using ComponentDesigner.Parser.Util;
-using ComponentDesigner.Renderers.DiscordNet;
 using ComponentDesigner.Util;
+using Discord;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -80,7 +80,7 @@ public abstract class BaseComponentTest(ITestOutputHelper output) : TestWithDiag
             target.CX,
             options ?? GraphOptions.Default,
             CSharpCompilationProvider.Get(compilation),
-            new DiscordNetComponentRenderer()
+            new DiscordNetRenderer()
         );
 
         var graph = CXComponentGraph.Create(graphParameters);
@@ -102,31 +102,48 @@ public abstract class BaseComponentTest(ITestOutputHelper output) : TestWithDiag
         var result = _graph.Emit(
             CSharpCompilationProvider.Get(_compilation)
         );
-        
+
         PushDiagnostics(result.Diagnostics);
 
         if (expected is not null)
         {
-            Assert.True(result.HasValue);
+            Assert.True(result.HasValue, "emit result should have a value");
             Assert.Equal(expected, result.Value);
+        }
+        else
+        {
+            Assert.False(result.HasValue, "emit result was not suppose to have a value");
         }
     }
 
     protected T Component<T>() where T : IComponentNode
         => Component<T>(out _);
-    
+
     protected T Component<T>(out GraphNode graphNode) where T : IComponentNode
+        => Component<T>(out graphNode, out _);
+
+    protected T Component<T>(out GraphNode graphNode, out ComponentState state)
+        where T : IComponentNode
+        => Component<T, ComponentState>(out graphNode, out state);
+
+    protected T Component<T, U>(out GraphNode graphNode, out U state)
+        where T : IComponentNode
+        where U : ComponentState
     {
         Assert.NotNull(_nodeEnumerator);
         Assert.True(_nodeEnumerator.MoveNext());
 
         graphNode = _nodeEnumerator.Current;
+
+        Assert.IsType<U>(graphNode.State, exactMatch: false);
         
+        state = (U)graphNode.State;
+
         Assert.IsType<T>(graphNode.Component);
 
         return (T)graphNode.Component;
     }
-    
+
     private IEnumerable<GraphNode> EnumerateNodes(GraphNode graphNode)
     {
         yield return graphNode;
@@ -143,7 +160,7 @@ public abstract class BaseComponentTest(ITestOutputHelper output) : TestWithDiag
     protected override void EOF()
     {
         Assert.NotNull(_nodeEnumerator);
-        Assert.False(_nodeEnumerator.MoveNext());
+        Assert.False(_nodeEnumerator.MoveNext(), "not all nodes were asserted");
         base.EOF();
     }
 
@@ -190,9 +207,9 @@ public abstract class BaseComponentTest(ITestOutputHelper output) : TestWithDiag
               {
                   public void {{testFuncName}}()
                   {
-                      {{pretext}}
+                      {{pretext?.WithNewlinePadding(8)}}
                       ComponentDesigner.cx(
-                          {{cxString.ToString().WithNewlinePadding(4)}}
+                          {{cxString.ToString().WithNewlinePadding(12)}}
                       );
                   }
                   {{additionalMethods?.WithNewlinePadding(4)}}

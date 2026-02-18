@@ -6,7 +6,7 @@ public readonly record struct GraphNodeInitializationRequest(
     IComponentNode Component,
     ICXNode? CXNode = null,
     GraphNode? Parent = null,
-    IReadOnlyList<CXNode>? Children = null
+    IReadOnlyList<ICXNode>? Children = null
 );
 
 public readonly struct ComponentGraphInitializationContext(
@@ -24,14 +24,20 @@ public readonly struct ComponentGraphInitializationContext(
 
     public void Push(GraphNodeInitializationRequest request)
     {
-        if (CXComponentGraph.CreateFromInitializationRequest(request, GraphInitializationContext) is { } node)
+        if (
+            CXComponentGraph.CreateFromInitializationRequest(request, GraphInitializationContext)
+            is { Parent: null } node
+        )
+        {
+            // only add to the current contexts results if the node is parentless
             results.Add(node);
+        }
     }
 
     public void Push<T>(
         T component,
         ICXNode? cxNode = null,
-        IReadOnlyList<CXNode>? children = null,
+        IReadOnlyList<ICXNode>? children = null,
         GraphNode? parent = null
     ) where T : IComponentNode
         => Push(new(component, cxNode, parent, children));

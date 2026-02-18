@@ -174,7 +174,7 @@ public sealed class CXBlender
         // we just took
         cursor = cursor with
         {
-            NewPosition = cursor.NewPosition + current.FullSpan.Length
+            NewPosition = cursor.NewPosition + current.FullTextSpan.Length
         };
 
         node = current;
@@ -272,7 +272,7 @@ public sealed class CXBlender
         if (node is null) return false;
 
         // zero-width nodes don't get reused
-        if (node.FullSpan.IsEmpty) return false;
+        if (node.FullTextSpan.IsEmpty) return false;
 
         // don't reuse the node if it intersects a change
         if (IntersectsChange(node, cursor)) return false;
@@ -296,7 +296,7 @@ public sealed class CXBlender
     {
         if (cursor.Changes.IsEmpty) return false;
         
-        return node.FullSpan.IntersectsWith(cursor.Changes.Peek().Span);
+        return node.FullTextSpan.IntersectsWith(cursor.Changes.Peek().Span);
     }
 
     /// <summary>
@@ -315,8 +315,8 @@ public sealed class CXBlender
         // update the cursor with the tokens full width.
         cursor = cursor with
         {
-            NewPosition = cursor.NewPosition + token.FullSpan.Length,
-            ChangeDelta = cursor.ChangeDelta - token.FullSpan.Length
+            NewPosition = cursor.NewPosition + token.FullTextSpan.Length,
+            ChangeDelta = cursor.ChangeDelta - token.FullTextSpan.Length
         };
         
         // skip past any changes in the cursor that we've read over.
@@ -343,7 +343,7 @@ public sealed class CXBlender
         // update the cursors change delta (not position) based on the tokens span
         cursor = cursor with
         {
-            ChangeDelta = cursor.ChangeDelta + current.FullSpan.Length
+            ChangeDelta = cursor.ChangeDelta + current.FullTextSpan.Length
         };
 
         // point the cursor to the next sibling and skip past any changes we've read over
@@ -365,11 +365,11 @@ public sealed class CXBlender
         }
 
         // we can skip over a node if it exists in the change delta
-        if (current is CXNode && current.FullSpan.Length + cursor.ChangeDelta < 0)
+        if (current is CXNode && current.FullTextSpan.Length + cursor.ChangeDelta < 0)
         {
             cursor = cursor with
             {
-                ChangeDelta = cursor.ChangeDelta + current.FullSpan.Length
+                ChangeDelta = cursor.ChangeDelta + current.FullTextSpan.Length
             };
 
             // move to the nodes next sibling
@@ -394,7 +394,7 @@ public sealed class CXBlender
 
         while (
             !cursor.Changes.IsEmpty &&
-            node.FullSpan.Start >= cursor.Changes.Peek().Span.End
+            node.FullTextSpan.Start >= cursor.Changes.Peek().Span.End
         )
         {
             var change = cursor.Changes.Peek();

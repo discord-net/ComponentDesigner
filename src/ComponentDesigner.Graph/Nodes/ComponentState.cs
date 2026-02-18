@@ -6,7 +6,7 @@ namespace ComponentDesigner.Nodes;
 public record ComponentState(
     GraphNode GraphNode,
     ICXNode? CXNode
-)
+) : ISourceLocatable
 {
     public virtual CXTextSpan TextSpan
     {
@@ -14,17 +14,32 @@ public record ComponentState(
         {
             if (_textSpan.HasValue) return _textSpan.Value;
 
-            var current = this;
+            if (CXNode is null)
+            {
+                if (Children.Count is not 0)
+                {
+                    return _textSpan ??= CXTextSpan.FromBounds(
+                        Children[0].State.TextSpan.Start,
+                        Children[Children.Count - 1].State.TextSpan.End
+                    );
+                }
 
-            while (current is not null && current.CXNode is null)
-                current = current.GraphNode?.Parent?.State;
+                var current = this;
 
-            return (_textSpan = current?.CXNode?.Span ?? default(CXTextSpan)).Value;
+                while (current is not null && current.CXNode is null)
+                    current = current.GraphNode?.Parent?.State;
+
+                return _textSpan ??= current?.TextSpan ?? default;
+            }
+            else
+            {
+                return _textSpan ??= CXNode.TextSpan;
+            }
         }
     }
 
     public CXTextSpan ElementIdentifierTextSpanOrBetter
-        => CXNode is CXElement { OpeningTag.Identifier: { } identifier } ? identifier.Span : TextSpan;
+        => CXNode is CXElement { OpeningTag.Identifier: { } identifier } ? identifier.TextSpan : TextSpan;
 
     public bool HasGraphChildren => GraphNode.HasChildren;
 
@@ -69,7 +84,7 @@ public record ComponentState(
 
             return _propertyValues[property] = graphNode is null
                 ? new ComponentPropertyValue.Missing(property, TextSpan)
-                : new ComponentPropertyValue.AttributeElement(property, attribute, graphNode);
+                : new ComponentPropertyValue.AttributeComponent(property, attribute, graphNode);
         }
 
         return _propertyValues[property] = new ComponentPropertyValue.AttributeValue(
@@ -88,12 +103,12 @@ public record ComponentState(
         params IReadOnlyList<GraphNode> children
     )
     {
-        var textSpan = children.Count > 0
-            ? CXTextSpan.FromBounds(children[0].State.TextSpan.Start, children[children.Count - 1].State.TextSpan.End)
-            : TextSpan;
-        
         _propertyValues ??= [];
-        _propertyValues[property] = new ComponentPropertyValue.Children(property, textSpan, children);
+
+        _propertyValues[property] = new ComponentPropertyValue.Many(
+            property,
+            [..children.Select(x => new ComponentPropertyValue.Component(property, x))]
+        );
     }
 
     internal void SetPropertyValueToChild(
@@ -102,7 +117,7 @@ public record ComponentState(
     )
     {
         _propertyValues ??= [];
-        _propertyValues[property] = new ComponentPropertyValue.Children(property, child.State.TextSpan, [child]);
+        _propertyValues[property] = new ComponentPropertyValue.Component(property, child.State.TextSpan, child);
     }
 
     internal void SetPropertyValueToChild(
@@ -116,10 +131,9 @@ public record ComponentState(
         if (childGraphNode is null) return;
 
         _propertyValues ??= [];
-        _propertyValues[property] = new ComponentPropertyValue.Children(
+        _propertyValues[property] = new ComponentPropertyValue.Component(
             property,
-            childGraphNode.State.TextSpan,
-            [childGraphNode]
+            childGraphNode
         );
     }
 
@@ -127,6 +141,27 @@ public record ComponentState(
     {
         _propertyValues ??= [];
         _propertyValues[property] = new ComponentPropertyValue.SyntaxValue(property, value);
+    }
+
+    internal void SetPropertyValue(ComponentProperty property, ComponentPropertyValue value)
+    {
+        _propertyValues ??= [];
+        _propertyValues[property] = value;
+    }
+
+    internal void IngestChildrenAsScalarValueForProperty(
+        ComponentProperty property
+    )
+    {
+        if (CXNode is not CXElement { Children.Count: > 0 } element) return;
+
+        if (element.Children[0] is not CXValue value)
+        {
+            // TODO: maybe report diagnostic?
+            return;
+        }
+
+        SetPropertyValue(property, value);
     }
 
     public virtual bool Equals(ComponentState? other)

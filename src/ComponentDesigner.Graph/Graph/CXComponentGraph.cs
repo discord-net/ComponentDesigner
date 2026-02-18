@@ -95,13 +95,21 @@ public sealed class CXComponentGraph : IEquatable<CXComponentGraph>
     {
         var reader = new CXSourceReader(
             CXSourceText.From(parameters.CX.Syntax),
-            parameters.CX.Interpolations.Select(x => x.TextSpan).ToArray(),
+            parameters.CX.Interpolations.Select(NormalizeInterpolatedSpanToStartOfCX).ToArray(),
             parameters.CX.QuoteCount
         );
 
         var document = CXParser.Parse(reader, token);
 
         return Create(parameters, document, token);
+
+        CXTextSpan NormalizeInterpolatedSpanToStartOfCX(IInterpolationInfo info)
+        {
+            return new CXTextSpan(
+                info.TextSpan.Start - parameters.CX.Location.TextSpan.Start,
+                info.TextSpan.Length
+            );
+        }
     }
 
     public static CXComponentGraph Create(
@@ -150,7 +158,7 @@ public sealed class CXComponentGraph : IEquatable<CXComponentGraph>
 
     internal static void CreateNodes(
         IList<GraphNode> results,
-        IReadOnlyList<CXNode> nodes,
+        IReadOnlyList<ICXNode> nodes,
         GraphNode? parent,
         GraphInitializationContext context,
         CancellationToken token = default
@@ -179,7 +187,7 @@ public sealed class CXComponentGraph : IEquatable<CXComponentGraph>
                     var autoTextDisplayGraphNode = new GraphNode(
                         AutoTextDisplayComponentNode.Instance
                     );
-                    
+
                     autoTextDisplayGraphNode.State = new TextDisplayState(
                         autoTextDisplayGraphNode,
                         null
@@ -192,7 +200,7 @@ public sealed class CXComponentGraph : IEquatable<CXComponentGraph>
                         null,
                         result
                     );
-                    
+
                     autoTextDisplayGraphNode.Children.Add(textControlGraphNode);
                     results.Add(autoTextDisplayGraphNode);
                 }
@@ -259,7 +267,7 @@ public sealed class CXComponentGraph : IEquatable<CXComponentGraph>
         }
     }
 
-    private static void CreateInterpolationNodes(
+    internal static void CreateInterpolationNodes(
         IList<GraphNode> results,
         ICXNode cxNode,
         IInterpolationInfo info,
@@ -294,7 +302,7 @@ public sealed class CXComponentGraph : IEquatable<CXComponentGraph>
         results.Add(graphNode);
     }
 
-    private static void CreateElementNodes(
+    internal static void CreateElementNodes(
         IList<GraphNode> results,
         CXElement element,
         GraphNode? parent,
@@ -349,7 +357,7 @@ public sealed class CXComponentGraph : IEquatable<CXComponentGraph>
     public static GraphNode? CreateFromInitializationRequest(
         GraphNodeInitializationRequest request,
         GraphInitializationContext context,
-        CancellationToken token = default
+        CancellationToken cancellationToken = default
     )
     {
         var node = new GraphNode(
@@ -357,13 +365,15 @@ public sealed class CXComponentGraph : IEquatable<CXComponentGraph>
             parent: request.Parent
         );
 
+        request.Parent?.Children.Add(node);
+
         var initContext = new ComponentNodeInitializationContext(
             request.CXNode,
             node,
             context
         );
 
-        var state = node.Component.Initialize(initContext, context.Diagnostics);
+        var state = node.Component.Initialize(initContext, context.Diagnostics, cancellationToken);
 
         if (state is null) return null;
 
@@ -375,13 +385,13 @@ public sealed class CXComponentGraph : IEquatable<CXComponentGraph>
             {
                 if (attribute.Value is not CXValue.Element nestedElement) continue;
 
-                CreateNodes(node.Attributes, nestedElement.Value, node, context, token);
+                CreateNodes(node.Attributes, nestedElement.Value, node, context, cancellationToken);
             }
         }
 
         if (request.Children?.Count > 0)
         {
-            CreateNodes(node.Children, request.Children, node, context, token);
+            CreateNodes(node.Children, request.Children, node, context, cancellationToken);
         }
 
         return node;

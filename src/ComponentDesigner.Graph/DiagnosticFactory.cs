@@ -22,6 +22,7 @@ public static class DiagnosticFactory
         UnknownTextControlElement,
         UnsupportedTextControlElement,
         FeatureAutoTextDisplaysDisabled,
+        FeatureAutoActionRowsDisabled,
         ChildSuppliedExclusivePropertyDuplicated,
         UnknownPropertyOfComponent,
         ComponentRequiresAtLeastOneChild,
@@ -37,7 +38,12 @@ public static class DiagnosticFactory
         ExpectedAConstantValue,
         SelectMenuDefaultValueMustBeInASelectMenu,
         SelectMenuOptionMustBeInASelectMenu,
-        ValueCouldNotBeValidateAndARuntimeValidationCheckWillOccur
+        ValueCouldNotBeValidateAndARuntimeValidationCheckWillOccur,
+        TooManyChildren,
+        DuplicatePropertyValue,
+        InvalidPropertyValue,
+        InvalidAccessoryComponentOfSection,
+        InvalidChildComponentOfSection
     }
 
     private enum DiagnosticSource
@@ -79,22 +85,15 @@ public static class DiagnosticFactory
         message
     );
 
-    extension(CXTextSpan span)
+    extension<T>(T locatable) where T : ISourceLocatable
     {
         public Diagnostic Report(DiagnosticDescriptor descriptor)
-            => new(span, descriptor);
-    }
-
-    extension(ICXNode node)
-    {
-        public Diagnostic Report(DiagnosticDescriptor descriptor)
-            => new(node.Span, descriptor);
+            => new(locatable.TextSpan, descriptor);
     }
 
     extension(DiagnosticDescriptor descriptor)
     {
-        public Diagnostic At(CXTextSpan textSpan) => new(textSpan, descriptor);
-        public Diagnostic At(ICXNode cxNode) => new(cxNode.Span, descriptor);
+        public Diagnostic At<T>(T locatable) where T : ISourceLocatable => new(locatable.TextSpan, descriptor);
     }
 
     extension(CXDiagnostic diagnostic)
@@ -149,9 +148,11 @@ public static class DiagnosticFactory
             DiagnosticSeverity.Error,
             $"'{(child switch {
                 CXElement element => element.Identifier,
+                CXToken token => token.Kind.ToString(),
                 _ => child.GetType().Name
             })}' is not a valid child of '{parent.Name}'"
         );
+
 
         public static DiagnosticDescriptor RequiredPropertyNotSpecified(
             IComponentNode component,
@@ -165,7 +166,32 @@ public static class DiagnosticFactory
 
         public static DiagnosticDescriptor MissingOneOfProperties(
             IComponentNode component,
-            ReadOnlySpan<ComponentPropertyValue> properties
+            params ReadOnlySpan<ComponentProperty> properties
+        )
+        {
+            using var _ = ObjectPool<StringBuilder>.GetScoped(out var sb);
+            sb.Clear();
+
+            for (var i = 0; i < properties.Length; i++)
+            {
+                if (i > 0) sb.Append(" or ");
+
+                var property = properties[i];
+
+                sb.Append('\'').Append(property.Name).Append('\'');
+            }
+
+            return Create(
+                DiagnosticSource.Graph,
+                DiagnosticCode.RequiredPropertyNotSpecified,
+                DiagnosticSeverity.Error,
+                $"'{component.Name}' requires {sb} to be specified"
+            );
+        }
+
+        public static DiagnosticDescriptor MissingOneOfProperties(
+            IComponentNode component,
+            params ReadOnlySpan<ComponentPropertyValue> properties
         )
         {
             using var _ = ObjectPool<StringBuilder>.GetScoped(out var sb);
@@ -202,9 +228,13 @@ public static class DiagnosticFactory
         ) => Diagnostic.ValueVariantCannotBeGenerated(value.GetType().Name);
 
         public static DiagnosticDescriptor ValueVariantCannotBeGenerated(
+            ComponentPropertyValue value
+        ) => Diagnostic.ValueVariantCannotBeGenerated(value.GetType().Name);
+
+        public static DiagnosticDescriptor ValueVariantCannotBeGenerated(
             string name
         ) => Create(
-            DiagnosticSource.Graph,
+            DiagnosticSource.Renderer,
             DiagnosticCode.ValueVariantCannotBeGenerated,
             DiagnosticSeverity.Error,
             $"'{name}' is not a valid value"
@@ -306,6 +336,14 @@ public static class DiagnosticFactory
             "Text related components must be wrapped in a 'text-display' component, you can enable auto text displays to automatically wrap text in a text-display"
         );
 
+        public static DiagnosticDescriptor FeatureAutoActionRowsDisabled => Create(
+            DiagnosticSource.Graph,
+            DiagnosticCode.FeatureAutoActionRowsDisabled,
+            DiagnosticSeverity.Error,
+            $"Buttons and Select Menus must be wrapped in an 'action-row' component",
+            "Buttons and Select Menus must be wrapped in an 'action-row' component, you can enable auto action rows to automatically wrap them in 'action-row' components"
+        );
+
         public static DiagnosticDescriptor ChildSuppliedExclusivePropertyDuplicated(string propertyName) => Create(
             DiagnosticSource.Graph,
             DiagnosticCode.ChildSuppliedExclusivePropertyDuplicated,
@@ -328,6 +366,13 @@ public static class DiagnosticFactory
             $"'{component.Name}' requires at least one child component"
         );
 
+        public static DiagnosticDescriptor ComponentRequiresAtLeastOneChild(CXElement element) => Create(
+            DiagnosticSource.Graph,
+            DiagnosticCode.ComponentRequiresAtLeastOneChild,
+            DiagnosticSeverity.Error,
+            $"'{element.Identifier}' requires at least one child component"
+        );
+
         public static DiagnosticDescriptor OutOfRange(
             ComponentProperty lower,
             ComponentProperty upper,
@@ -342,9 +387,9 @@ public static class DiagnosticFactory
 
         public static DiagnosticDescriptor IntegerOutOfRange(
             ComponentProperty property,
-            int? lower,
-            int? upper,
-            int value
+            int value,
+            int? lower = null,
+            int? upper = null
         ) => Create(
             DiagnosticSource.Graph,
             DiagnosticCode.OutOfRange,
@@ -354,9 +399,9 @@ public static class DiagnosticFactory
 
         public static DiagnosticDescriptor StringOutOfRange(
             ComponentProperty property,
-            int? lower,
-            int? upper,
-            int value
+            int value,
+            int? lower = null,
+            int? upper = null
         ) => Create(
             DiagnosticSource.Graph,
             DiagnosticCode.OutOfRange,
@@ -500,10 +545,147 @@ public static class DiagnosticFactory
             string value,
             string runtimeCheckMethod
         ) => Create(
+            DiagnosticSource.Graph,
+            DiagnosticCode.ValueCouldNotBeValidateAndARuntimeValidationCheckWillOccur,
+            DiagnosticSeverity.Warning,
+            $"'{value}' couldn't be validated against '{expected}', runtime validation check will be performed with '{runtimeCheckMethod}'"
+        );
+
+        public static DiagnosticDescriptor TooManyChildren(
+            IComponentNode node,
+            int maxChildren
+        ) => Create(
+            DiagnosticSource.Graph,
+            DiagnosticCode.TooManyChildren,
+            DiagnosticSeverity.Error,
+            $"'{node.Name}' can only contain at most {maxChildren} children"
+        );
+
+        public static DiagnosticDescriptor TooManyChildren(
+            CXElement element,
+            int maxChildren
+        ) => Create(
+            DiagnosticSource.Graph,
+            DiagnosticCode.TooManyChildren,
+            DiagnosticSeverity.Error,
+            $"'{element.Identifier}' can only contain at most {maxChildren} {(maxChildren is 1 ? "child" : "children")}"
+        );
+
+        public static DiagnosticDescriptor DuplicatePropertyValue(
+            ComponentProperty property
+        ) => Create(
+            DiagnosticSource.Graph,
+            DiagnosticCode.DuplicatePropertyValue,
+            DiagnosticSeverity.Error,
+            $"'{property.Name}' was already specified once"
+        );
+
+        public static DiagnosticDescriptor InvalidPropertyValue(
+            ComponentPropertyValue propertyValue,
+            params ReadOnlySpan<ComponentPropertyValueKind> expected
+        )
+        {
+            string message;
+
+            if (expected.Length is 0)
+            {
+                message = $"Unexpected property value for '{propertyValue.Name}': {propertyValue.Kind}";
+            }
+            else
+            {
+                string expectedString;
+
+                if (expected.Length is 1)
+                {
+                    expectedString = expected[0].ToString();
+                }
+                else 
+                {
+                    using var _ = ObjectPool<StringBuilder>.GetScoped(out var sb);
+
+                    for (var i = 0; i < expected.Length; i++)
+                    {
+                        sb.Append(expected.Length - 1 == i ? " or " : ", ");
+                        sb.Append('\'').Append(expected[i]).Append('\'');
+                    }
+
+                    expectedString = sb.ToString();
+                }
+
+                message =
+                    $"Expected {expectedString} as the property value for '{propertyValue.UsedName}', but got '{propertyValue.Kind}'";
+            }
+
+
+            return Create(
                 DiagnosticSource.Graph,
-                DiagnosticCode.ValueCouldNotBeValidateAndARuntimeValidationCheckWillOccur,
-                DiagnosticSeverity.Warning,
-                $"'{value}' couldn't be validated against '{expected}', runtime validation check will be performed with '{runtimeCheckMethod}'"
+                DiagnosticCode.InvalidPropertyValue,
+                DiagnosticSeverity.Error,
+                message
             );
+        }
+        
+        public static DiagnosticDescriptor InvalidPropertyValue(
+            ComponentPropertyValue propertyValue,
+            params ReadOnlySpan<string> expected
+        )
+        {
+            string message;
+
+            if (expected.Length is 0)
+            {
+                message = $"Unexpected property value for '{propertyValue.Name}': {propertyValue.Kind}";
+            }
+            else
+            {
+                string expectedString;
+
+                if (expected.Length is 1)
+                {
+                    expectedString = expected[0];
+                }
+                else 
+                {
+                    using var _ = ObjectPool<StringBuilder>.GetScoped(out var sb);
+
+                    for (var i = 0; i < expected.Length; i++)
+                    {
+                        sb.Append(expected.Length - 1 == i ? " or " : ", ");
+                        sb.Append('\'').Append(expected[i]).Append('\'');
+                    }
+
+                    expectedString = sb.ToString();
+                }
+
+                message =
+                    $"Expected {expectedString} as the property value for '{propertyValue.UsedName}', but got '{propertyValue.Kind}'";
+            }
+
+
+            return Create(
+                DiagnosticSource.Graph,
+                DiagnosticCode.InvalidPropertyValue,
+                DiagnosticSeverity.Error,
+                message
+            );
+        }
+        
+        public static DiagnosticDescriptor InvalidAccessoryComponentOfSection(
+            IComponentNode componentNode
+        ) => Create(
+            DiagnosticSource.Graph,
+            DiagnosticCode.InvalidAccessoryComponentOfSection,
+            DiagnosticSeverity.Error,
+            $"'{componentNode.Name}' is not a valid accessory of a section"
+        );
+        
+        public static DiagnosticDescriptor InvalidChildComponentOfSection(
+            IComponentNode componentNode
+        ) => Create(
+            DiagnosticSource.Graph,
+            DiagnosticCode.InvalidChildComponentOfSection,
+            DiagnosticSeverity.Error,
+            $"'{componentNode.Name}' is not a valid component of a section"
+        );
     }
 }

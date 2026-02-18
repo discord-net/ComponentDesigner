@@ -25,7 +25,7 @@ public static partial class Validators
         var allowsChildrenInCX = allowsChildrenInCXOverride ?? component.AllowChildrenInCX;
         var isParent = isParentOverride ?? component.IsParentOfOtherComponents;
 
-        if (!allowsChildrenInCX && !isParent && element.Children.Count > 0)
+        if (!allowsChildrenInCX && element.Children.Count > 0)
         {
             bag.Add(
                 element.Children.Report(
@@ -33,6 +33,23 @@ public static partial class Validators
                 )
             );
         }
+        else if (!isParent && state.Children.Count > 0)
+        {
+            bag.Add(
+                element.Children.Report(
+                    Diagnostic.ComponentDoesntAllowChildren(component)
+                )
+            );
+        }
+        
+        // if (!allowsChildrenInCX && !isParent && element.Children.Count > 0)
+        // {
+        //     bag.Add(
+        //         element.Children.Report(
+        //             Diagnostic.ComponentDoesntAllowChildren(component)
+        //         )
+        //     );
+        // }
     }
 
     public static void ReportDiagnosticsForUnknownProperties(

@@ -1,7 +1,7 @@
 ﻿using ComponentDesigner;
 using ComponentDesigner.Nodes;
 
-namespace Discord.ComponentDesigner;
+namespace Discord;
 
 partial class DiscordNetRenderer
 {
@@ -11,6 +11,7 @@ partial class DiscordNetRenderer
         CancellationToken cancellationToken = default
     )
     {
-        throw new NotImplementedException();
+        // TODO
+        return false;
     }
 }

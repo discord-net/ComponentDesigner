@@ -4,8 +4,6 @@ public sealed class FileComponentNode : ComponentNode
 {
     public override string Name => "file";
 
-    public override bool AllowChildrenInCX => true;
-
     public override IReadOnlyList<ComponentProperty> Properties { get; }
 
     public ComponentProperty Id { get; }

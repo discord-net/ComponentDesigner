@@ -36,7 +36,7 @@ public abstract class TestWithDiagnostics(ITestOutputHelper output) : IDisposabl
     protected Diagnostic AssertDiagnostic(
         DiagnosticDescriptor descriptor,
         ICXNode node
-    ) => AssertDiagnostic(descriptor, node.Span);
+    ) => AssertDiagnostic(descriptor, node.TextSpan);
     
     protected Diagnostic AssertDiagnostic(
         DiagnosticDescriptor descriptor,
@@ -72,7 +72,7 @@ public abstract class TestWithDiagnostics(ITestOutputHelper output) : IDisposabl
         Diagnostic diagnostic,
         DiagnosticDescriptor descriptor,
         ICXNode node
-    ) => AssertDiagnostic(diagnostic, descriptor, node.Span);
+    ) => AssertDiagnostic(diagnostic, descriptor, node.TextSpan);
     
     protected static Diagnostic AssertDiagnostic(
         Diagnostic diagnostic,

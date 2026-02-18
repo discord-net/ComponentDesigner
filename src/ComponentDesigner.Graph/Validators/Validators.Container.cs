@@ -33,10 +33,14 @@ partial class Validators
         IComponentNode child
     )
     {
-        // TODO: rest of components
         if (
             child is not IDynamicComponentNode
+            and not ActionRowComponentNode
             and not TextDisplayComponentNode
+            and not SectionComponentNode 
+            and not MediaGalleryComponentNode
+            and not SeparatorComponentNode
+            and not FileComponentNode
         )
         {
             bag.Add(

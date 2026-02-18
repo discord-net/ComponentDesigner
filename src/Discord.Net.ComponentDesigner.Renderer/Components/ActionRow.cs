@@ -1,7 +1,7 @@
 ﻿using ComponentDesigner;
 using ComponentDesigner.Nodes;
 
-namespace Discord.ComponentDesigner;
+namespace Discord;
 
 partial class DiscordNetRenderer
 {

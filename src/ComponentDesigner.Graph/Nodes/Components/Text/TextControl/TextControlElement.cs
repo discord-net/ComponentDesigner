@@ -15,7 +15,7 @@ public abstract class TextControlElement(CXTextSpan textSpan, IReadOnlyList<Text
     public virtual IReadOnlyList<Type>? AllowedChildren => null;
 
     protected TextControlElement(ICXNode node, IReadOnlyList<TextControlElement>? children = null) 
-        : this(node.Span, children)
+        : this(node.TextSpan, children)
     {
     }
 

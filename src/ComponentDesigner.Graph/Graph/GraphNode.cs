@@ -5,8 +5,9 @@ using ComponentDesigner.Util;
 
 namespace ComponentDesigner;
 
-public sealed class GraphNode : IEquatable<GraphNode>
+public sealed class GraphNode : IEquatable<GraphNode>, ISourceLocatable
 {
+    public CXTextSpan TextSpan => State.TextSpan;
     public GraphNode? Parent { get; private set; }
     public IComponentNode Component { get; }
 

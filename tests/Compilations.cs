@@ -14,6 +14,7 @@ public static class Compilations
             MetadataReference.CreateFromFile(typeof(IDiscordClient).Assembly.Location),
             MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
             MetadataReference.CreateFromFile(typeof(System.Linq.Enumerable).Assembly.Location),
+            MetadataReference.CreateFromFile(typeof(System.Uri).Assembly.Location),
             MetadataReference.CreateFromFile(
                 Path.Combine(
                     Path.GetDirectoryName(typeof(object).Assembly.Location)!,

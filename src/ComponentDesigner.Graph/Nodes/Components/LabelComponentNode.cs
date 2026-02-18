@@ -10,6 +10,7 @@ public sealed class LabelComponentNode : ComponentNode
 
     public override IReadOnlyList<ComponentProperty> Properties { get; }
 
+    public ComponentProperty Id { get; }
     public ComponentProperty Component { get; }
     public ComponentProperty Value { get; }
     public ComponentProperty Description { get; }
@@ -18,6 +19,7 @@ public sealed class LabelComponentNode : ComponentNode
     {
         Properties =
         [
+            Id = ComponentProperty.Id,
             Component = new(
                 "component"
             ),

@@ -33,6 +33,7 @@ public sealed class TextControlNode : ComponentNode<TextControlState>
             .GetEnumerator();
 
         if (
+            !enumerator.MoveNext() ||
             !TextControlElement.TryCreate(
                 context.GraphContext,
                 enumerator,

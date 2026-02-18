@@ -35,12 +35,18 @@ public abstract class ComponentNode<T> :
     public virtual void RegisterGraphNode(
         ComponentGraphInitializationContext context,
         CancellationToken cancellationToken = default
+    ) => RegisterGraphNode(context, includeElementChildren: true, cancellationToken);
+
+    protected void RegisterGraphNode(
+        ComponentGraphInitializationContext context,
+        bool includeElementChildren = true,
+        CancellationToken cancellationToken = default
     )
     {
         context.Push(
             this,
             cxNode: context.CXNode,
-            children: IsParentOfOtherComponents && context.CXNode is CXElement element
+            children: context.CXNode is CXElement element && includeElementChildren
                 ? element.Children
                 : null
         );

@@ -1,54 +1,37 @@
-﻿using ComponentDesigner;
+﻿using System.Text;
+using ComponentDesigner;
 using ComponentDesigner.CSharp;
 using ComponentDesigner.Nodes;
 
-namespace Discord.ComponentDesigner;
+namespace Discord;
 
 public sealed partial class DiscordNetRenderer : BaseCSharpRenderer
 {
     public override string Name => "Discord.Net";
-
-
+    
     public override Result<string> RenderComponents(
         CXComponentGraph graph,
         ComponentEmitContext context,
         CancellationToken cancellationToken = default
     )
     {
-        throw new NotImplementedException();
-    }
-    
+        var sb = new StringBuilder();
+        using var bag = PooledDiagnosticBag.Get(); 
+        
+        foreach (var node in graph.RootNodes)
+        {
+            var render = node.Emit(context, cancellationToken: cancellationToken);
+            
+            bag.Add(render.Diagnostics);
+            if(!render.HasValue) continue;
 
-   
+            if (sb.Length > 0) sb.AppendLine(",");
 
-    public override Result<RenderedComponent> RenderTextInput(IRendererContext context,
-        TextInputComponentNode textInput, ComponentState state,
-        RendererTypingContext? typingContext = null, CancellationToken cancellationToken = default)
-    {
-        throw new NotImplementedException();
-    }
-    
+            sb.Append(render.Value.Source);
+        }
 
-    public override Result<RenderedComponent> RenderLabel(IRendererContext context, LabelComponentNode label,
-        ComponentState state,
-        RendererTypingContext? typingContext = null, CancellationToken cancellationToken = default)
-    {
-        throw new NotImplementedException();
-    }
+        if (bag.HasErrors) return new(bag.ToCollection());
 
-    
-
-    public override Result<RenderedComponent> RenderFileUpload(IRendererContext context,
-        FileUploadComponentNode fileUpload, ComponentState state,
-        RendererTypingContext? typingContext = null, CancellationToken cancellationToken = default)
-    {
-        throw new NotImplementedException();
-    }
-
-    public override Result<RenderedComponent> RenderButton(IRendererContext context, ButtonComponentNode button,
-        ButtonState state,
-        RendererTypingContext? typingContext = null, CancellationToken cancellationToken = default)
-    {
-        throw new NotImplementedException();
+        return new(sb.ToString(), bag.ToCollection());
     }
 }

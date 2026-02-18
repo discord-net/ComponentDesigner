@@ -27,13 +27,7 @@ public sealed class SectionComponentNode : ComponentNode
     public override void RegisterGraphNode(
         ComponentGraphInitializationContext context,
         CancellationToken cancellationToken = default
-    )
-    {
-        context.Push(
-            this,
-            cxNode: context.CXNode
-        );
-    }
+    ) => base.RegisterGraphNode(context, includeElementChildren: false, cancellationToken);
 
     public override ComponentState? Initialize(
         ComponentNodeInitializationContext context,
@@ -46,23 +40,110 @@ public sealed class SectionComponentNode : ComponentNode
             base.Initialize(context, diagnostics, cancellationToken) is not { } state
         ) return null;
 
-        if (element.Children.Count > 1)
-        {
-            diagnostics.Add(
-                CXTextSpan.FromBounds(
-                    element.Children[1].Span.Start,
-                    element.Children[element.Children.Count - 1].Span.End
-                ).Report(
-                    Diagnostic.OnlyOneChildAllowed(this)
-                )
-            );
+        using var _ = ObjectPool<List<ICXNode>>.GetScoped(out var children);
+        children.Clear();
 
-            return null;
+        ComponentPropertyValue? accessory = null;
+
+        foreach (var child in element.Children)
+        {
+            if (child is CXElement { Identifier: "accessory" } accessoryElement)
+            {
+                ExtractChildAccessory(
+                    context,
+                    this,
+                    diagnostics,
+                    accessoryElement,
+                    ref accessory,
+                    cancellationToken
+                );
+                continue;
+            }
+
+            children.Add(child);
         }
 
-        if (element.Children.Count > 0) state.SetPropertyValueToChildren(Accessory);
+        if (children.Count > 0)
+        {
+            state.SetPropertyValueToChildren(
+                Components,
+                context.PushAsChildren(
+                    children,
+                    cancellationToken
+                )
+            );
+        }
+
+        if (accessory is not null)
+            state.SetPropertyValue(Accessory, accessory);
 
         return state;
+
+        static void ExtractChildAccessory(
+            ComponentNodeInitializationContext context,
+            SectionComponentNode self,
+            IDiagnosticBag bag,
+            CXElement accessoryElement,
+            ref ComponentPropertyValue? result,
+            CancellationToken cancellationToken
+        )
+        {
+            // do we already have an accessory?
+            if (result is not null)
+            {
+                bag.Add(
+                    Diagnostic
+                        .DuplicatePropertyValue(self.Accessory)
+                        .At(accessoryElement.IdentifierTextSpanOrElementTextSpan)
+                );
+                return;
+            }
+
+            if (accessoryElement.Children.Count is 0)
+            {
+                bag.Add(
+                    Diagnostic
+                        .ComponentRequiresAtLeastOneChild(accessoryElement)
+                        .At(accessoryElement)
+                );
+                return;
+            }
+
+            var accessoryNodes = context.PushAsChildren(
+                accessoryElement.Children,
+                cancellationToken
+            );
+
+            if (accessoryNodes.Count is 0)
+            {
+                // diagnostics should come from the component graph
+                return;
+            }
+
+            if (accessoryNodes.Count is not 1)
+            {
+                bag.Add(
+                    Diagnostic
+                        .TooManyChildren(
+                            accessoryElement,
+                            1
+                        )
+                        .At(
+                            CXTextSpan.FromBounds(
+                                accessoryNodes[1].State.TextSpan.Start,
+                                accessoryNodes[accessoryNodes.Count - 1].State.TextSpan.End
+                            )
+                        )
+                );
+
+                return;
+            }
+
+            result = new ComponentPropertyValue.Component(
+                self.Accessory,
+                accessoryNodes[0]
+            );
+        }
     }
 
     public override Result<RenderedComponent> Emit(

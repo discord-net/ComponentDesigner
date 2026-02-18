@@ -51,8 +51,8 @@ public sealed record CXToken(
         ? 0
         : LeadingTrivia.CharacterLength + RawValue.Length + TrailingTrivia.CharacterLength;
 
-    public CXTextSpan Span => new(this.Offset + LeadingTrivia.CharacterLength, IsMissing ? 0 : RawValue.Length);
-    public CXTextSpan FullSpan => new(this.Offset, Width);
+    public CXTextSpan TextSpan => new(this.Offset + LeadingTrivia.CharacterLength, IsMissing ? 0 : RawValue.Length);
+    public CXTextSpan FullTextSpan => new(this.Offset, Width);
 
     /// <inheritdoc/>
     public CXNode? Parent { get; set; }
@@ -74,7 +74,7 @@ public sealed record CXToken(
     /// <summary>
     ///     Gets whether this token has a zero character width.
     /// </summary>
-    public bool IsZeroWidth => Span.IsEmpty;
+    public bool IsZeroWidth => TextSpan.IsEmpty;
 
     /// <summary>
     ///     Gets whether this token is an <see cref="CXTokenKind.Invalid"/> kind.
@@ -190,7 +190,7 @@ public sealed record CXToken(
     object ICloneable.Clone() => this with { };
 
     CXDiagnostic ICXNode.CreateDiagnostic(CXDiagnosticDescriptor descriptor)
-        => new(descriptor, Span);
+        => new(descriptor, TextSpan);
 
     void ICXNode.ResetCachedState()
     {

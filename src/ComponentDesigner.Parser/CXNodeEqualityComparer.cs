@@ -57,7 +57,7 @@ public sealed class CXNodeEqualityComparer(
 
         if (
             (flags & SyntaxEqualityFlags.CompareLocation) != 0 &&
-            !x.Span.Equals(y.Span)
+            !x.TextSpan.Equals(y.TextSpan)
         ) return false;
 
         return (x, y) switch
@@ -83,7 +83,7 @@ public sealed class CXNodeEqualityComparer(
         var hash = 0;
 
         if ((flags & SyntaxEqualityFlags.CompareLocation) != 0)
-            hash = Hash.Combine(hash, obj.Span);
+            hash = Hash.Combine(hash, obj.TextSpan);
 
         if ((flags & SyntaxEqualityFlags.CompareTrivia) != 0)
             hash = Hash.Combine(hash, obj.LeadingTrivia, obj.TrailingTrivia);

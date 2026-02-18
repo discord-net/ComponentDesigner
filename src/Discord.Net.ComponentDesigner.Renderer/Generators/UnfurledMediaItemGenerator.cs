@@ -1,6 +1,6 @@
 ﻿using ComponentDesigner;
 
-namespace Discord.ComponentDesigner;
+namespace Discord;
 
 public sealed class UnfurledMediaItemGenerator : CSharpValueGenerator
 {

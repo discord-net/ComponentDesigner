@@ -28,7 +28,7 @@ public abstract class CSharpValueGenerator
         }
         else if(!TryGetCommonValueType(compilationProvider, symbol, false, out result))
         {
-            if (symbol.Equals(compilationProvider.String))
+            if (symbol.Equals(compilationProvider.String!))
                 result = StringGenerator.Get(StringNullMode.TreatNullAsEmptyString);
         }
         
@@ -41,11 +41,11 @@ public abstract class CSharpValueGenerator
             [MaybeNullWhen(false)] out CSharpValueGenerator result
         )
         {
-            if (symbol is ICSharpEnumSymbol enumSymbol)
-                result = EnumGenerator.Get(enumSymbol, renderAsSymbolReference: true, allowNullable: nullable);
-            else if (symbol.Equals(compilation.Int32))
+            if (symbol.IsEnum)
+                result = EnumGenerator.Get(symbol, renderAsSymbolReference: true, allowNullable: nullable);
+            else if (symbol.Equals(compilation.Int32!))
                 result = IntegerGenerator.Get(allowNullable: nullable);
-            else if (symbol.Equals(compilation.UInt64))
+            else if (symbol.Equals(compilation.UInt64!))
                 result = SnowflakeGenerator.Get(allowNullable: nullable);
             else result = null;
 
