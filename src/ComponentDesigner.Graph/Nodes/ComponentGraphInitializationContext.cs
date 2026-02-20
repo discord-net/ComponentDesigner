@@ -26,7 +26,7 @@ public readonly struct ComponentGraphInitializationContext(
     {
         if (
             CXComponentGraph.CreateFromInitializationRequest(request, GraphInitializationContext)
-            is { Parent: null } node
+            is {} node
         )
         {
             // only add to the current contexts results if the node is parentless

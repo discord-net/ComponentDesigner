@@ -3,33 +3,25 @@ using ComponentDesigner.Util;
 
 namespace ComponentDesigner.Nodes;
 
-public sealed class ComponentEmitContext :
+public sealed class ComponentEmitContext(CXComponentGraph graph) :
     IRendererContext,
     IEquatable<ComponentEmitContext>
 {
-    public ICompilationProvider CompilationProvider { get; }
-
     public ICXModel CX => _graph.CX;
 
     public GraphOptions Options => _graph.Options;
 
-    public IComponentRenderer Renderer => _graph.Renderer;
+    public IComponentImplementation Implementation => _graph.Implementation;
 
-    private readonly CXComponentGraph _graph;
+    private readonly CXComponentGraph _graph = graph;
 
     private Dictionary<string, int>? _varsCount;
-
-    public ComponentEmitContext(CXComponentGraph graph, ICompilationProvider compilationProvider)
-    {
-        CompilationProvider = compilationProvider;
-        _graph = graph;
-    }
 
     public Result<RenderedComponent> RenderGraphNode(
         GraphNode node,
         ComponentOptions options = default,
         CancellationToken cancellationToken = default
-    )  => node.Emit(this, options, cancellationToken);
+    ) => node.Emit(this, options, cancellationToken);
 
     public string CreateVariable(string hint = "local_")
     {
@@ -45,14 +37,14 @@ public sealed class ComponentEmitContext :
 
     public bool Equals(ComponentEmitContext? other)
         => other is not null &&
-           ReferenceEquals(Renderer, other.Renderer) &&
+           ReferenceEquals(Implementation, other.Implementation) &&
            _graph.Equals(other._graph);
 
     public override bool Equals(object? obj)
         => obj is ComponentEmitContext other && Equals(other);
 
     public override int GetHashCode()
-        => Hash.Combine(_graph, Renderer);
+        => Hash.Combine(_graph, Implementation);
 
     bool IEquatable<IComponentContext>.Equals(IComponentContext? other)
         => other is ComponentEmitContext ctx && Equals(ctx);

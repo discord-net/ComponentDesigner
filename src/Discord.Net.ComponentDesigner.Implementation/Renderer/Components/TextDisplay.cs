@@ -31,6 +31,17 @@ partial class DiscordNetRenderer
         CancellationToken cancellationToken
     )
     {
+        if (value is ComponentPropertyValue.AttributeValue attributeValue)
+        {
+            return CSharpValueGenerator
+                .String
+                .Render(
+                    context,
+                    attributeValue,
+                    cancellationToken: cancellationToken
+                );
+        }
+        
         if (value.GraphNode is null)
             return Diagnostic
                 .InvalidPropertyValue(value, ComponentPropertyValueKind.Component)

@@ -4,6 +4,8 @@ public sealed class MediaGalleryItemComponentNode : ComponentNode
 {
     public override string Name => "media-gallery-item";
 
+    public override IReadOnlyList<string> Aliases { get; } = ["media", "gallery-item", "item"];
+
     public override IReadOnlyList<ComponentProperty> Properties { get; }
     
     public ComponentProperty Media { get; }

@@ -27,10 +27,7 @@ public sealed class MediaGalleryComponentNode : ComponentNode
     public override void RegisterGraphNode(
         ComponentGraphInitializationContext context,
         CancellationToken cancellationToken = default
-    )
-    {
-        base.RegisterGraphNode(context, includeElementChildren: false, cancellationToken);
-    }
+    ) => base.RegisterGraphNode(context, includeElementChildren: false, cancellationToken);
 
     public override ComponentState? Initialize(
         ComponentNodeInitializationContext context,

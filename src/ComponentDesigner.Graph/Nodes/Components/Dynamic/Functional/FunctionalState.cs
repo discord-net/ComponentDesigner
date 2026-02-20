@@ -18,7 +18,7 @@ public sealed record FunctionalState(
     private int? _dependencyKey;
 
     public static Result<FunctionalState> FromSymbol(
-        IGraphContext context,
+        IComponentContext context,
         ICSharpMethodSymbol symbol,
         GraphNode graphNode,
         CXElement element,
@@ -26,7 +26,7 @@ public sealed record FunctionalState(
         CancellationToken cancellationToken
     )
     {
-        if (!context.Renderer.IsValidComponentType(context, symbol.ReturnType, cancellationToken))
+        if (!context.ComponentTypingProvider.IsValidComponentType(context, symbol.ReturnType, cancellationToken))
             return element.IdentifierTextSpanOrElementTextSpan.Report(
                 Diagnostic.FunctionalComponentDoesntReturnAComponentType(symbol)
             );

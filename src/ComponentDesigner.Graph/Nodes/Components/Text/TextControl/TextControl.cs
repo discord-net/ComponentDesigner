@@ -10,8 +10,18 @@ public readonly record struct TextControl(
 )
 {
     public static readonly TextControl Empty = new(LexedCXTrivia.Empty, LexedCXTrivia.Empty, string.Empty, false);
-    
-    public bool ContainsNewLines 
+
+    public TextControl(ICXNode node, string value, bool valueContainsNewLines)
+        : this(
+            node.LeadingTrivia,
+            node.TrailingTrivia,
+            value,
+            valueContainsNewLines
+        )
+    {
+    }
+
+    public bool ContainsNewLines
         => ValueContainsNewLines || LeadingTrivia.ContainsNewlines || TrailingTrivia.ContainsNewlines;
 
     public override string ToString()

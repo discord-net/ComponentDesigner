@@ -1,10 +1,14 @@
-﻿namespace ComponentDesigner.Parser;
+﻿using System;
+
+namespace ComponentDesigner.Parser;
 
 /// <summary>
 ///     An abstract record representing a non-specific form of syntax trivia.
 /// </summary>
 public abstract record CXTrivia
 {
+    public static readonly Token LineBreak = new(CXTriviaTokenKind.Newline, Environment.NewLine);
+    
     /// <summary>
     ///     Gets the length in characters of this trivia.
     /// </summary>

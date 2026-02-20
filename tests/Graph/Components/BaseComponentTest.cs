@@ -76,11 +76,12 @@ public abstract class BaseComponentTest(ITestOutputHelper output) : TestWithDiag
 
         Assert.NotNull(target);
 
+        var compilationProvider = CSharpCompilationProvider.Get(compilation);
+        
         var graphParameters = new GraphParameters(
+            new DiscordNetComponentDesignerImplementation(compilationProvider),
             target.CX,
-            options ?? GraphOptions.Default,
-            CSharpCompilationProvider.Get(compilation),
-            new DiscordNetRenderer()
+            options ?? GraphOptions.Default
         );
 
         var graph = CXComponentGraph.Create(graphParameters);
@@ -99,9 +100,7 @@ public abstract class BaseComponentTest(ITestOutputHelper output) : TestWithDiag
         Assert.NotNull(_compilation);
         AssertEmptyDiagnostics();
 
-        var result = _graph.Emit(
-            CSharpCompilationProvider.Get(_compilation)
-        );
+        var result = _graph.Emit();
 
         PushDiagnostics(result.Diagnostics);
 
@@ -131,7 +130,7 @@ public abstract class BaseComponentTest(ITestOutputHelper output) : TestWithDiag
         where U : ComponentState
     {
         Assert.NotNull(_nodeEnumerator);
-        Assert.True(_nodeEnumerator.MoveNext());
+        Assert.True(_nodeEnumerator.MoveNext(), "expecting another component in the graph");
 
         graphNode = _nodeEnumerator.Current;
 

@@ -12,6 +12,7 @@ public static class DiagnosticFactory
         UnsupportedSyntaxKindForGraphNode,
         InvalidChildOfComponent,
         RequiredPropertyNotSpecified,
+        RequiredPropertyValueNotSpecified,
         ComponentDoesntAllowChildren,
         ValueVariantCannotBeGenerated,
         UsingRuntimeValidation,
@@ -157,11 +158,25 @@ public static class DiagnosticFactory
         public static DiagnosticDescriptor RequiredPropertyNotSpecified(
             IComponentNode component,
             ComponentProperty property
+        ) => RequiredPropertyNotSpecified(component.Name, property.Name);
+        
+        public static DiagnosticDescriptor RequiredPropertyNotSpecified(
+            string elementName,
+            string propertyName
         ) => Create(
             DiagnosticSource.Graph,
             DiagnosticCode.RequiredPropertyNotSpecified,
             DiagnosticSeverity.Error,
-            $"'{component.Name}' requires the property '{property.Name}' to be specified"
+            $"'{elementName}' requires the property '{propertyName}' to be specified"
+        );
+        
+        public static DiagnosticDescriptor RequiredPropertyValueNotSpecified(
+            string propertyName
+        ) => Create(
+            DiagnosticSource.Graph,
+            DiagnosticCode.RequiredPropertyValueNotSpecified,
+            DiagnosticSeverity.Error,
+            $"'{propertyName}' requires a value"
         );
 
         public static DiagnosticDescriptor MissingOneOfProperties(
@@ -169,8 +184,7 @@ public static class DiagnosticFactory
             params ReadOnlySpan<ComponentProperty> properties
         )
         {
-            using var _ = ObjectPool<StringBuilder>.GetScoped(out var sb);
-            sb.Clear();
+            using var _ = StringBuilder.Pooled(out var sb);
 
             for (var i = 0; i < properties.Length; i++)
             {
@@ -194,8 +208,7 @@ public static class DiagnosticFactory
             params ReadOnlySpan<ComponentPropertyValue> properties
         )
         {
-            using var _ = ObjectPool<StringBuilder>.GetScoped(out var sb);
-            sb.Clear();
+            using var _ = StringBuilder.Pooled(out var sb);
 
             for (var i = 0; i < properties.Length; i++)
             {
@@ -213,14 +226,18 @@ public static class DiagnosticFactory
                 $"'{component.Name}' requires {sb} to be specified"
             );
         }
-
+        
         public static DiagnosticDescriptor ComponentDoesntAllowChildren(
             IComponentNode component
+        ) => ComponentDoesntAllowChildren(component.Name);
+        
+        public static DiagnosticDescriptor ComponentDoesntAllowChildren(
+            string name
         ) => Create(
             DiagnosticSource.Graph,
             DiagnosticCode.ComponentDoesntAllowChildren,
             DiagnosticSeverity.Error,
-            $"'{component.Name}' doesn't allow other components as children"
+            $"'{name}' doesn't allow other components as children"
         );
 
         public static DiagnosticDescriptor ValueVariantCannotBeGenerated(
@@ -292,22 +309,22 @@ public static class DiagnosticFactory
 
         public static DiagnosticDescriptor MissingImplementationForRenderer(
             IComponentNode node,
-            IComponentRenderer renderer
+            IComponentImplementation implementation
         ) => Create(
             DiagnosticSource.Renderer,
             DiagnosticCode.MissingImplementationForRenderer,
             DiagnosticSeverity.Error,
-            $"The renderer '{renderer.Name}' doesn't provide an implementation for the component '{node.Name}'"
+            $"The renderer for '{implementation.Name}' doesn't provide an implementation for the component '{node.Name}'"
         );
 
         public static DiagnosticDescriptor MissingImplementationForRenderer(
             ComponentProperty property,
-            IComponentRenderer renderer
+            IComponentImplementation implementation
         ) => Create(
             DiagnosticSource.Renderer,
             DiagnosticCode.MissingImplementationForRenderer,
             DiagnosticSeverity.Error,
-            $"The renderer '{renderer.Name}' doesn't provide an implementation for the property '{property.Name}'"
+            $"The renderer for '{implementation.Name}' doesn't provide an implementation for the property '{property.Name}'"
         );
 
         public static DiagnosticDescriptor UnknownTextControlElement(
@@ -573,11 +590,25 @@ public static class DiagnosticFactory
 
         public static DiagnosticDescriptor DuplicatePropertyValue(
             ComponentProperty property
+        ) => DuplicatePropertyValue(property.Name);
+        
+        public static DiagnosticDescriptor DuplicatePropertyValue(
+            string name
         ) => Create(
             DiagnosticSource.Graph,
             DiagnosticCode.DuplicatePropertyValue,
             DiagnosticSeverity.Error,
-            $"'{property.Name}' was already specified once"
+            $"'{name}' was already specified once"
+        );
+
+        public static DiagnosticDescriptor InvalidPropertyValue(
+            string property,
+            string valueKind
+        ) => Create(
+            DiagnosticSource.Graph,
+            DiagnosticCode.InvalidPropertyValue,
+            DiagnosticSeverity.Error,
+            $"'{valueKind}' is not a valid value for property '{property}'"
         );
 
         public static DiagnosticDescriptor InvalidPropertyValue(
@@ -601,7 +632,7 @@ public static class DiagnosticFactory
                 }
                 else 
                 {
-                    using var _ = ObjectPool<StringBuilder>.GetScoped(out var sb);
+                    using var _ = StringBuilder.Pooled(out var sb);
 
                     for (var i = 0; i < expected.Length; i++)
                     {
@@ -644,9 +675,9 @@ public static class DiagnosticFactory
                 {
                     expectedString = expected[0];
                 }
-                else 
+                else
                 {
-                    using var _ = ObjectPool<StringBuilder>.GetScoped(out var sb);
+                    using var _ = StringBuilder.Pooled(out var sb);
 
                     for (var i = 0; i < expected.Length; i++)
                     {

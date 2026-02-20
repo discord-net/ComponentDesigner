@@ -16,6 +16,8 @@ public class TextDisplayComponentNode : ComponentNode<TextDisplayState>
 
     public override bool AllowChildrenInCX => true;
 
+    public override bool IsParentOfOtherComponents => true;
+
     public override IReadOnlyList<ComponentProperty> Properties { get; }
 
     public ComponentProperty Id { get; }
@@ -36,13 +38,7 @@ public class TextDisplayComponentNode : ComponentNode<TextDisplayState>
     public override void RegisterGraphNode(
         ComponentGraphInitializationContext context,
         CancellationToken cancellationToken = default
-    )
-    {
-        context.Push(
-            this,
-            cxNode: context.CXNode
-        );
-    }
+    ) => base.RegisterGraphNode(context, includeElementChildren: false, cancellationToken);
 
     public override TextDisplayState? Initialize(
         ComponentNodeInitializationContext context,
@@ -59,7 +55,8 @@ public class TextDisplayComponentNode : ComponentNode<TextDisplayState>
             context.Push(
                 TextControlNode.Instance,
                 cxNode: element.Children,
-                parent: context.GraphNode
+                parent: context.GraphNode,
+                cancellationToken: cancellationToken
             );
 
             // we should expect one child

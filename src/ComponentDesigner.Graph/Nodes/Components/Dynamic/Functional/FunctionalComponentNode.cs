@@ -30,7 +30,7 @@ public sealed class FunctionalComponentNode : ComponentNode<FunctionalState>
 
     public override FunctionalState UpdateState(
         FunctionalState state,
-        IGraphContext context,
+        IComponentContext context,
         IDiagnosticBag diagnostics,
         CancellationToken cancellationToken = default
     ) => SearchForTargetMethod(state.CXNode, context, cancellationToken)
@@ -50,7 +50,7 @@ public sealed class FunctionalComponentNode : ComponentNode<FunctionalState>
 
     private static Result<ICSharpMethodSymbol> SearchForTargetMethod(
         CXElement element,
-        IGraphContext context,
+        IComponentContext context,
         CancellationToken cancellationToken
     )
     {
@@ -115,7 +115,7 @@ public sealed class FunctionalComponentNode : ComponentNode<FunctionalState>
         }
 
         static SearchResult Classify(
-            IGraphContext context,
+            IComponentContext context,
             ICSharpSymbol symbol,
             bool inStaticContext,
             CancellationToken cancellationToken
@@ -124,7 +124,7 @@ public sealed class FunctionalComponentNode : ComponentNode<FunctionalState>
             if (symbol is not ICSharpMethodSymbol methodSymbol)
                 return new(symbol, SearchResultKind.NotAMethod);
 
-            if (!context.Renderer.IsValidComponentType(context, methodSymbol.ReturnType, cancellationToken))
+            if (!context.ComponentTypingProvider.IsValidComponentType(context, methodSymbol.ReturnType, cancellationToken))
                 return new(symbol, SearchResultKind.DoesntReturnAComponent);
 
             if (methodSymbol.IsStatic != inStaticContext)
@@ -144,7 +144,7 @@ public sealed class FunctionalComponentNode : ComponentNode<FunctionalState>
         ComponentEmitContext context,
         ComponentOptions options,
         CancellationToken cancellationToken = default
-    )=> ValidateAndRender(
+    ) => ValidateAndRender(
         this,
         state,
         context,

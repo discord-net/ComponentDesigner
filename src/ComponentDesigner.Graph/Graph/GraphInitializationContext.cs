@@ -6,11 +6,10 @@ namespace ComponentDesigner;
 public sealed record GraphInitializationContext(
     CXDocument Document,
     ICXModel CX,
-    ICompilationProvider CompilationProvider,
     GraphOptions Options,
-    IDiagnosticBag Diagnostics,
-    IComponentRenderer Renderer
-) : IGraphContext
+    IComponentImplementation Implementation,
+    IDiagnosticBag Diagnostics
+) : IComponentContext
 {
     public bool Equals(IComponentContext? other)
         => other is GraphInitializationContext ctx && Equals(ctx);

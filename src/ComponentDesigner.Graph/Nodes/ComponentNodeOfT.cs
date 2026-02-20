@@ -27,10 +27,9 @@ public abstract class ComponentNode<T> :
 
     public virtual T UpdateState(
         T state,
-        IGraphContext context,
+        IComponentContext context,
         IDiagnosticBag diagnostics,
-        CancellationToken cancellationToken = default
-    ) => state;
+        CancellationToken cancellationToken = default) => state;
 
     public virtual void RegisterGraphNode(
         ComponentGraphInitializationContext context,
@@ -48,7 +47,8 @@ public abstract class ComponentNode<T> :
             cxNode: context.CXNode,
             children: context.CXNode is CXElement element && includeElementChildren
                 ? element.Children
-                : null
+                : null,
+            parent: context.ParentGraphNode
         );
     }
 
@@ -100,12 +100,10 @@ public abstract class ComponentNode<T> :
         CancellationToken cancellationToken
     ) => Initialize(context, diagnostics, cancellationToken);
 
-    ComponentState IComponentNode.UpdateState(
-        ComponentState state,
-        IGraphContext context,
+    ComponentState IComponentNode.UpdateState(ComponentState state,
+        IComponentContext context,
         IDiagnosticBag diagnostics,
-        CancellationToken cancellationToken
-    ) => UpdateState((T)state, context, diagnostics, cancellationToken);
+        CancellationToken cancellationToken) => UpdateState((T)state, context, diagnostics, cancellationToken);
 
     Result<RenderedComponent> IComponentNode.Emit(
         ComponentState state,

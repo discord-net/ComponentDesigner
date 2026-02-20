@@ -101,7 +101,7 @@ public sealed class SelectMenuComponentNode : ComponentNode<SelectMenuState>
     }
 
     private Result<SelectMenuKind> InferKind(
-        IGraphContext context,
+        IComponentContext context,
         CXElement element
     )
     {

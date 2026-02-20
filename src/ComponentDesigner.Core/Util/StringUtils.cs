@@ -5,60 +5,59 @@ namespace ComponentDesigner.Util;
 
 public static class StringUtils
 {
-     public static string CollapseAndTrimNewlines(this string str)
+    public static string CollapseAndTrimNewlines(this string str)
     {
         var parts = str.Split('\n');
 
         if (parts.Length is 1) return str;
 
-        using var _ = ObjectPool<StringBuilder>.GetScoped(out var sb);
-        sb.Clear();
-        
+        using var _ = StringBuilder.Pooled(out var sb);
+
         for (var i = 0; i < parts.Length; i++)
         {
             var part = parts[i];
             var partEnd = part.Length - 1;
             var partStart = 0;
-            
-            if(string.IsNullOrEmpty(part)) continue;
-            
+
+            if (string.IsNullOrEmpty(part)) continue;
+
             // check for '\r'
             if (part[part.Length - 1] is '\r')
                 partEnd--;
-            
+
             // trim start
             for (; partStart < partEnd; partStart++)
             {
                 var ch = part[partStart];
-                if(!char.IsWhiteSpace(ch))
+                if (!char.IsWhiteSpace(ch))
                     break;
             }
-            
+
             // trim end
             for (; partEnd > partStart; partEnd--)
             {
                 var ch = part[partEnd];
-                if(!char.IsWhiteSpace(ch))
+                if (!char.IsWhiteSpace(ch))
                     break;
             }
-            
-            if(partStart > partEnd) continue;
+
+            if (partStart > partEnd) continue;
 
             if (sb.Length is not 0)
                 sb.Append(' ');
-            
+
             sb.Append(part, partStart, (partEnd + 1) - partStart);
         }
 
         return sb.ToString();
     }
-    
+
     public static string Indent(this string value, int size)
     {
         if (size is 0) return value;
 
         var padStr = new string(' ', size);
-        
+
         var split = value.Split('\n');
 
         if (split.Length is 1) return $"{padStr}{value}";
@@ -68,7 +67,7 @@ public static class StringUtils
             split.Select(x => $"{padStr}{x}")
         );
     }
-    
+
     public static string Prefix(this string str, int count, char prefixChar = ' ')
         => count > 0 ? $"{new string(prefixChar, count)}{str}" : str;
 
@@ -114,7 +113,7 @@ public static class StringUtils
             }
             else break;
         }
-        
+
         // remove trailing empty lines
         for (var i = rawLines.Length - 1; i >= 0; i--)
         {
@@ -127,15 +126,14 @@ public static class StringUtils
         }
 
         if (lines.Count is 0) return str;
-        
+
         var minSpacing = lines.Min(x =>
             x.TakeWhile(char.IsWhiteSpace).Count()
         );
 
         if (minSpacing is 0 or int.MaxValue) return str;
 
-        using var _ = ObjectPool<StringBuilder>.GetScoped(out var sb);
-        sb.Clear();
+        using var _ = StringBuilder.Pooled(out var sb);
 
         for (var i = 0; i < leadingNewLineCount; i++)
             sb.AppendLine();
@@ -160,7 +158,7 @@ public static class StringUtils
 
         return sb.ToString();
     }
-    
+
     public static void NormalizeIndentation(this StringBuilder str)
     {
         var normal = str.ToString().NormalizeIndentation();

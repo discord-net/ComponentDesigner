@@ -7,8 +7,6 @@ namespace Discord;
 
 public sealed partial class DiscordNetRenderer : BaseCSharpRenderer
 {
-    public override string Name => "Discord.Net";
-    
     public override Result<string> RenderComponents(
         CXComponentGraph graph,
         ComponentEmitContext context,

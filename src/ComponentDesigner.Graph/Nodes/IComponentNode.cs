@@ -17,10 +17,9 @@ public interface IComponentNode : IEquatable<IComponentNode>
 
     ComponentState UpdateState(
         ComponentState state,
-        IGraphContext context,
+        IComponentContext context,
         IDiagnosticBag diagnostics,
-        CancellationToken token = default
-    );
+        CancellationToken token = default);
 
     void RegisterGraphNode(ComponentGraphInitializationContext context, CancellationToken cancellationToken = default);
 

@@ -1,10 +1,14 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using ComponentDesigner.Parser;
+using ComponentDesigner.Util;
 
 namespace ComponentDesigner.Nodes.TextControls;
 
-public abstract class TextControlElement(CXTextSpan textSpan, IReadOnlyList<TextControlElement>? children = null)
+public abstract partial class TextControlElement(
+    CXTextSpan textSpan,
+    IReadOnlyList<TextControlElement>? children = null)
+    : ISourceLocatable
 {
     public CXTextSpan TextSpan => textSpan;
 
@@ -12,9 +16,7 @@ public abstract class TextControlElement(CXTextSpan textSpan, IReadOnlyList<Text
 
     public virtual IReadOnlyList<TextControlElement>? Children { get; } = children;
 
-    public virtual IReadOnlyList<Type>? AllowedChildren => null;
-
-    protected TextControlElement(ICXNode node, IReadOnlyList<TextControlElement>? children = null) 
+    protected TextControlElement(ICXNode node, IReadOnlyList<TextControlElement>? children = null)
         : this(node.TextSpan, children)
     {
     }
@@ -26,7 +28,7 @@ public abstract class TextControlElement(CXTextSpan textSpan, IReadOnlyList<Text
     );
 
     public static bool TryCreate(
-        IGraphContext context,
+        IComponentContext context,
         IEnumerator<ICXNode> enumerator,
         IDiagnosticBag bag,
         out TextControlGraph result,
@@ -61,7 +63,7 @@ public abstract class TextControlElement(CXTextSpan textSpan, IReadOnlyList<Text
         return true;
 
         static bool TryAddNodes(
-            IGraphContext context,
+            IComponentContext context,
             List<TextControlElement> results,
             ICXNode? cxNode,
             List<CXToken> tokens,
@@ -76,7 +78,7 @@ public abstract class TextControlElement(CXTextSpan textSpan, IReadOnlyList<Text
         }
 
         static void AddNodes(
-            IGraphContext context,
+            IComponentContext context,
             List<TextControlElement> results,
             ICXNode? cxNode,
             List<CXToken> tokens,
@@ -90,17 +92,17 @@ public abstract class TextControlElement(CXTextSpan textSpan, IReadOnlyList<Text
                 case null: return;
 
                 case CXToken token:
-                    results.Add(new ScalarTextControlElement(token));
+                    results.Add(new SyntaxToken(token));
                     tokens.Add(token);
                     break;
 
                 case CXValue.Scalar scalar:
-                    results.Add(new ScalarTextControlElement(scalar.Token));
+                    results.Add(new SyntaxToken(scalar.Token));
                     tokens.Add(scalar.Token);
                     break;
 
                 case CXValue.Interpolation interpolation:
-                    results.Add(new ScalarTextControlElement(interpolation.Token));
+                    results.Add(new SyntaxToken(interpolation.Token));
                     tokens.Add(interpolation.Token);
                     break;
 
@@ -109,20 +111,14 @@ public abstract class TextControlElement(CXTextSpan textSpan, IReadOnlyList<Text
                     throw new InvalidOperationException("multipart values are not allowed");
 
                 case CXElement element:
-                    var control = element.Identifier.ToLowerInvariant() switch
-                    {
-                        "b" or "strong" or "bold" => new BoldTextControlElement(element, CreateChildren(element)),
-                        _ => null
-                    };
-
-                    if (control is null)
+                    if (!context.TextControlProvider.TryGetTextControlFactory(element, out var factory))
                     {
                         if (!isRoot) bag.Add(Diagnostic.UnknownTextControlElement(element).At(element));
-
+                        
                         return;
                     }
-
-                    results.Add(control);
+                    
+                    results.Add(factory(element, CreateChildren(element)));
                     break;
 
                 default:
@@ -169,18 +165,122 @@ public abstract class TextControlElement(CXTextSpan textSpan, IReadOnlyList<Text
                         interpolationDollarCount = Math
                             .Max(
                                 interpolationDollarCount,
-                                StringGenerator.GetInterpolationDollarRequirement(token.Value)
+                                StringGenerator.GetSequentialInterpolationCharacterCount(token.Value)
                             );
                         continue;
                 }
             }
+
+            if (hasInterpolations)
+                interpolationDollarCount++;
         }
     }
-    
+
+    protected static bool TryGetTextBasedValue(
+        CXValue? value,
+        IComponentContext context,
+        TextControlOptions options,
+        [MaybeNullWhen(false)] out string result
+    )
+    {
+        switch (value)
+        {
+            case CXValue.Scalar scalar:
+                result = scalar.Value;
+                return true;
+
+            case CXValue.Interpolation interpolation:
+                result =
+                    $"{options.StartInterpolationMarker}{
+                        context.GetReferenceToDesignerValue(interpolation)
+                    }{options.StartInterpolationMarker}";
+                return true;
+
+            case CXValue.Multipart multipart:
+            {
+                using var _ = StringBuilder.Pooled(out var sb);
+
+                foreach (var part in multipart.Tokens)
+                {
+                    switch (part.Kind)
+                    {
+                        case CXTokenKind.Text:
+                            sb.Append(part.Value);
+                            break;
+
+                        case CXTokenKind.Interpolation when part.InterpolationIndex is { } index:
+                            sb.Append(options.StartInterpolationMarker)
+                                .Append(context.GetReferenceToDesignerValue(index))
+                                .Append(options.EndInterpolationMarker);
+                            break;
+
+                        default:
+                            result = null;
+                            return false;
+                    }
+                }
+
+                result = sb.ToString();
+                return true;
+            }
+
+            default:
+                result = null;
+                return false;
+        }
+    }
+
+    protected LexedCXTrivia EnsureLineBreaks(LexedCXTrivia trivia)
+    {
+        if (trivia.ContainsNewlines) return trivia;
+
+        return [CXTrivia.LineBreak];
+    }
+
+    protected string RenderChildrenWithoutNewLines(EquatableArray<TextControl> children)
+    {
+        using var _ = StringBuilder.Pooled(out var sb);
+        sb.Clear();
+
+        var hasTrailingSpace = false;
+
+        for (var i = 0; i < children.Count; i++)
+        {
+            var child = children[i];
+
+            if (
+                i is not 0 &&
+                !hasTrailingSpace
+            )
+            {
+                sb.Append(' ');
+            }
+
+            sb.Append(child.Value.CollapseAndTrimNewlines());
+
+            hasTrailingSpace =
+                i < children.Count - 1 &&
+                (
+                    child.TrailingTrivia.ContainsWhitespace ||
+                    (child.Value.Length is 0 || char.IsWhiteSpace(child.Value[0]))
+                );
+
+            if (hasTrailingSpace) sb.Append(' ');
+        }
+
+        return sb.ToString();
+    }
+
+    protected Result<string> RenderChildrenWithoutNewLines(
+        IRendererContext context,
+        TextControlOptions options,
+        CancellationToken cancellationToken = default
+    ) => RenderChildren(context, options, cancellationToken).Map(RenderChildrenWithoutNewLines);
+
     protected Result<EquatableArray<TextControl>> RenderChildren(
         IRendererContext context,
         TextControlOptions options,
-        CancellationToken token = default
+        CancellationToken cancellationToken = default
     )
     {
         if (Children is null or { Count: 0 }) return EquatableArray<TextControl>.Empty;
@@ -188,10 +288,10 @@ public abstract class TextControlElement(CXTextSpan textSpan, IReadOnlyList<Text
         var result = new TextControl[Children.Count];
         using var bag = PooledDiagnosticBag.Get();
         var anyFailed = false;
-        
+
         for (var i = 0; i < Children.Count; i++)
         {
-            var childResult = Children[i].Render(context, options, token);
+            var childResult = Children[i].Render(context, options, cancellationToken);
             anyFailed |= !childResult.HasValue;
             bag.Add(childResult.Diagnostics);
 
@@ -202,6 +302,14 @@ public abstract class TextControlElement(CXTextSpan textSpan, IReadOnlyList<Text
 
         return new([..result], bag.ToCollection());
     }
+
+    protected static Result<TextControl> JoinWithTrimmedTrivia(
+        Result<EquatableArray<TextControl>> target
+    ) => Join(target).Map(x => x with
+    {
+        LeadingTrivia = LexedCXTrivia.Empty,
+        TrailingTrivia = LexedCXTrivia.Empty
+    });
 
     protected static Result<TextControl> Join(
         Result<EquatableArray<TextControl>> target
@@ -221,8 +329,7 @@ public abstract class TextControlElement(CXTextSpan textSpan, IReadOnlyList<Text
                 target.Diagnostics
             );
 
-        using var _ = ObjectPool<StringBuilder>.GetScoped(out var sb);
-        sb.Clear();
+        using var _ = StringBuilder.Pooled(out var sb);
         var hasNewlines = false;
 
         for (var i = 0; i < target.Value.Count; i++)

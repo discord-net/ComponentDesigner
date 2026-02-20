@@ -7,6 +7,31 @@ public static class ComponentContextExtensions
 {
     extension(IComponentContext context)
     {
+        public ICompilationProvider CompilationProvider => context.Implementation.CompilationProvider;
+        public IComponentRenderer Renderer => context.Implementation.Renderer;
+        public ITextControlProvider TextControlProvider => context.Implementation.TextControlProvider;
+        public IComponentTypingProvider ComponentTypingProvider => context.Implementation.ComponentTypingProvider;
+        
+        public bool IsInterpolatedComponent(ICXNode? node, CancellationToken cancellationToken = default)
+            => node switch
+            {
+                CXValue.Interpolation { InterpolationIndex: { } index } => context
+                    .ComponentTypingProvider
+                    .IsValidComponentType(
+                        context,
+                        context.GetInterpolationInfo(index).Symbol,
+                        cancellationToken
+                    ),
+                CXToken { Kind: CXTokenKind.Interpolation, InterpolationIndex: { } index } => context
+                    .ComponentTypingProvider
+                    .IsValidComponentType(
+                        context,
+                        context.GetInterpolationInfo(index).Symbol,
+                        cancellationToken
+                    ),
+                _ => false
+            };
+        
         public IInterpolationInfo GetInterpolationInfo(CXValue.Interpolation interpolation)
             => context.CX.Interpolations[interpolation.InterpolationIndex];
         

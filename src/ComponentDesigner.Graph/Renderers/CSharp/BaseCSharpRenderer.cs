@@ -8,8 +8,6 @@ namespace ComponentDesigner.CSharp;
 
 public abstract class BaseCSharpRenderer : IComponentRenderer
 {
-    public abstract string Name { get; }
-
     protected virtual CSharpValueGenerator? GetCustomGeneratorForSymbol(
         ICompilationProvider compilationProvider,
         ICSharpTypeSymbol symbol
@@ -31,8 +29,7 @@ public abstract class BaseCSharpRenderer : IComponentRenderer
     {
         var bag = PooledDiagnosticBag.Get();
 
-        using var _ = ObjectPool<StringBuilder>.GetScoped(out var parameters);
-        parameters.Clear();
+        using var _ = StringBuilder.Pooled(out var parameters);
 
         for (var i = 0; i < state.Parameters.Count; i++)
         {
@@ -214,8 +211,7 @@ public abstract class BaseCSharpRenderer : IComponentRenderer
                 ? new string(' ', interpolationDollarCount)
                 : string.Empty;
 
-            using var _ = ObjectPool<StringBuilder>.GetScoped(out var sb);
-            sb.Clear();
+            using var _ = StringBuilder.Pooled(out var sb);
 
             // start on newline if it's a multi-line string
             if (isMultiline) sb.AppendLine();
@@ -274,12 +270,6 @@ public abstract class BaseCSharpRenderer : IComponentRenderer
             );
         }
     }
-
-    public abstract bool IsValidComponentType(
-        IComponentContext context,
-        ICSharpTypeSymbol? symbol,
-        CancellationToken cancellationToken = default
-    );
 
     public abstract Result<string> RenderComponents(
         CXComponentGraph graph,

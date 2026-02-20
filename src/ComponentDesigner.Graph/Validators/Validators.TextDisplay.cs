@@ -11,32 +11,55 @@ partial class Validators
         IDiagnosticBag bag
     )
     {
+        ValidateElementStructure(textDisplay, state, bag);
         ValidateProperty(textDisplay, state.GetPropertyValue(textDisplay.Id), bag);
         ReportDiagnosticsForUnknownProperties(textDisplay, state, bag);
 
-        // content can be either the property or in the state
-        var contentProperty = state.GetPropertyValue(textDisplay.Content);
-        
-        // the property is exclusive with the states text control
-        // if (contentProperty.IsSpecified && state.Content is not null)
-        // {
-        //     bag.Add(
-        //         contentProperty.TextSpan.Report(
-        //             Diagnostic.ChildSuppliedExclusivePropertyDuplicated(contentProperty.UsedName)
-        //         )
-        //     );
-        //     
-        //     return;
-        // }
-        
-        // if (!contentProperty.HasValue && state.Content is null)
-        // {
-        //     bag.Add(
-        //         state.ElementIdentifierTextSpanOrBetter.Report(
-        //             Diagnostic.RequiredPropertyNotSpecified(textDisplay, textDisplay.Content)
-        //         )
-        //     );
-        //     return;
-        // }
+        ValidateContent();
+
+        void ValidateContent()
+        {
+            var content = state.GetPropertyValue(textDisplay.Content);
+
+            if (!content.HasValue)
+            {
+                bag.Add(
+                    Diagnostic
+                        .RequiredPropertyNotSpecified(textDisplay, textDisplay.Content)
+                        .At(state.ElementIdentifierTextSpanOrBetter)
+                );
+
+                return;
+            }
+
+            switch (content)
+            {
+                case ComponentPropertyValue.AttributeValue:
+                    // OK
+                    break;
+                case ComponentPropertyValue.Component { GraphNode.Component: { } component }:
+                    if (component is not TextControlNode)
+                    {
+                        bag.Add(
+                            Diagnostic
+                                .InvalidChildOfComponent(textDisplay, component)
+                                .At(content)
+                        );
+                    }
+
+                    break;
+                default:
+                    bag.Add(
+                        Diagnostic
+                            .InvalidPropertyValue(
+                                content,
+                                "string",
+                                "text controls"
+                            )
+                            .At(content)
+                    );
+                    break;
+            }
+        }
     }
 }

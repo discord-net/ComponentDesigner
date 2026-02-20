@@ -72,8 +72,7 @@ public sealed class StringGenerator : CSharpValueGenerator
     {
         if (literal.Tokens.Count is 0) return "string.Empty";
 
-        using var _ = ObjectPool<StringBuilder>.GetScoped(out var sb);
-        sb.Clear();
+        using var _ = StringBuilder.Pooled(out var sb);
 
         var literalParts = literal.Tokens
             .Where(x => x.Kind is CXTokenKind.Text)
@@ -98,7 +97,7 @@ public sealed class StringGenerator : CSharpValueGenerator
                 '$',
                 literalParts.Length is 0
                     ? 1
-                    : Math.Max(1, literalParts.Select(GetInterpolationDollarRequirement).Max())
+                    : Math.Max(1, literalParts.Select(GetSequentialInterpolationCharacterCount).Max())
             )
             : string.Empty;
 
@@ -228,8 +227,7 @@ public sealed class StringGenerator : CSharpValueGenerator
 
         var quotes = new string('"', quoteCount);
 
-        using var _ = ObjectPool<StringBuilder>.GetScoped(out var sb);
-        sb.Clear();
+        using var _ = StringBuilder.Pooled(out var sb);
 
         if (isMultiline) sb.AppendLine();
 
@@ -247,7 +245,7 @@ public sealed class StringGenerator : CSharpValueGenerator
         return sb.ToString();
     }
 
-    public static int GetInterpolationDollarRequirement(string part)
+    public static int GetSequentialInterpolationCharacterCount(string part)
     {
         var result = 0;
 

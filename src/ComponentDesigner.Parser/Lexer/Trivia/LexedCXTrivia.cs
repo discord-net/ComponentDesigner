@@ -15,7 +15,7 @@ public sealed class LexedCXTrivia(
 ) : IImmutableList<CXTrivia>, IEquatable<LexedCXTrivia>
 {
     public bool ContainsWhitespace
-        => trivia.Any(x => x is CXTrivia.Token { Kind: CXTriviaTokenKind.Whitespace });
+        => trivia.Any(x => x.IsWhitespaceTrivia);
 
     public bool ContainsNewlines
         => trivia.Any(x => x is CXTrivia.Token { Kind: CXTriviaTokenKind.Newline });
@@ -105,7 +105,12 @@ public sealed class LexedCXTrivia(
             Hash.Combine
         );
 
-    public override string ToString() => string.Join(string.Empty, trivia);
+    public override string ToString()
+    {
+        if (trivia.Length is 0) return string.Empty;
+        
+        return string.Join(string.Empty, trivia);
+    }
 
     IImmutableList<CXTrivia> IImmutableList<CXTrivia>.Clear() => Clear();
 

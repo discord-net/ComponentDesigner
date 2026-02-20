@@ -26,7 +26,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Discord.Net", "Discord.Net"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ComponentDesigner.CSharp", "src\ComponentDesigner.CSharp\ComponentDesigner.CSharp.csproj", "{7785168F-57D7-4FF8-9E42-2E2C9E0D8583}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Discord.Net.ComponentDesigner.Renderer", "src\Discord.Net.ComponentDesigner.Renderer\Discord.Net.ComponentDesigner.Renderer.csproj", "{C5B1B427-EB96-47F3-A5A5-A3196BABDBA0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Discord.Net.ComponentDesigner.Implementation", "src\Discord.Net.ComponentDesigner.Implementation\Discord.Net.ComponentDesigner.Implementation.csproj", "{C5B1B427-EB96-47F3-A5A5-A3196BABDBA0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

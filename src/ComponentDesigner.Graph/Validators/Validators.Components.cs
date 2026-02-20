@@ -41,7 +41,7 @@ public static partial class Validators
                 )
             );
         }
-        
+
         // if (!allowsChildrenInCX && !isParent && element.Children.Count > 0)
         // {
         //     bag.Add(
@@ -105,6 +105,22 @@ public static partial class Validators
                 propertyValue.TextSpan.Report(
                     Diagnostic.RequiredPropertyNotSpecified(component, propertyValue.Property)
                 )
+            );
+        }
+    }
+
+    public static void PropertyValueIsOneOf(
+        IDiagnosticBag bag,
+        ComponentPropertyValue propertyValue,
+        params ComponentPropertyValueKind[] kinds
+    )
+    {
+        if (!kinds.Contains(propertyValue.Kind))
+        {
+            bag.Add(
+                Diagnostic
+                    .InvalidPropertyValue(propertyValue, kinds)
+                    .At(propertyValue)
             );
         }
     }

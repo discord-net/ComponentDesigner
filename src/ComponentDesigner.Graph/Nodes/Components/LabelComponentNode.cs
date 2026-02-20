@@ -36,13 +36,7 @@ public sealed class LabelComponentNode : ComponentNode
     public override void RegisterGraphNode(
         ComponentGraphInitializationContext context,
         CancellationToken cancellationToken = default
-    )
-    {
-        context.Push(
-            this,
-            cxNode: context.CXNode
-        );
-    }
+    ) => base.RegisterGraphNode(context, includeElementChildren: false, cancellationToken);
 
     public override ComponentState? Initialize(
         ComponentNodeInitializationContext context,

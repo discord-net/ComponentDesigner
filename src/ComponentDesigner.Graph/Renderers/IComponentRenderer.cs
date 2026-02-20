@@ -5,14 +5,6 @@ namespace ComponentDesigner;
 
 public interface IComponentRenderer
 {
-    string Name { get; }
-
-    bool IsValidComponentType(
-        IComponentContext context, 
-        ICSharpTypeSymbol? symbol, 
-        CancellationToken cancellationToken = default
-    );
-
     Result<RenderedComponent> RenderTextControls(
         IRendererContext context,
         TextControlGraph textControlGraph,

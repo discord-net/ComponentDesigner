@@ -12,7 +12,7 @@ public sealed class CXComponentGraph : IEquatable<CXComponentGraph>
     public CXDocument Document { get; }
     public ICXModel CX { get; }
     public GraphOptions Options { get; }
-    public IComponentRenderer Renderer { get; }
+    public IComponentImplementation Implementation { get; }
 
     private readonly IReadOnlyList<Diagnostic> _diagnostics;
     private readonly IReadOnlyList<Diagnostic>? _updateDiagnostics;
@@ -24,7 +24,7 @@ public sealed class CXComponentGraph : IEquatable<CXComponentGraph>
         IReadOnlyList<Diagnostic> diagnostics,
         ICXModel cx,
         GraphOptions options,
-        IComponentRenderer renderer,
+        IComponentImplementation implementation,
         IReadOnlyList<Diagnostic>? updateDiagnostics = null
     )
     {
@@ -34,7 +34,7 @@ public sealed class CXComponentGraph : IEquatable<CXComponentGraph>
         _diagnostics = diagnostics;
         _updateDiagnostics = updateDiagnostics;
         Options = options;
-        Renderer = renderer;
+        Implementation = implementation;
         CX = cx;
     }
 
@@ -45,7 +45,7 @@ public sealed class CXComponentGraph : IEquatable<CXComponentGraph>
         GraphParameters parameters,
         IReadOnlyList<Diagnostic>? updateDiagnostics = null
     ) : this(
-        document, rootNodes, diagnostics, parameters.CX, parameters.Options, parameters.Renderer,
+        document, rootNodes, diagnostics, parameters.CX, parameters.Options, parameters.Implementation,
         updateDiagnostics
     )
     {
@@ -74,7 +74,7 @@ public sealed class CXComponentGraph : IEquatable<CXComponentGraph>
         );
 
     public static bool IsLikelyComponent(
-        IGraphContext context,
+        IComponentContext context,
         ICXNode? cxNode,
         CancellationToken cancellationToken = default
     )
@@ -140,10 +140,9 @@ public sealed class CXComponentGraph : IEquatable<CXComponentGraph>
         var context = new GraphInitializationContext(
             document,
             parameters.CX,
-            parameters.CompilationProvider,
             parameters.Options,
-            diagnostics,
-            parameters.Renderer
+            parameters.Implementation,
+            diagnostics
         );
 
         CreateNodes(rootNodes, document.RootNodes, null, context, token);
@@ -161,7 +160,7 @@ public sealed class CXComponentGraph : IEquatable<CXComponentGraph>
         IReadOnlyList<ICXNode> nodes,
         GraphNode? parent,
         GraphInitializationContext context,
-        CancellationToken token = default
+        CancellationToken cancellationToken = default
     )
     {
         using var enumerator = GraphNodeEnumerator.GetNext(nodes).GetEnumerator();
@@ -171,14 +170,14 @@ public sealed class CXComponentGraph : IEquatable<CXComponentGraph>
             var node = enumerator.Current;
 
             if (
-                !context.IsInterpolatedComponent(node) &&
+                !context.IsInterpolatedComponent(node, cancellationToken) &&
                 TextControlElement.TryCreate(
                     context,
                     enumerator,
                     context.Diagnostics,
                     out var result,
                     out var enumeratorHasMore,
-                    token
+                    cancellationToken
                 )
             )
             {
@@ -219,7 +218,7 @@ public sealed class CXComponentGraph : IEquatable<CXComponentGraph>
                 node = enumerator.Current;
             }
 
-            CreateNodes(results, node, parent, context, token);
+            CreateNodes(results, node, parent, context, cancellationToken);
         }
     }
 
@@ -229,7 +228,7 @@ public sealed class CXComponentGraph : IEquatable<CXComponentGraph>
         ICXNode? cxNode,
         GraphNode? parent,
         GraphInitializationContext context,
-        CancellationToken token = default
+        CancellationToken cancellationToken = default
     )
     {
         switch (cxNode)
@@ -240,7 +239,7 @@ public sealed class CXComponentGraph : IEquatable<CXComponentGraph>
                     interpolation,
                     context.CX.Interpolations[interpolation.InterpolationIndex],
                     parent,
-                    context, token);
+                    context, cancellationToken);
                 return;
 
             case CXValue.Multipart multipart:
@@ -250,7 +249,7 @@ public sealed class CXComponentGraph : IEquatable<CXComponentGraph>
             }
 
             case CXElement element:
-                CreateElementNodes(results, element, parent, context, token);
+                CreateElementNodes(results, element, parent, context, cancellationToken);
                 return;
 
             default:
@@ -276,7 +275,7 @@ public sealed class CXComponentGraph : IEquatable<CXComponentGraph>
         CancellationToken token = default
     )
     {
-        if (!context.Renderer.IsValidComponentType(context, info.Symbol, token))
+        if (!context.ComponentTypingProvider.IsValidComponentType(context, info.Symbol, token))
         {
             // TODO: diagnostic can be improved to include type info etc
             context.Diagnostics.Add(
@@ -365,8 +364,11 @@ public sealed class CXComponentGraph : IEquatable<CXComponentGraph>
             parent: request.Parent
         );
 
-        request.Parent?.Children.Add(node);
-
+        if (request.Children?.Count > 0)
+        {
+            CreateNodes(node.Children, request.Children, node, context, cancellationToken);
+        }
+        
         var initContext = new ComponentNodeInitializationContext(
             request.CXNode,
             node,
@@ -389,11 +391,6 @@ public sealed class CXComponentGraph : IEquatable<CXComponentGraph>
             }
         }
 
-        if (request.Children?.Count > 0)
-        {
-            CreateNodes(node.Children, request.Children, node, context, cancellationToken);
-        }
-
         return node;
     }
 
@@ -405,10 +402,9 @@ public sealed class CXComponentGraph : IEquatable<CXComponentGraph>
     )
     {
         var context = new GraphUpdateContext(
-            parameters.CompilationProvider,
             parameters.CX,
             parameters.Options,
-            parameters.Renderer
+            parameters.Implementation
         );
 
         using var diagnostics = PooledDiagnosticBag.Get();
@@ -416,7 +412,7 @@ public sealed class CXComponentGraph : IEquatable<CXComponentGraph>
         var shouldUpdate =
             !parameters.CX.Equals(CX) ||
             !parameters.Options.Equals(Options) ||
-            !parameters.Renderer.Equals(Renderer);
+            !parameters.Implementation.Equals(Implementation);
 
 
         var rootNodes = new GraphNode[RootNodes.Count];
@@ -442,14 +438,11 @@ public sealed class CXComponentGraph : IEquatable<CXComponentGraph>
             : this;
     }
 
-    public Result<string> Emit(ICompilationProvider compilationProvider, CancellationToken cancellationToken = default)
+    public Result<string> Emit(CancellationToken cancellationToken = default)
     {
-        var context = new ComponentEmitContext(
-            this,
-            compilationProvider
-        );
+        var context = new ComponentEmitContext(this);
 
-        return Renderer.RenderComponents(
+        return Implementation.Renderer.RenderComponents(
             this,
             context,
             cancellationToken

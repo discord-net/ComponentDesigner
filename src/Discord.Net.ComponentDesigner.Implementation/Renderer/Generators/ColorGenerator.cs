@@ -93,7 +93,7 @@ public sealed class ColorGenerator : CSharpValueGenerator
     private Result<string> FromText(IRendererContext context, CXTextSpan textSpan, string text)
     {
         if (TryGetColorPreset(context, text, out var preset)) 
-            return $"global::Discord.Color.{preset}";
+            return preset;
 
         var hex = text;
 

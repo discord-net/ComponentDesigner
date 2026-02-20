@@ -47,27 +47,29 @@ public static class CXExtensions
                     return true;
                 }
 
-                var sb = ObjectPool<StringBuilder>.Get();
-                sb.Clear();
-
-                foreach (var token in multipart.Tokens)
+                using (StringBuilder.Pooled(out var sb))
                 {
-                    if (token.InterpolationIndex is { } index)
+                    foreach (var token in multipart.Tokens)
                     {
-                        if (!TryGetInterpolationLiteral(context.GetInterpolationInfo(index), out var part))
-                            goto default;
+                        if (token.InterpolationIndex is { } index)
+                        {
+                            if (!TryGetInterpolationLiteral(context.GetInterpolationInfo(index), out var part))
+                            {
+                                literal = null;
+                                return false;
+                            }
 
-                        sb.Append(part);
+                            sb.Append(part);
+                        }
+                        else
+                        {
+                            sb.Append(token.Value);
+                        }
                     }
-                    else
-                    {
-                        sb.Append(token.Value);
-                    }
+
+                    literal = sb.ToString();
+                    return true;
                 }
-
-                literal = sb.ToString();
-                ObjectPool<StringBuilder>.Return(sb);
-                return true;
             default:
                 literal = null;
                 return false;

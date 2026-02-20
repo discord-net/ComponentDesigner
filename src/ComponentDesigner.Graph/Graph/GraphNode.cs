@@ -45,7 +45,7 @@ public sealed class GraphNode : IEquatable<GraphNode>, ISourceLocatable
     }
 
     public GraphNode Update(
-        IGraphContext context,
+        IComponentContext context,
         IDiagnosticBag diagnostics,
         CancellationToken cancellationToken,
         GraphNode? parent = null

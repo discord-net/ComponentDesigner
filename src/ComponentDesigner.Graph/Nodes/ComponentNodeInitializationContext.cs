@@ -40,7 +40,7 @@ public readonly struct ComponentNodeInitializationContext
     {
         if (CXComponentGraph.CreateFromInitializationRequest(request, GraphContext, cancellationToken) is { } node)
         {
-            if (node.Parent is null) GraphNode.Children.Add(node);
+            GraphNode.Children.Add(node);
 
             return node;
         }

@@ -1,8 +1,8 @@
-﻿namespace ComponentDesigner.Nodes;
+﻿namespace ComponentDesigner;
 
 public interface IComponentContext : IEquatable<IComponentContext>
 {
-    ICompilationProvider CompilationProvider { get; }
+    IComponentImplementation Implementation { get; }
     
     ICXModel CX { get; }
     
