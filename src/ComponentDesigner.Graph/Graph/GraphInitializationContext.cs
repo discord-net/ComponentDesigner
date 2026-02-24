@@ -8,9 +8,12 @@ public sealed record GraphInitializationContext(
     ICXModel CX,
     GraphOptions Options,
     IComponentImplementation Implementation,
+    ICompilationProvider CompilationProvider,
     IDiagnosticBag Diagnostics
 ) : IComponentContext
 {
+    public CXComponentTree Tree { get; } = new();
+    
     public bool Equals(IComponentContext? other)
         => other is GraphInitializationContext ctx && Equals(ctx);
 }

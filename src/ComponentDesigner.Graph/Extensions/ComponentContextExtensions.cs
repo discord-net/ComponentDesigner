@@ -7,7 +7,6 @@ public static class ComponentContextExtensions
 {
     extension(IComponentContext context)
     {
-        public ICompilationProvider CompilationProvider => context.Implementation.CompilationProvider;
         public IComponentRenderer Renderer => context.Implementation.Renderer;
         public ITextControlProvider TextControlProvider => context.Implementation.TextControlProvider;
         public IComponentTypingProvider ComponentTypingProvider => context.Implementation.ComponentTypingProvider;

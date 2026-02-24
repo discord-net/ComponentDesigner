@@ -79,7 +79,7 @@ public record ComponentState(
         if (attribute.Value is CXValue.Element attributeElement)
         {
             var graphNode = GraphNode
-                ?.Attributes
+                ?.Children
                 .FirstOrDefault(x => ReferenceEquals(x.State.CXNode, attributeElement.Value));
 
             return _propertyValues[property] = graphNode is null
@@ -100,7 +100,7 @@ public record ComponentState(
 
     internal void SetPropertyValueToChildren(
         ComponentProperty property,
-        params IReadOnlyList<GraphNode> children
+        params IEnumerable<GraphNode> children
     )
     {
         _propertyValues ??= [];

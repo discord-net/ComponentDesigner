@@ -26,7 +26,7 @@ public sealed class AutoActionRowComponentNode : ActionRowComponentNode
 
         var sibling = context.ParentGraphNode.Children.LastOrDefault();
 
-        if (sibling?.Component is AutoActionRowComponentNode)
+        if (sibling?.Component is AutoActionRowComponentNode autoRow)
         {
             // the original sibling node of the target was added to an auto action row
 
@@ -47,6 +47,9 @@ public sealed class AutoActionRowComponentNode : ActionRowComponentNode
             {
                 // we can push the target to the sibling auto action row
                 context.Push(target, cxNode: context.CXNode, parent: sibling);
+                
+                // we need to add the child into the property value again
+                sibling.State.SetPropertyValueToChildren(autoRow.Components);
                 return true;
             }
         }
@@ -59,7 +62,7 @@ public sealed class AutoActionRowComponentNode : ActionRowComponentNode
         if (context.CXNode is null) return false;
 
         // we can create a new auto row
-        context.Push(Instance, children: [context.CXNode]);
+        context.Push(Instance, children: [context.CXNode], parent: context.ParentGraphNode);
         return true;
     }
     

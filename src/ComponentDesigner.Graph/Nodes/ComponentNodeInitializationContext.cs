@@ -25,7 +25,6 @@ public readonly struct ComponentNodeInitializationContext
     public void AddChild(ICXNode cxNode, CancellationToken cancellationToken = default)
     {
         CXComponentGraph.CreateNodes(
-            GraphNode.Children,
             cxNode,
             GraphNode,
             GraphContext,
@@ -36,17 +35,7 @@ public readonly struct ComponentNodeInitializationContext
     public GraphNode? Push(
         GraphNodeInitializationRequest request,
         CancellationToken cancellationToken = default
-    )
-    {
-        if (CXComponentGraph.CreateFromInitializationRequest(request, GraphContext, cancellationToken) is { } node)
-        {
-            GraphNode.Children.Add(node);
-
-            return node;
-        }
-
-        return null;
-    }
+    ) => CXComponentGraph.CreateFromInitializationRequest(request, GraphContext, cancellationToken);
 
     public IReadOnlyList<GraphNode> PushAsChildren(
         CXElement element,
@@ -56,7 +45,6 @@ public readonly struct ComponentNodeInitializationContext
         var start = GraphNode.Children.Count;
 
         CXComponentGraph.CreateElementNodes(
-            GraphNode.Children,
             element,
             GraphNode,
             GraphContext,
@@ -78,7 +66,6 @@ public readonly struct ComponentNodeInitializationContext
         var start = GraphNode.Children.Count;
 
         CXComponentGraph.CreateNodes(
-            GraphNode.Children,
             syntaxNodes,
             GraphNode,
             GraphContext,

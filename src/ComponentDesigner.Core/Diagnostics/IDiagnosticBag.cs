@@ -27,6 +27,7 @@ public sealed class PooledDiagnosticBag : IDiagnosticBag, IDisposable
     {
         var pooled = ObjectPool<PooledDiagnosticBag>.Get(static () => new());
         pooled._diagnostics?.Clear();
+        pooled.HasErrors = false;
 
         if (initial.Count > 0) pooled.Add(initial);
         

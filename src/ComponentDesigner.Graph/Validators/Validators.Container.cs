@@ -11,7 +11,10 @@ partial class Validators
         IDiagnosticBag bag
     )
     {
-        ValidateGenericComponent(container, state, bag);
+        ValidateElementStructure(container, state, bag);
+        ValidateProperty(container, state.GetPropertyValue(container.Id), bag);
+        ValidateProperty(container, state.GetPropertyValue(container.AccentColor), bag);
+        ReportDiagnosticsForUnknownProperties(container, state, bag);
 
         if (state.Children.Count is 0)
         {

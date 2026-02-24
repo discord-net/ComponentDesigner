@@ -12,8 +12,7 @@ public readonly record struct GraphNodeInitializationRequest(
 public readonly struct ComponentGraphInitializationContext(
     GraphNode? parentGraphNode,
     ICXNode? cxNode,
-    GraphInitializationContext graphInitializationContext,
-    IList<GraphNode> results
+    GraphInitializationContext graphInitializationContext
 )
 {
     public IDiagnosticBag Diagnostics => GraphInitializationContext.Diagnostics;
@@ -23,16 +22,7 @@ public readonly struct ComponentGraphInitializationContext(
     public readonly GraphInitializationContext GraphInitializationContext = graphInitializationContext;
 
     public void Push(GraphNodeInitializationRequest request)
-    {
-        if (
-            CXComponentGraph.CreateFromInitializationRequest(request, GraphInitializationContext)
-            is {} node
-        )
-        {
-            // only add to the current contexts results if the node is parentless
-            results.Add(node);
-        }
-    }
+        => CXComponentGraph.CreateFromInitializationRequest(request, GraphInitializationContext);
 
     public void Push<T>(
         T component,

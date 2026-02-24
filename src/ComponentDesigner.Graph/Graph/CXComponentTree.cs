@@ -1,0 +1,92 @@
+﻿using ComponentDesigner.Nodes;
+using ComponentDesigner.Util;
+
+namespace ComponentDesigner;
+
+public sealed class CXComponentTree : IEquatable<CXComponentTree>
+{
+    public static CXComponentTree Empty => new ();
+    
+    public int Count => _nodes.Count;
+    public GraphNode this[int id] => _nodes[id];
+
+    public bool HasExternalDependencies => _nodesWithExternalDependencies?.Count > 0;
+
+    public IReadOnlyList<GraphNode> NodesWithExternalDependencies
+        => _nodesWithExternalDependencies ?? [];
+
+    public IReadOnlyList<GraphNode> RootNodes => _rootNodes ?? [];
+    
+    private List<GraphNode> _nodes;
+    
+    private List<GraphNode>? _nodesWithExternalDependencies;
+    private List<GraphNode>? _rootNodes;
+    
+    public CXComponentTree()
+    {
+        _nodes = [];
+    }
+    
+    public GraphNode Reuse(
+        GraphNode graphNode,
+        ComponentState? state = null
+    )
+    {
+        var newNode = graphNode.Reuse(this, state);
+        
+        _nodes.Add(newNode);
+
+        if (newNode.Component.HasExternalDependencies)
+        {
+            _nodesWithExternalDependencies ??= [];
+            _nodesWithExternalDependencies.Add(newNode);
+        }
+
+        return newNode;
+    }
+    
+    public GraphNode Push(
+        IComponentNode component,
+        ComponentState? state = null,
+        NodeList? children = null,
+        GraphNode? parent = null
+    )
+    {
+        var node = new GraphNode(
+            this,
+            _nodes.Count,
+            component, 
+            state,
+            children,
+            parent?.Id
+        );
+        
+        _nodes.Add(node);
+
+        if (component.HasExternalDependencies)
+        {
+            _nodesWithExternalDependencies ??= [];
+            _nodesWithExternalDependencies.Add(node);
+        }
+
+        if (parent is null)
+        {
+            _rootNodes ??= [];
+            _rootNodes.Add(node);
+        }
+        
+        return node;
+    }
+
+    public bool Equals(CXComponentTree? other)
+        => other is not null && (
+            ReferenceEquals(this, other) ||
+            _nodes.SequenceEqual(other._nodes)
+        );
+
+    public override bool Equals(object? obj)
+        => obj is CXComponentTree other && Equals(other);
+
+    public override int GetHashCode()
+        => _nodes.Aggregate(0, Hash.Combine);
+}

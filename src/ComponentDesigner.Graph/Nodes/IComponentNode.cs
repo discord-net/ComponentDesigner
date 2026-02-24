@@ -8,18 +8,19 @@ public interface IComponentNode : IEquatable<IComponentNode>
     IReadOnlyList<ComponentProperty> Properties { get; }
     bool IsUserAccessible { get; }
     bool AllowChildrenInCX { get; }
+    bool HasExternalDependencies { get; }
 
     ComponentState? Initialize(
         ComponentNodeInitializationContext context,
         IDiagnosticBag diagnostics,
-        CancellationToken token = default
+        CancellationToken cancellationToken = default
     );
 
     ComponentState UpdateState(
         ComponentState state,
         IComponentContext context,
         IDiagnosticBag diagnostics,
-        CancellationToken token = default);
+        CancellationToken cancellationToken = default);
 
     void RegisterGraphNode(ComponentGraphInitializationContext context, CancellationToken cancellationToken = default);
 
@@ -27,6 +28,6 @@ public interface IComponentNode : IEquatable<IComponentNode>
         ComponentState state,
         ComponentEmitContext context,
         ComponentOptions options,
-        CancellationToken token = default
+        CancellationToken cancellationToken = default
     );
 }

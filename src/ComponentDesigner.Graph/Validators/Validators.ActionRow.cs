@@ -16,7 +16,7 @@ partial class Validators
         ReportDiagnosticsForUnknownProperties(actionRow, state, bag);
 
         var components = state.GetPropertyValue(actionRow.Components);
-        
+
         if (!state.HasGraphChildren && !components.HasValue)
         {
             bag.Add(
@@ -26,75 +26,76 @@ partial class Validators
             return;
         }
 
-        switch (state.Children[0].Component)
+        if (state.Children.Count > 0)
         {
-            case ButtonComponentNode:
+            switch (state.Children[0].Component)
             {
-                for (var i = 1; i < Math.Min(5, state.Children.Count); i++)
+                case ButtonComponentNode:
                 {
-                    var child = state.Children[i];
+                    for (var i = 1; i < Math.Min(5, state.Children.Count); i++)
+                    {
+                        var child = state.Children[i];
 
-                    if (child.Component is not ButtonComponentNode and not IDynamicComponentNode)
+                        if (child.Component is not ButtonComponentNode and not IDynamicComponentNode)
+                        {
+                            bag.Add(
+                                Diagnostic
+                                    .InvalidChildOfComponent(actionRow, child.Component)
+                                    .At(child.State.TextSpan)
+                            );
+                        }
+                    }
+
+                    // any remaining components are not allow
+                    if (state.Children.Count > 5)
                     {
                         bag.Add(
                             Diagnostic
-                                .InvalidChildOfComponent(actionRow, child.Component)
-                                .At(child.State.TextSpan)
+                                .TooManyChildren(actionRow, 5)
+                                .At(
+                                    CXTextSpan.FromBounds(
+                                        state.Children[5].State.TextSpan.Start,
+                                        state.Children[state.Children.Count - 1].State.TextSpan.End
+                                    )
+                                )
                         );
                     }
+
+                    break;
                 }
 
-                // any remaining components are not allow
-                if (state.Children.Count > 5)
+                case SelectMenuComponentNode when state.Children.Count > 1:
                 {
+                    // no other components are allowed
                     bag.Add(
                         Diagnostic
                             .TooManyChildren(actionRow, 5)
                             .At(
                                 CXTextSpan.FromBounds(
-                                    state.Children[5].State.TextSpan.Start,
+                                    state.Children[1].State.TextSpan.Start,
                                     state.Children[state.Children.Count - 1].State.TextSpan.End
                                 )
                             )
                     );
+
+                    break;
                 }
 
-                break;
+                case IDynamicComponentNode: break;
+
+                default:
+                    foreach (var invalidChild in state.Children.Where(x => !IsValidChild(x.Component)))
+                    {
+                        bag.Add(
+                            Diagnostic
+                                .InvalidChildOfComponent(actionRow, invalidChild.Component)
+                                .At(invalidChild.State.TextSpan)
+                        );
+                    }
+
+                    break;
             }
-
-            case SelectMenuComponentNode when state.Children.Count > 1:
-            {
-                // no other components are allowed
-                bag.Add(
-                    Diagnostic
-                        .TooManyChildren(actionRow, 5)
-                        .At(
-                            CXTextSpan.FromBounds(
-                                state.Children[1].State.TextSpan.Start,
-                                state.Children[state.Children.Count - 1].State.TextSpan.End
-                            )
-                        )
-                );
-
-                break;
-            }
-
-            case IDynamicComponentNode: break;
-
-            default:
-                foreach (var invalidChild in state.Children.Where(x => !IsValidChild(x.Component)))
-                {
-                    bag.Add(
-                        Diagnostic
-                            .InvalidChildOfComponent(actionRow, invalidChild.Component)
-                            .At(invalidChild.State.TextSpan)
-                    );
-                }
-
-                break;
         }
-
-        // TODO: validate children
 
         static bool IsValidChild(IComponentNode node)
             => node is IDynamicComponentNode

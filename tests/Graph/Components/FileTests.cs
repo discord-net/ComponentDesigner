@@ -61,6 +61,9 @@ public sealed class FileTests(ITestOutputHelper output) : BaseComponentTest(outp
         );
         {
             var file = Component<FileComponentNode>();
+            {
+                Component<SeparatorComponentNode>();
+            }
             
             Emits(null);
             {

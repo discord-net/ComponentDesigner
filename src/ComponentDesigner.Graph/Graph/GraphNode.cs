@@ -7,8 +7,13 @@ namespace ComponentDesigner;
 
 public sealed class GraphNode : IEquatable<GraphNode>, ISourceLocatable
 {
+    public int Id { get; }
+
     public CXTextSpan TextSpan => State.TextSpan;
-    public GraphNode? Parent { get; private set; }
+
+    public GraphNode? Parent
+        => _parentId.HasValue ? Tree[_parentId.Value] : null;
+
     public IComponentNode Component { get; }
 
     public ComponentState State
@@ -19,61 +24,51 @@ public sealed class GraphNode : IEquatable<GraphNode>, ISourceLocatable
 
     public bool HasChildren => _children?.Count > 0;
 
-    public List<GraphNode> Children => _children ??= [];
-    public List<GraphNode> Attributes => _attributes ??= [];
+    public IReadOnlyList<GraphNode> Children => _children ?? (IReadOnlyList<GraphNode>)[];
 
-
-    private List<GraphNode>? _children;
-    private List<GraphNode>? _attributes;
     private ComponentState? _state;
+
+    internal readonly CXComponentTree Tree;
 
     private Result<RenderedComponent>? _result;
 
-    public GraphNode(
+    private readonly int? _parentId;
+    private NodeList? _children;
+
+    internal GraphNode(
+        CXComponentTree tree,
+        int id,
         IComponentNode component,
         ComponentState? state = null,
-        List<GraphNode>? children = null,
-        List<GraphNode>? attributes = null,
-        GraphNode? parent = null
+        NodeList? children = null,
+        int? parentId = null
     )
     {
+        Id = id;
+        Tree = tree;
         Component = component;
-        Parent = parent;
-        _state = state;
         _children = children;
-        _attributes = attributes;
-    }
+        _parentId = parentId;
+        _state = state;
 
-    public GraphNode Update(
-        IComponentContext context,
-        IDiagnosticBag diagnostics,
-        CancellationToken cancellationToken,
-        GraphNode? parent = null
-    )
-    {
-        var newState = _state is null
-            ? _state
-            : Component.UpdateState(_state, context, diagnostics, cancellationToken);
-
-        var result = new GraphNode(Component, newState, parent: parent);
-
-        UpdateNodes(ref result._children, _children);
-        UpdateNodes(ref result._attributes, _attributes);
-
-        return result;
-
-        void UpdateNodes(ref List<GraphNode>? results, List<GraphNode>? nodes)
+        if (Parent is { } parent)
         {
-            if (nodes is null or { Count: 0 }) return;
-
-            results ??= [];
-
-            for (var i = 0; i < nodes.Count; i++)
-            {
-                results[i] = nodes[i].Update(context, diagnostics, cancellationToken, result);
-            }
+            parent._children ??= new(tree);
+            parent._children.Add(this);
         }
     }
+
+    public GraphNode Reuse(
+        CXComponentTree tree,
+        ComponentState? state = null
+    ) => new(
+        tree,
+        Id,
+        Component,
+        state ?? State,
+        _children?.WithTree(tree),
+        _parentId
+    );
 
     public Result<RenderedComponent> Emit(
         ComponentEmitContext context,
@@ -93,25 +88,18 @@ public sealed class GraphNode : IEquatable<GraphNode>, ISourceLocatable
         return
             (_state?.Equals(other._state) ?? other._state is null) &&
             Component.Equals(other.Component) &&
-            (_children, other._children) switch
-            {
-                (not null, not null) => _children.SequenceEqual(other._children),
-                (null, null) => true,
-                _ => false
-            } &&
-            (_attributes, other._attributes) switch
-            {
-                (not null, not null) => _attributes.SequenceEqual(other._attributes),
-                (null, null) => true,
-                _ => false
-            };
+            (
+                (_children?.Count ?? 0) == (other._children?.Count ?? 0) &&
+                (_children is null || _children.Equals(other._children))
+            ) &&
+            _parentId == other._parentId;
     }
 
     public override int GetHashCode()
         => Hash.Combine(
             Component,
             _state,
-            _children?.Aggregate(0, Hash.Combine),
-            _attributes?.Aggregate(0, Hash.Combine)
+            _children,
+            _parentId
         );
 }

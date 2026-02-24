@@ -19,6 +19,8 @@ public abstract class ComponentNode<T> :
 
     public virtual bool AllowChildrenInCX => IsParentOfOtherComponents;
 
+    public virtual bool HasExternalDependencies => false;
+
     public abstract T? Initialize(
         ComponentNodeInitializationContext context,
         IDiagnosticBag diagnostics,

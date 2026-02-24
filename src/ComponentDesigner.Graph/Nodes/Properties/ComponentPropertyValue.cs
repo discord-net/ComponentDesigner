@@ -34,7 +34,7 @@ public abstract record ComponentPropertyValue(
             or AttributeValue { Attribute.Value: not null }
             or Component
             or SyntaxValue || (
-            this is Many many && many.Values.All(x => x.HasValue)
+            this is Many{Values.Count: > 0} many && many.Values.All(x => x.HasValue)
         );
 
     public virtual CXValue? CXValue => null;
@@ -48,7 +48,7 @@ public abstract record ComponentPropertyValue(
         or AttributeValue { Attribute.IdentifierToken.IsMissing: false }
         or Component
         or SyntaxValue || (
-        this is Many many && many.Values.All(x => x.IsSpecified)
+        this is Many {Values.Count: > 0} many && many.Values.All(x => x.IsSpecified)
     );
 
     public bool IsOptional => Property.IsOptional;

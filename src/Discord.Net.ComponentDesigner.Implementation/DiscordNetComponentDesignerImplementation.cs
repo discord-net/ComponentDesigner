@@ -9,20 +9,12 @@ public sealed class DiscordNetComponentDesignerImplementation :
 {
     public string Name => "Discord.Net";
 
-    public ICompilationProvider CompilationProvider { get; }
-
     public IComponentRenderer Renderer { get; } = new DiscordNetRenderer();
 
     public ITextControlProvider TextControlProvider => DefaultTextControlProvider.Instance;
 
     public IComponentTypingProvider ComponentTypingProvider => this;
-
-    public DiscordNetComponentDesignerImplementation(ICompilationProvider compilationProvider)
-    {
-        CompilationProvider = compilationProvider;
-    }
-
-
+    
     public bool IsValidComponentType(
         IComponentContext context,
         ICSharpTypeSymbol? symbol,

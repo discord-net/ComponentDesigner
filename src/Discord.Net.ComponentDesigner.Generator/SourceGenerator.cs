@@ -2,31 +2,99 @@
 using System.Linq;
 using System.Threading;
 using ComponentDesigner.CSharp;
+using Discord;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
 
 namespace ComponentDesigner;
 
-public sealed class Target(
-    InterceptableLocation interceptableLocation,
-    string? parentKey,
-    CXModel cx
-)
-{
-    public InterceptableLocation InterceptableLocation { get; } = interceptableLocation;
-    public string? ParentKey { get; } = parentKey;
-    public CXModel CX { get; } = cx;
-}
-
 public sealed class SourceGenerator : IIncrementalGenerator
 {
+    private const string ENABLE_AUTO_ROWS_KEY = "build_property.EnableAutoRows";
+    private const string ENABLE_AUTO_TEXT_DISPLAY = "build_property.EnableAutoTextDisplay";
+
+    public static DiscordNetComponentDesignerImplementation Implementation { get; } = new();
+    
+    
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
+        IncrementalValuesProvider<ComponentDesignerTarget> targetProvider = context
+            .SyntaxProvider
+            .CreateSyntaxProvider(
+                IsComponentDesignerEntryPoint,
+                MapPossibleComponentDesignerEntryPoint
+            )
+            .WithTrackingName(TrackingNames.INITIAL_TARGET)
+            .Where(x => x is not null)!;
+
+        var optionsProvider = CreateGraphOptionsProvider(context);
+
+        var graphProvider = targetProvider
+            .Combine(optionsProvider)
+            .Select(CreateGraphParameters)
+            .WithComparer(Stage1GraphParametersComparer.Instance)
+            .Select(CreateGraph);
     }
 
-    public static Target? Map(
+    public static CXComponentGraph CreateGraph(GraphParameters parameters, CancellationToken cancellationToken)
+        => CXComponentGraph.Create(parameters, cancellationToken);
+
+    public static GraphParameters CreateGraphParameters(
+        (ComponentDesignerTarget Target, GraphOptions Options) tuple,
+        CancellationToken cancellationToken
+    ) => new (
+        Implementation,
+        CSharpCompilationProvider.Get(tuple.Target.Compilation),
+        tuple.Target.CX,
+        tuple.Options
+    );
+
+    public static IncrementalValueProvider<GraphOptions> CreateGraphOptionsProvider(
+        IncrementalGeneratorInitializationContext context
+    )
+    {
+        return context
+            .CompilationProvider
+            .Combine(context.AnalyzerConfigOptionsProvider)
+            .Select(CreateOptions);
+        
+        static GraphOptions CreateOptions(
+            (Compilation Compilation, AnalyzerConfigOptionsProvider Options) tuple,
+            CancellationToken cancellationToken
+        )
+        {
+            var (compilation, options) = tuple;
+
+            var autoRows = GetBoolValue(options, ENABLE_AUTO_ROWS_KEY);
+            var autoTextDisplay = GetBoolValue(options, ENABLE_AUTO_TEXT_DISPLAY);
+
+            return new(
+                autoRows ?? GraphOptions.Default.AllowAutoRows,
+                autoTextDisplay ?? GraphOptions.Default.AllowAutoTextDisplays
+            );
+        }
+
+        static bool? GetBoolValue(AnalyzerConfigOptionsProvider provider, string key)
+        {
+            if (
+                !provider.GlobalOptions.TryGetValue(key, out var val) ||
+                string.IsNullOrEmpty(val) ||
+                !bool.TryParse(val, out var flag)
+            )  return null;
+
+            return flag;
+        }
+    }
+
+    public static ComponentDesignerTarget? MapPossibleComponentDesignerEntryPoint(
+        GeneratorSyntaxContext context,
+        CancellationToken cancellationToken
+    ) => MapPossibleComponentDesignerEntryPoint(context.SemanticModel, context.Node, cancellationToken);
+
+    public static ComponentDesignerTarget? MapPossibleComponentDesignerEntryPoint(
         SemanticModel semanticModel,
         SyntaxNode syntaxNode,
         CancellationToken cancellationToken = default
@@ -60,7 +128,7 @@ public sealed class SourceGenerator : IIncrementalGenerator
         var designerParameter = invocationOperation
             .TargetMethod
             .Parameters[0];
-        
+
         var usesDesignerParameter = designerParameter
             .Type
             .SpecialType is not SpecialType.System_String;
@@ -69,9 +137,9 @@ public sealed class SourceGenerator : IIncrementalGenerator
             ? designerParameter.Name
             : null;
 
-        return new Target(
+        return new ComponentDesignerTarget(
+            semanticModel.Compilation,
             interceptableLocation,
-            parentKey,
             new CXModel(
                 cx,
                 locationInfo,
@@ -133,7 +201,6 @@ public sealed class SourceGenerator : IIncrementalGenerator
                 interpolations = null;
                 quoteCount = 0;
                 return false;
-                
         }
 
         static string PrepareRawLiteral(
@@ -223,7 +290,7 @@ public sealed class SourceGenerator : IIncrementalGenerator
         return true;
     }
 
-    public static bool IsComponentDesignerCall(SyntaxNode node, CancellationToken token)
+    public static bool IsComponentDesignerEntryPoint(SyntaxNode node, CancellationToken token)
         => node is InvocationExpressionSyntax
         {
             Expression: MemberAccessExpressionSyntax

@@ -69,7 +69,7 @@ public abstract class BaseComponentTest(ITestOutputHelper output) : TestWithDiag
 
         Assert.NotNull(invocation);
 
-        var target = SourceGenerator.Map(
+        var target = SourceGenerator.MapPossibleComponentDesignerEntryPoint(
             compilation.GetSemanticModel(invocation.SyntaxTree),
             invocation
         );
@@ -79,7 +79,8 @@ public abstract class BaseComponentTest(ITestOutputHelper output) : TestWithDiag
         var compilationProvider = CSharpCompilationProvider.Get(compilation);
         
         var graphParameters = new GraphParameters(
-            new DiscordNetComponentDesignerImplementation(compilationProvider),
+            new DiscordNetComponentDesignerImplementation(),
+            compilationProvider,
             target.CX,
             options ?? GraphOptions.Default
         );
@@ -100,7 +101,7 @@ public abstract class BaseComponentTest(ITestOutputHelper output) : TestWithDiag
         Assert.NotNull(_compilation);
         AssertEmptyDiagnostics();
 
-        var result = _graph.Emit();
+        var result = _graph.Emit(CSharpCompilationProvider.Get(_compilation));
 
         PushDiagnostics(result.Diagnostics);
 
@@ -146,10 +147,6 @@ public abstract class BaseComponentTest(ITestOutputHelper output) : TestWithDiag
     private IEnumerable<GraphNode> EnumerateNodes(GraphNode graphNode)
     {
         yield return graphNode;
-
-        foreach (var attrNode in graphNode.Attributes)
-        foreach (var child in EnumerateNodes(attrNode))
-            yield return child;
 
         foreach (var childNode in graphNode.Children)
         foreach (var child in EnumerateNodes(childNode))

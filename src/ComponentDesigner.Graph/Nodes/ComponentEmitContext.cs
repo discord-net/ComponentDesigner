@@ -3,7 +3,7 @@ using ComponentDesigner.Util;
 
 namespace ComponentDesigner.Nodes;
 
-public sealed class ComponentEmitContext(CXComponentGraph graph) :
+public sealed class ComponentEmitContext(CXComponentGraph graph, ICompilationProvider compilationProvider) :
     IRendererContext,
     IEquatable<ComponentEmitContext>
 {
@@ -12,6 +12,7 @@ public sealed class ComponentEmitContext(CXComponentGraph graph) :
     public GraphOptions Options => _graph.Options;
 
     public IComponentImplementation Implementation => _graph.Implementation;
+    public ICompilationProvider CompilationProvider { get; } = compilationProvider;
 
     private readonly CXComponentGraph _graph = graph;
 
