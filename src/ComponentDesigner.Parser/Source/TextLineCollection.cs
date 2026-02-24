@@ -38,6 +38,15 @@ public abstract class TextLineCollection
     /// </returns>
     public TextLine GetLineFromPosition(int position) => this[IndexOf(position)];
 
+    public LinePosition GetLinePositon(int position)
+    {
+        var line = GetLineFromPosition(position);
+        return new(line.LineNumber, position - line.Start);
+    }
+
+    public LinePositionSpan GetLinePositionSpan(CXTextSpan span)
+        => new(GetLinePositon(span.Start), GetLinePositon(span.End));
+
     /// <summary>
     ///     Gets a <see cref="SourceLocation"/> from a given <paramref name="position"/> relative to the start of the
     ///     <see cref="CXSourceText"/>.
@@ -54,4 +63,6 @@ public abstract class TextLineCollection
         var line = GetLineFromPosition(position);
         return new(line.LineNumber, position - line.Start, position);
     }
+    
+    
 }

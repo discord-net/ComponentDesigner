@@ -121,7 +121,7 @@ public abstract class BaseCSharpRenderer : IComponentRenderer
                 case CXIdentifier.Interpolated { InterpolationToken: { } token }:
                     var info = context.GetInterpolationInfo(token);
 
-                    return $"{context.GetReferenceToDesignerValue(info)}.{symbol.Name}";
+                    return $"{context.GetReferenceToDesignerValue(info, info.Symbol)}.{symbol.Name}";
 
                 default: throw new ArgumentOutOfRangeException(nameof(element));
             }

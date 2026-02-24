@@ -9,7 +9,7 @@ public sealed class ComponentEmitContext(CXComponentGraph graph, ICompilationPro
 {
     public ICXModel CX => _graph.CX;
 
-    public GraphOptions Options => _graph.Options;
+    public IGraphOptions Options => _graph.Options;
 
     public IComponentImplementation Implementation => _graph.Implementation;
     public ICompilationProvider CompilationProvider { get; } = compilationProvider;

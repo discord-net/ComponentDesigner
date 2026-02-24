@@ -7,5 +7,5 @@ public interface IComponentContext : IEquatable<IComponentContext>
     
     ICXModel CX { get; }
     
-    GraphOptions Options { get; }
+    IGraphOptions Options { get; }
 }

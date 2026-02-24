@@ -45,7 +45,7 @@ public abstract partial class CXSourceText
             return new string(slice);
         }
     }
-
+    
     /// <summary>
     ///     Gets a collection representing each line within this <see cref="CXSourceText"/>.
     /// </summary>

@@ -32,8 +32,8 @@ public abstract class BaseComponentTest(ITestOutputHelper output) : TestWithDiag
         string cx,
         [StringSyntax("csharp")] string? pretext = null,
         bool allowParsingErrors = false,
-        GraphOptions? options = null,
-        [StringSyntax("csharp")] string? additionalMethods = null,
+        GeneratorGraphOptions? options = null,
+        [StringSyntax("csharp")] string? additionalMembers = null,
         string testClassName = "TestClass",
         string testFuncName = "Run",
         bool hasInterpolations = true,
@@ -48,7 +48,7 @@ public abstract class BaseComponentTest(ITestOutputHelper output) : TestWithDiag
 
         var source = MakeCSharpSource(
             cx, pretext, quoteCount, hasInterpolations, testClassName, testFuncName,
-            additionalMethods
+            additionalMembers
         );
 
         var syntaxTree = CSharpSyntaxTree.ParseText(source);
@@ -82,7 +82,7 @@ public abstract class BaseComponentTest(ITestOutputHelper output) : TestWithDiag
             new DiscordNetComponentDesignerImplementation(),
             compilationProvider,
             target.CX,
-            options ?? GraphOptions.Default
+            options ?? GeneratorGraphOptions.Default
         );
 
         var graph = CXComponentGraph.Create(graphParameters);

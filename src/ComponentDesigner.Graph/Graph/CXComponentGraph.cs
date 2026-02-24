@@ -12,7 +12,7 @@ public sealed class CXComponentGraph : IEquatable<CXComponentGraph>
     public IReadOnlyList<Diagnostic> Diagnostics { get; }
     public CXDocument Document { get; }
     public ICXModel CX { get; }
-    public GraphOptions Options { get; }
+    public IGraphOptions Options { get; }
     public IComponentImplementation Implementation { get; }
 
     private readonly IReadOnlyList<Diagnostic> _diagnostics;
@@ -25,7 +25,7 @@ public sealed class CXComponentGraph : IEquatable<CXComponentGraph>
         CXComponentTree tree,
         IReadOnlyList<Diagnostic> diagnostics,
         ICXModel cx,
-        GraphOptions options,
+        IGraphOptions options,
         IComponentImplementation implementation,
         IReadOnlyList<Diagnostic>? updateDiagnostics = null
     )
@@ -344,7 +344,8 @@ public sealed class CXComponentGraph : IEquatable<CXComponentGraph>
         CancellationToken cancellationToken = default
     )
     {
-        // TODO: try resolve custom components
+        // for now, just assume it to be a functional component
+        result = FunctionalComponentNode.Instance;
     }
 
     public static GraphNode? CreateFromInitializationRequest(
@@ -368,7 +369,7 @@ public sealed class CXComponentGraph : IEquatable<CXComponentGraph>
                 CreateNodes(nestedElement.Value, node, context, cancellationToken);
             }
         }
-        
+
         // then do children
         if (request.Children?.Count > 0)
         {
@@ -386,24 +387,24 @@ public sealed class CXComponentGraph : IEquatable<CXComponentGraph>
         if (state is null) return null;
 
         node.State = state;
-        
+
         return node;
     }
 
     #endregion
 
-    public CXComponentGraph UpdateState(
-        GraphParameters parameters,
+    public CXComponentGraph UpdateDependencies(
+        ICompilationProvider compilationProvider,
         CancellationToken cancellationToken
     )
     {
         if (!_tree.HasExternalDependencies) return this;
 
         var context = new GraphUpdateContext(
-            parameters.CX,
-            parameters.Options,
-            parameters.Implementation,
-            parameters.CompilationProvider
+            CX,
+            Options,
+            Implementation,
+            compilationProvider
         );
 
         using var diagnostics = PooledDiagnosticBag.Get();
@@ -433,7 +434,7 @@ public sealed class CXComponentGraph : IEquatable<CXComponentGraph>
         }
 
         var newTree = new CXComponentTree();
-        
+
         for (var i = 0; i < _tree.Count; i++)
             newTree.Reuse(_tree[i], updatedStates[i]);
 
@@ -441,7 +442,9 @@ public sealed class CXComponentGraph : IEquatable<CXComponentGraph>
             Document,
             newTree,
             _diagnostics,
-            parameters,
+            CX,
+            Options,
+            Implementation,
             diagnostics.ToCollection()
         );
     }

@@ -1,24 +1,37 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using ComponentDesigner.CSharp;
+using ComponentDesigner.Parser;
+using ComponentDesigner.Util;
 using Discord;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
+using Microsoft.CodeAnalysis.Text;
+using RoslynDiagnostic = Microsoft.CodeAnalysis.Diagnostic;
+using RoslynDiagnosticDescriptor = Microsoft.CodeAnalysis.DiagnosticDescriptor;
 
 namespace ComponentDesigner;
+
+using FinalProduct = (ImmutableArray<EmittedGraph>, ImmutableArray<ComponentDesignerTarget>);
 
 public sealed class SourceGenerator : IIncrementalGenerator
 {
     private const string ENABLE_AUTO_ROWS_KEY = "build_property.EnableAutoRows";
     private const string ENABLE_AUTO_TEXT_DISPLAY = "build_property.EnableAutoTextDisplay";
 
+    public IncrementalValueProvider<FinalProduct> Provider { get; private set; }
+
     public static DiscordNetComponentDesignerImplementation Implementation { get; } = new();
-    
-    
+
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
         IncrementalValuesProvider<ComponentDesignerTarget> targetProvider = context
@@ -28,40 +41,282 @@ public sealed class SourceGenerator : IIncrementalGenerator
                 MapPossibleComponentDesignerEntryPoint
             )
             .WithTrackingName(TrackingNames.INITIAL_TARGET)
-            .Where(x => x is not null)!;
+            .Where(x => x is not null)
+            .WithTrackingName(TrackingNames.FILTER_NOT_NULL_TARGETS)!;
 
-        var optionsProvider = CreateGraphOptionsProvider(context);
-
-        var graphProvider = targetProvider
-            .Combine(optionsProvider)
+        Provider = targetProvider
+            .Combine(CreateGraphOptionsProvider(context))
+            .WithTrackingName(TrackingNames.TARGET_WITH_GENERATOR_OPTIONS)
             .Select(CreateGraphParameters)
+            .WithTrackingName(TrackingNames.CREATE_GRAPH_PARAMETERS)
             .WithComparer(Stage1GraphParametersComparer.Instance)
-            .Select(CreateGraph);
+            .Select(CreateGraph)
+            .WithTrackingName(TrackingNames.CREATE_GRAPH)
+            .Combine(context.CompilationProvider)
+            .WithTrackingName(TrackingNames.GRAPH_WITH_COMPILATION)
+            .Select(UpdateGraphDependencies)
+            .WithTrackingName(TrackingNames.UPDATE_GRAPH_EXTERNAL_DEPENDENCIES)
+            .Select(EmitGraph)
+            .WithTrackingName(TrackingNames.EMIT_GRAPH)
+            .Collect()
+            .WithTrackingName(TrackingNames.ALL_EMITTED_GRAPHS)
+            .Combine(
+                targetProvider
+                    .Collect()
+                    .WithTrackingName(TrackingNames.ALL_TARGETS)
+            )
+            .WithTrackingName(TrackingNames.EMITTED_GRAPHS_AND_TARGETS);
+
+        context.RegisterImplementationSourceOutput(
+            Provider,
+            Generate
+        );
+    }
+
+    private void Generate(
+        SourceProductionContext context,
+        FinalProduct product
+    )
+    {
+        var (emits, targets) = product;
+
+        if (emits.Length is 0) return;
+
+        // since we don't remove/add any new values in the pipeline, the arrays should map 1<->1 
+        if (emits.Length != targets.Length)
+        {
+            throw new InvalidOperationException("bad pipeline state");
+        }
+
+        var buckets = new Dictionary<string, List<string>>();
+
+        for (var i = 0; i < emits.Length; i++)
+        {
+            var emitted = emits[i];
+            var target = targets[i];
+
+            foreach (var diagnostic in emitted.Diagnostics)
+            {
+                context.ReportDiagnostic(
+                    diagnostic.ToRoslyn(
+                        GetLocation(emitted.Graph.Document.Source!, target.CX.Location, diagnostic.TextSpan)
+                    )
+                );
+            }
+
+            if (string.IsNullOrEmpty(emitted.Source)) continue;
+
+            var bucketName = target.CX.Location.FilePath ?? string.Empty;
+
+            if (!buckets.TryGetValue(bucketName, out var bucket))
+                buckets[bucketName] = bucket = new();
+
+            bucket.Add(
+                RenderInterceptor(
+                    emitted.Source!,
+                    target.InterceptableMethodInfo.Location,
+                    target.InterceptableMethodInfo.ReturnType,
+                    target.InterceptableMethodInfo.Parameters
+                )
+            );
+        }
+
+        var rootDir = ((GeneratorGraphOptions)emits[0].Graph.Options).ProjectDirectory;
+
+        if (rootDir is null)
+        {
+            rootDir = CalculateCommonPath(buckets.Keys);
+        }
+
+        var sources = new Dictionary<string, List<string>>();
+
+        foreach (var bucket in buckets)
+        {
+            string fileName;
+
+            if (rootDir is null || string.IsNullOrEmpty(bucket.Key))
+            {
+                fileName = "Generated.g.cs";
+            }
+            else
+            {
+                var path = bucket.Key.StartsWith(rootDir)
+                    ? bucket.Key.Substring(0, rootDir.Length)
+                    : bucket.Key;
+
+                // replace file ext with .g.cs
+
+                var newFileName = $"{Path.GetFileNameWithoutExtension(path)}.g.cs";
+
+                fileName = Path.GetDirectoryName(path) is { } dir
+                    ? Path.Combine(
+                        dir,
+                        newFileName
+                    )
+                    : newFileName;
+            }
+
+            if (!sources.TryGetValue(fileName, out var fileBucket))
+                sources[fileName] = fileBucket = [];
+
+            fileBucket.AddRange(bucket.Value);
+        }
+
+        foreach (var source in sources)
+        {
+            context.AddSource(
+                source.Key,
+                $$"""
+                  namespace System.Runtime.CompilerServices
+                  {
+                      [AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]
+                      sealed file class InterceptsLocationAttribute(int version, string data) : Attribute;
+                  }
+
+                  namespace ComponentDesignerInterceptors
+                  {
+                      static file class Interceptors
+                      {
+                          {{
+                              string.Join(
+                                  $"{Environment.NewLine}{Environment.NewLine}",
+                                  source.Value.Select(x => x.WithNewlinePadding(8))
+                              )
+                          }}
+                      }
+                  }
+                  """
+            );
+        }
+
+
+        static string RenderInterceptor(
+            string source,
+            InterceptableLocation location,
+            string returnType,
+            string parameters
+        ) => $"""
+              [global::System.Runtime.CompilerServices.InterceptsLocation(version: {location.Version}, data: "{location.Data}")]
+              public static {returnType} _{Math.Abs(location.GetHashCode())}({parameters})
+                  => {source};
+              """;
+
+
+        static string? CalculateCommonPath(IReadOnlyCollection<string> paths)
+        {
+            var minSlash = int.MaxValue;
+            string? minPath = null;
+
+            foreach (var path in paths)
+            {
+                if (string.IsNullOrEmpty(path)) continue;
+
+                var splits = path.Split('\\').Count();
+                if (minSlash > splits)
+                {
+                    minSlash = splits;
+                    minPath = path;
+                }
+            }
+
+            if (minPath != null)
+            {
+                var splits = minPath.Split(Path.DirectorySeparatorChar);
+                for (var i = 0; i < minSlash; i++)
+                {
+                    if (paths.Any(x => !string.IsNullOrEmpty(x) && !x.StartsWith(splits[i])))
+                    {
+                        return i >= 0 ? splits.Take(i).ToString() : "";
+                    }
+                }
+            }
+
+            return minPath;
+        }
+
+        static Location GetLocation(
+            CXSourceText source,
+            LocationInfo cxInfo,
+            CXTextSpan textSpan
+        )
+        {
+            var sourceLineSpan = source.Lines.GetLinePositionSpan(textSpan);
+
+            // we have to normalize everything back to the original C# file
+            return Location.Create(
+                cxInfo.FilePath ?? string.Empty,
+                new TextSpan(
+                    textSpan.Start + cxInfo.TextSpan.Start,
+                    textSpan.Length
+                ),
+                new Microsoft.CodeAnalysis.Text.LinePositionSpan(
+                    new Microsoft.CodeAnalysis.Text.LinePosition(
+                        cxInfo.LineSpan.Start.Line + sourceLineSpan.Start.Line,
+                        sourceLineSpan.Start.Character
+                    ),
+                    new Microsoft.CodeAnalysis.Text.LinePosition(
+                        cxInfo.LineSpan.End.Line + sourceLineSpan.End.Line,
+                        sourceLineSpan.End.Character
+                    )
+                )
+            );
+        }
+    }
+
+    public static EmittedGraph EmitGraph(
+        UpdatedGraph parameters,
+        CancellationToken cancellationToken
+    )
+    {
+        var result = parameters.Graph.Emit(parameters.CompilationProvider, cancellationToken);
+
+        return new(
+            parameters.Graph,
+            result.GetValueOrDefault(),
+            result.Diagnostics,
+            parameters.CompilationProvider
+        );
+    }
+
+    public static UpdatedGraph UpdateGraphDependencies(
+        (CXComponentGraph Graph, Compilation Compilation) tuple,
+        CancellationToken cancellationToken
+    )
+    {
+        var provider = CSharpCompilationProvider.Get(tuple.Compilation);
+
+        var graph = tuple.Graph.UpdateDependencies(
+            provider,
+            cancellationToken
+        );
+
+        return new(graph, provider);
     }
 
     public static CXComponentGraph CreateGraph(GraphParameters parameters, CancellationToken cancellationToken)
         => CXComponentGraph.Create(parameters, cancellationToken);
 
     public static GraphParameters CreateGraphParameters(
-        (ComponentDesignerTarget Target, GraphOptions Options) tuple,
+        (ComponentDesignerTarget Target, GeneratorGraphOptions Options) tuple,
         CancellationToken cancellationToken
-    ) => new (
+    ) => new(
         Implementation,
         CSharpCompilationProvider.Get(tuple.Target.Compilation),
         tuple.Target.CX,
         tuple.Options
     );
 
-    public static IncrementalValueProvider<GraphOptions> CreateGraphOptionsProvider(
+    public static IncrementalValueProvider<GeneratorGraphOptions> CreateGraphOptionsProvider(
         IncrementalGeneratorInitializationContext context
     )
     {
         return context
             .CompilationProvider
             .Combine(context.AnalyzerConfigOptionsProvider)
-            .Select(CreateOptions);
-        
-        static GraphOptions CreateOptions(
+            .Select(CreateOptions)
+            .WithTrackingName(TrackingNames.GENERATOR_OPTIONS);
+
+        static GeneratorGraphOptions CreateOptions(
             (Compilation Compilation, AnalyzerConfigOptionsProvider Options) tuple,
             CancellationToken cancellationToken
         )
@@ -71,9 +326,20 @@ public sealed class SourceGenerator : IIncrementalGenerator
             var autoRows = GetBoolValue(options, ENABLE_AUTO_ROWS_KEY);
             var autoTextDisplay = GetBoolValue(options, ENABLE_AUTO_TEXT_DISPLAY);
 
+            string? projectDir = null;
+
+            if (
+                (
+                    options.GlobalOptions.TryGetValue("build_property.ProjectDir", out var dir) &&
+                    !string.IsNullOrEmpty(dir)
+                ) ||
+                (options.GlobalOptions.TryGetValue("build_property.SolutionDir", out dir) && !string.IsNullOrEmpty(dir))
+            ) projectDir = dir;
+
             return new(
-                autoRows ?? GraphOptions.Default.AllowAutoRows,
-                autoTextDisplay ?? GraphOptions.Default.AllowAutoTextDisplays
+                autoRows ?? false,
+                autoTextDisplay ?? false,
+                projectDir
             );
         }
 
@@ -83,7 +349,7 @@ public sealed class SourceGenerator : IIncrementalGenerator
                 !provider.GlobalOptions.TryGetValue(key, out var val) ||
                 string.IsNullOrEmpty(val) ||
                 !bool.TryParse(val, out var flag)
-            )  return null;
+            ) return null;
 
             return flag;
         }
@@ -137,18 +403,68 @@ public sealed class SourceGenerator : IIncrementalGenerator
             ? designerParameter.Name
             : null;
 
+        var designerParameterType = usesDesignerParameter
+            ? designerParameter.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
+            : null;
+
         return new ComponentDesignerTarget(
             semanticModel.Compilation,
-            interceptableLocation,
+            new InterceptableMethodInfo(
+                interceptableLocation,
+                invocationOperation
+                    .TargetMethod
+                    .ReturnType
+                    .ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
+                ToParametersString(invocationOperation.TargetMethod)
+            ),
             new CXModel(
                 cx,
                 locationInfo,
                 quoteCount,
                 usesDesignerParameter,
                 designerParameterName,
+                designerParameterType,
                 interpolations
             )
         );
+
+        static string ToParametersString(IMethodSymbol symbol)
+        {
+            var sb = new StringBuilder();
+
+            if (!symbol.IsStatic)
+            {
+                sb.Append(
+                    $"this {symbol.ContainingType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)} __this__"
+                );
+            }
+
+            for (var i = 0; i < symbol.Parameters.Length; i++)
+            {
+                if (sb.Length > 0)
+                    sb.Append(", ");
+
+                var parameter = symbol.Parameters[i];
+
+                if (parameter.ScopedKind is not ScopedKind.None)
+                    sb.Append("scoped ");
+
+                sb.Append(parameter.RefKind switch
+                {
+                    RefKind.In => "in ",
+                    RefKind.Out => "out ",
+                    RefKind.Ref => "ref ",
+                    RefKind.RefReadOnlyParameter => "ref readonly",
+                    _ => string.Empty
+                });
+
+                sb.Append(parameter.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat))
+                    .Append(' ')
+                    .Append(parameter.Name);
+            }
+
+            return sb.ToString();
+        }
     }
 
     public static bool TryGetCXDesigner(

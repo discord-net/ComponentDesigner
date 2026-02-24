@@ -14,14 +14,10 @@ public sealed class DiscordNetComponentDesignerImplementation :
     public ITextControlProvider TextControlProvider => DefaultTextControlProvider.Instance;
 
     public IComponentTypingProvider ComponentTypingProvider => this;
-    
+
     public bool IsValidComponentType(
         IComponentContext context,
         ICSharpTypeSymbol? symbol,
         CancellationToken cancellationToken = default
-    )
-    {
-        // TODO
-        return false;
-    }
+    ) => ComponentBuilderType.TryGetFromSymbol(symbol, context.CompilationProvider, cancellationToken, out _);
 }

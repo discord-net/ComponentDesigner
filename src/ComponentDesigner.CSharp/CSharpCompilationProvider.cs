@@ -10,11 +10,11 @@ public sealed class CSharpCompilationProvider : ICompilationProvider
     private static readonly ConditionalWeakTable<Compilation, CSharpCompilationProvider> _cache = new();
     private static readonly Dictionary<int, WeakReference<ICSharpSymbol>> _symbolsCache = [];
 
-    private readonly Compilation _inner;
+    public Compilation Inner { get; }
 
     private CSharpCompilationProvider(Compilation inner)
     {
-        _inner = inner;
+        Inner = inner;
     }
 
     public static CSharpCompilationProvider Get(Compilation compilation)
@@ -55,6 +55,21 @@ public sealed class CSharpCompilationProvider : ICompilationProvider
             () => new CSharpTypeSymbol(this, symbol)
         );
     }
+    
+    [return: NotNullIfNotNull(nameof(symbol))]
+    public CSharpMethodSymbol? GetMethodSymbol(IMethodSymbol? symbol)
+    {
+        if (symbol is null) return null;
+
+        return GetSymbol(
+            Hash.Combine(
+                typeof(ICSharpMethodSymbol),
+                symbol.ContainingAssembly.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
+                symbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
+            ),
+            () => new CSharpMethodSymbol(this, symbol)
+        );
+    }
 
     internal ICSharpFieldSymbol GetFieldSymbol(CSharpTypeSymbol containingType, IFieldSymbol symbol)
         => GetSymbol(
@@ -69,11 +84,11 @@ public sealed class CSharpCompilationProvider : ICompilationProvider
 
     public CSharpTypeSymbol? GetTypeFromQualifiedName(string name, CancellationToken cancellationToken = default)
     {
-        var symbol = _inner.GetTypeByMetadataName(name);
+        var symbol = Inner.GetTypeByMetadataName(name);
 
         if (symbol is not null) return GetTypeSymbol(symbol);
 
-        
+
         return null;
     }
 
@@ -81,7 +96,7 @@ public sealed class CSharpCompilationProvider : ICompilationProvider
         ICSharpTypeSymbol? from,
         ICSharpTypeSymbol? to,
         CancellationToken cancellationToken = default
-    ) => _inner.HasImplicitConversion(
+    ) => Inner.HasImplicitConversion(
         GetTypeFromImplementation(from, cancellationToken),
         GetTypeFromImplementation(to, cancellationToken)
     );
@@ -99,7 +114,7 @@ public sealed class CSharpCompilationProvider : ICompilationProvider
 
         return
         [
-            .._inner
+            ..Inner
                 .GetSemanticModel(tree)
                 .LookupSymbols(
                     location.TextSpan.Start,
@@ -117,13 +132,14 @@ public sealed class CSharpCompilationProvider : ICompilationProvider
         {
             ITypeSymbol typeSymbol => GetTypeSymbol(typeSymbol),
             IFieldSymbol field => GetFieldSymbol(GetTypeSymbol(field.ContainingType), field),
+            IMethodSymbol method => GetMethodSymbol(method),
             _ => null
         };
     }
 
     private SyntaxTree? FindSyntaxTree(LocationInfo locationInfo)
     {
-        foreach (var tree in _inner.SyntaxTrees)
+        foreach (var tree in Inner.SyntaxTrees)
         {
             try
             {

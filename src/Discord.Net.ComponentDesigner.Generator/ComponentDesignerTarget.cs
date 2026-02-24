@@ -1,4 +1,5 @@
 ﻿using System;
+using ComponentDesigner.Util;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 
@@ -6,18 +7,24 @@ namespace ComponentDesigner;
 
 public sealed class ComponentDesignerTarget(
     Compilation compilation,
-    InterceptableLocation interceptableLocation,
+    InterceptableMethodInfo interceptableMethodInfo,
     CXModel cx
 ) : IEquatable<ComponentDesignerTarget>
 {
     public Compilation Compilation { get; } = compilation;
-    public InterceptableLocation InterceptableLocation { get; } = interceptableLocation;
+    public InterceptableMethodInfo InterceptableMethodInfo { get; } = interceptableMethodInfo;
     public CXModel CX { get; } = cx;
 
     public bool Equals(ComponentDesignerTarget? other)
     {
         if (other is null) return false;
 
-        return CX.Equals(other.CX) && InterceptableLocation.Equals(other.InterceptableLocation);
+        return CX.Equals(other.CX) && InterceptableMethodInfo.Equals(other.InterceptableMethodInfo);
     }
+
+    public override bool Equals(object? obj)
+        => obj is ComponentDesignerTarget other && Equals(other);
+
+    public override int GetHashCode()
+        => Hash.Combine(CX, InterceptableMethodInfo);
 }

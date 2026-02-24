@@ -4,7 +4,7 @@ namespace ComponentDesigner;
 
 public sealed record GraphUpdateContext(
     ICXModel CX,
-    GraphOptions Options,
+    IGraphOptions Options,
     IComponentImplementation Implementation,
     ICompilationProvider CompilationProvider
 ) : IComponentContext

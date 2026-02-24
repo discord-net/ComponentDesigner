@@ -4,7 +4,11 @@ namespace ComponentDesigner.Nodes;
 
 public sealed class FunctionalComponentNode : ComponentNode<FunctionalState>
 {
+    public static readonly FunctionalComponentNode Instance = new();
+    
     public override string Name => "<functional component>";
+
+    public override bool IsUserAccessible => false;
 
     public override FunctionalState? Initialize(
         ComponentNodeInitializationContext context,

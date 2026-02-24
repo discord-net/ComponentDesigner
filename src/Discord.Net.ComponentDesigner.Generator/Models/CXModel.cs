@@ -12,6 +12,7 @@ public sealed class CXModel(
     int quoteCount,
     bool usesDesignerParameter,
     string? designerParameterName,
+    string? designerParameterType,
     IReadOnlyList<InterpolationInfo> interpolations
 ) : ICXModel, IEquatable<CXModel>
 {
@@ -24,6 +25,7 @@ public sealed class CXModel(
     public bool UsesDesignerParameter { get; } = usesDesignerParameter;
 
     public string? DesignerParameterName { get; } = designerParameterName;
+    public string? DesignerParameterType { get; } = designerParameterType;
 
     public IReadOnlyList<InterpolationInfo> Interpolations { get; } = interpolations;
 
@@ -33,6 +35,7 @@ public sealed class CXModel(
            other.Location == Location &&
            other.QuoteCount == QuoteCount &&
            other.UsesDesignerParameter == UsesDesignerParameter &&
+           other.DesignerParameterType == DesignerParameterType && 
            other.DesignerParameterName == DesignerParameterName &&
            Interpolations.SequenceEqual(other.Interpolations);
 
@@ -42,7 +45,7 @@ public sealed class CXModel(
     public override int GetHashCode()
         => Hash.Combine(
             Syntax, Location, QuoteCount, UsesDesignerParameter, DesignerParameterName,
-            Interpolations.Aggregate(0, Hash.Combine)
+            DesignerParameterType, Interpolations.Aggregate(0, Hash.Combine)
         );
 
     IReadOnlyList<IInterpolationInfo> ICXModel.Interpolations => Interpolations;

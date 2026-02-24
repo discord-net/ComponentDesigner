@@ -6,7 +6,7 @@ namespace ComponentDesigner;
 public sealed record GraphInitializationContext(
     CXDocument Document,
     ICXModel CX,
-    GraphOptions Options,
+    IGraphOptions Options,
     IComponentImplementation Implementation,
     ICompilationProvider CompilationProvider,
     IDiagnosticBag Diagnostics
