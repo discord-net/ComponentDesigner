@@ -6,7 +6,7 @@ using ComponentDesigner.Util;
 
 namespace ComponentDesigner.CSharp;
 
-public abstract class BaseCSharpRenderer : IComponentRenderer
+public abstract partial class BaseCSharpRenderer : IComponentRenderer
 {
     protected virtual CSharpValueGenerator? GetCustomGeneratorForSymbol(
         ICompilationProvider compilationProvider,
@@ -18,115 +18,7 @@ public abstract class BaseCSharpRenderer : IComponentRenderer
         ICSharpTypeSymbol symbol
     ) => GetCustomGeneratorForSymbol(compilationProvider, symbol) ??
          CSharpValueGenerator.FromSymbol(compilationProvider, symbol);
-
-    public virtual Result<RenderedComponent> RenderFunctionalComponent(
-        IRendererContext context,
-        FunctionalComponentNode functionalComponent,
-        FunctionalState state,
-        RendererTypingContext? typingContext = null,
-        CancellationToken cancellationToken = default
-    )
-    {
-        var bag = PooledDiagnosticBag.Get();
-
-        using var _ = StringBuilder.Pooled(out var parameters);
-
-        for (var i = 0; i < state.Parameters.Count; i++)
-        {
-            var parameter = state.Parameters[i];
-            var parameterSymbol = state.Symbol.Parameters[i];
-
-            // can we omit?
-            var parameterValue = state.GetPropertyValue(parameter);
-
-            if (!parameterValue.HasValue)
-            {
-                if (parameter.IsOptional)
-                {
-                    bag.Add(
-                        state.ElementIdentifierTextSpanOrBetter.Report(
-                            Diagnostic.RequiredPropertyNotSpecified(functionalComponent, parameter)
-                        )
-                    );
-                }
-
-                continue;
-            }
-
-            switch (parameterValue)
-            {
-                case ComponentPropertyValue.AttributeComponent attributeElement:
-                {
-                    var result = context.RenderGraphNode(
-                        attributeElement.GraphNode,
-                        new(TypingContext: new(parameterSymbol.Type)),
-                        cancellationToken
-                    );
-
-                    bag.Add(result.Diagnostics);
-
-                    if (result.HasValue) AppendParameter(parameters, parameter.Name, result.Value.Source);
-
-                    break;
-                }
-                case ComponentPropertyValue.AttributeValue attributeValue:
-                {
-                    var generator = GetGeneratorForSymbol(
-                        context.CompilationProvider,
-                        parameterSymbol.Type
-                    );
-
-                    var result = generator.Render(context, attributeValue, cancellationToken: cancellationToken);
-
-                    bag.Add(result.Diagnostics);
-
-                    if (result.HasValue) AppendParameter(parameters, parameter.Name, result.Value);
-
-                    break;
-                }
-
-                case ComponentPropertyValue.Component children:
-                {
-                    // TODO: figure out collection conversion and builder conversion etc
-                    break;
-                }
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(parameterValue));
-            }
-        }
-
-        if (bag.HasErrors) return new(bag.ToCollection());
-
-        if (parameters.Length > 0)
-        {
-            parameters.Insert(0, Environment.NewLine).AppendLine();
-        }
-
-        return new(
-            $"{MakeMethodReference(state.CXNode, context, state.Symbol)}({parameters})"
-        );
-
-        static void AppendParameter(StringBuilder builder, string name, string value)
-        {
-            if (builder.Length > 0) builder.AppendLine(",");
-            builder.Append(name).Append(": ").Append(value);
-        }
-
-        static string MakeMethodReference(CXElement element, IComponentContext context, ICSharpMethodSymbol symbol)
-        {
-            switch (element.OpeningTag.Identifier)
-            {
-                case CXIdentifier.Simple:
-                    return $"{symbol.ContainingType.ToQualifiedName()}.{symbol.Name}";
-                case CXIdentifier.Interpolated { InterpolationToken: { } token }:
-                    var info = context.GetInterpolationInfo(token);
-
-                    return $"{context.GetReferenceToDesignerValue(info, info.Symbol)}.{symbol.Name}";
-
-                default: throw new ArgumentOutOfRangeException(nameof(element));
-            }
-        }
-    }
+    
 
     public virtual Result<RenderedComponent> RenderInterpolation(
         IRendererContext context,

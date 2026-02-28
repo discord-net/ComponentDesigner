@@ -134,16 +134,21 @@ partial class DiscordNetRenderer
                         break;
 
                     case ComponentPropertyValue.Component children:
-                        results.Add(RenderAsChildComponents(
-                            context,
-                            children,
-                            cancellationToken,
-                            withinCollectionExpression: false)
+                        results.Add(
+                            context.CompilationProvider
+                                .IEnumerableOfMediaGalleryItemProperties(children, cancellationToken)
+                                .Map(symbol => RenderAsChildComponents(
+                                    context,
+                                    children,
+                                    symbol,
+                                    cancellationToken,
+                                    withinCollectionExpression: false
+                                ))
                         );
-                        
+
                         if (children.GraphNode.Component is MediaGalleryItemComponentNode)
                             itemsCount++;
-                        
+
                         break;
 
                     default:
@@ -165,12 +170,12 @@ partial class DiscordNetRenderer
 
                 var uri = context
                     .CompilationProvider
-                    .SystemUri(default, cancellationToken)
+                    .SystemUri(CXTextSpan.Empty, cancellationToken)
                     .GetValueOrDefault();
 
                 var mediaGalleryItemProperties = context
                     .CompilationProvider
-                    .MediaGalleryItemProperties(default, cancellationToken)
+                    .MediaGalleryItemProperties(CXTextSpan.Empty, cancellationToken)
                     .GetValueOrDefault();
 
                 if (

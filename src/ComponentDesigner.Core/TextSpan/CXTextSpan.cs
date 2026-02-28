@@ -7,6 +7,8 @@ public readonly record struct CXTextSpan(
     int Length
 ) : IComparable<CXTextSpan>, ISourceLocatable
 {
+    public static readonly CXTextSpan Empty = default;
+    
     /// <summary>
     ///     End of the span.
     /// </summary>

@@ -10,6 +10,8 @@ public sealed record InterpolationState(
 
 public sealed class InterpolationComponentNode : ComponentNode<InterpolationState>, IDynamicComponentNode
 {
+    public static readonly InterpolationComponentNode Instance = new();
+    
     public override string Name { get; } = "<interpolated component>";
 
     public override bool IsUserAccessible => false;

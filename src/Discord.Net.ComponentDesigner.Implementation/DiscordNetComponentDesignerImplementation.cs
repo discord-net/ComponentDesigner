@@ -4,8 +4,7 @@ using ComponentDesigner.Nodes.TextControls;
 namespace Discord;
 
 public sealed class DiscordNetComponentDesignerImplementation :
-    IComponentImplementation,
-    IComponentTypingProvider
+    IComponentImplementation
 {
     public string Name => "Discord.Net";
 
@@ -13,11 +12,7 @@ public sealed class DiscordNetComponentDesignerImplementation :
 
     public ITextControlProvider TextControlProvider => DefaultTextControlProvider.Instance;
 
-    public IComponentTypingProvider ComponentTypingProvider => this;
+    public IComponentTypingProvider ComponentTypingProvider { get; } = new ComponentTyping();
 
-    public bool IsValidComponentType(
-        IComponentContext context,
-        ICSharpTypeSymbol? symbol,
-        CancellationToken cancellationToken = default
-    ) => ComponentBuilderType.TryGetFromSymbol(symbol, context.CompilationProvider, cancellationToken, out _);
+
 }

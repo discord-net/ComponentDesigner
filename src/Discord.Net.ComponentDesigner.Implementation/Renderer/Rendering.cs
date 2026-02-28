@@ -96,12 +96,14 @@ partial class DiscordNetRenderer
     private static Result<string> RenderAsChildComponents(
         IRendererContext context,
         ComponentPropertyValue value,
+        ICSharpTypeSymbol targetType,
         CancellationToken cancellationToken
-    ) => RenderAsChildComponents(context, value, cancellationToken, true);
+    ) => RenderAsChildComponents(context, value, targetType, cancellationToken, true);
 
     private static Result<string> RenderAsChildComponents(
         IRendererContext context,
         ComponentPropertyValue value,
+        ICSharpTypeSymbol targetType,
         CancellationToken cancellationToken,
         bool withinCollectionExpression
     )
@@ -123,11 +125,16 @@ partial class DiscordNetRenderer
         var sb = new StringBuilder();
         using var bag = PooledDiagnosticBag.Get();
 
+        var options = new ComponentOptions(
+            new RendererTypingContext(targetType)
+        );
+        
         foreach (var child in children)
         {
             var result = context.RenderGraphNode(
                 child,
-                cancellationToken: cancellationToken
+                options,
+                cancellationToken
             );
 
             bag.Add(result.Diagnostics);

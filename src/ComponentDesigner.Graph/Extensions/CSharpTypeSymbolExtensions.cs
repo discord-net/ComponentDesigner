@@ -77,8 +77,8 @@ public static class CSharpTypeSymbolExtensions
         {
             inner = null;
 
-            if (symbol is null or {IsBoundGeneric: false, TypeArguments.Count: not 1}) return false;
-
+            if (symbol is null) return false;
+            
             if (IsEnumerableType(symbol))
             {
                 inner = symbol.TypeArguments[0];
@@ -94,8 +94,8 @@ public static class CSharpTypeSymbolExtensions
             return inner is not null;
 
             static bool IsEnumerableType(ICSharpTypeSymbol symbol)
-                => symbol.IsBoundGeneric && 
-                   symbol.ConstructedFrom?.ToQualifiedName() == "System.Collections.Generic.IEnumerable<>";
+                => symbol is {IsBoundGeneric: true, TypeArguments.Count: 1} && 
+                   symbol.ConstructedFrom?.ToQualifiedName() == "global::System.Collections.Generic.IEnumerable<T>";
         }
     }
 }

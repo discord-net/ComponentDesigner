@@ -44,7 +44,10 @@ public static class DiagnosticFactory
         DuplicatePropertyValue,
         InvalidPropertyValue,
         InvalidAccessoryComponentOfSection,
-        InvalidChildComponentOfSection
+        InvalidChildComponentOfSection,
+        CannotConvertComponents,
+        NotAComponentType,
+        TypedComponentsAreNotSupported
     }
 
     private enum DiagnosticSource
@@ -159,7 +162,7 @@ public static class DiagnosticFactory
             IComponentNode component,
             ComponentProperty property
         ) => RequiredPropertyNotSpecified(component.Name, property.Name);
-        
+
         public static DiagnosticDescriptor RequiredPropertyNotSpecified(
             string elementName,
             string propertyName
@@ -169,7 +172,7 @@ public static class DiagnosticFactory
             DiagnosticSeverity.Error,
             $"'{elementName}' requires the property '{propertyName}' to be specified"
         );
-        
+
         public static DiagnosticDescriptor RequiredPropertyValueNotSpecified(
             string propertyName
         ) => Create(
@@ -226,11 +229,11 @@ public static class DiagnosticFactory
                 $"'{component.Name}' requires {sb} to be specified"
             );
         }
-        
+
         public static DiagnosticDescriptor ComponentDoesntAllowChildren(
             IComponentNode component
         ) => ComponentDoesntAllowChildren(component.Name);
-        
+
         public static DiagnosticDescriptor ComponentDoesntAllowChildren(
             string name
         ) => Create(
@@ -591,7 +594,7 @@ public static class DiagnosticFactory
         public static DiagnosticDescriptor DuplicatePropertyValue(
             ComponentProperty property
         ) => DuplicatePropertyValue(property.Name);
-        
+
         public static DiagnosticDescriptor DuplicatePropertyValue(
             string name
         ) => Create(
@@ -630,7 +633,7 @@ public static class DiagnosticFactory
                 {
                     expectedString = expected[0].ToString();
                 }
-                else 
+                else
                 {
                     using var _ = StringBuilder.Pooled(out var sb);
 
@@ -655,7 +658,7 @@ public static class DiagnosticFactory
                 message
             );
         }
-        
+
         public static DiagnosticDescriptor InvalidPropertyValue(
             ComponentPropertyValue propertyValue,
             params ReadOnlySpan<string> expected
@@ -700,7 +703,7 @@ public static class DiagnosticFactory
                 message
             );
         }
-        
+
         public static DiagnosticDescriptor InvalidAccessoryComponentOfSection(
             IComponentNode componentNode
         ) => Create(
@@ -709,7 +712,7 @@ public static class DiagnosticFactory
             DiagnosticSeverity.Error,
             $"'{componentNode.Name}' is not a valid accessory of a section"
         );
-        
+
         public static DiagnosticDescriptor InvalidChildComponentOfSection(
             IComponentNode componentNode
         ) => Create(
@@ -717,6 +720,44 @@ public static class DiagnosticFactory
             DiagnosticCode.InvalidChildComponentOfSection,
             DiagnosticSeverity.Error,
             $"'{componentNode.Name}' is not a valid component of a section"
+        );
+
+        public static DiagnosticDescriptor NoConversionForComponents(
+            ICSharpTypeSymbol from,
+            ICSharpTypeSymbol to
+        ) => Create(
+            DiagnosticSource.Graph,
+            DiagnosticCode.CannotConvertComponents,
+            DiagnosticSeverity.Error,
+            $"No conversion exists for: {from} -> {to}"
+        );
+
+        public static DiagnosticDescriptor NoConversionForComponents(
+            string from,
+            string to
+        ) => Create(
+            DiagnosticSource.Graph,
+            DiagnosticCode.CannotConvertComponents,
+            DiagnosticSeverity.Error,
+            $"No conversion exists for: {from} -> {to}"
+        );
+
+        public static DiagnosticDescriptor NotAComponentType(
+            ICSharpTypeSymbol symbol
+        ) => Create(
+            DiagnosticSource.Graph,
+            DiagnosticCode.NotAComponentType,
+            DiagnosticSeverity.Error,
+            $"'{symbol}' is not a valid component type"
+        );
+
+        public static DiagnosticDescriptor TypedComponentsAreNotSupported(
+            IComponentImplementation implementation
+        ) => Create(
+            DiagnosticSource.Graph,
+            DiagnosticCode.NotAComponentType,
+            DiagnosticSeverity.Error,
+            $"'{implementation.Name}' does not support custom components (interpolations, functional, etc)"
         );
     }
 }

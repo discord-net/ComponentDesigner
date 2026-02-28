@@ -18,6 +18,7 @@ public sealed record FunctionalState(
     private int? _dependencyKey;
 
     public static Result<FunctionalState> FromSymbol(
+        ComponentNodeInitializationContext? initializationContext,
         IComponentContext context,
         ICSharpMethodSymbol symbol,
         GraphNode graphNode,
@@ -26,6 +27,11 @@ public sealed record FunctionalState(
         CancellationToken cancellationToken
     )
     {
+        if (context.ComponentTypingProvider is null)
+            return Diagnostic
+                .TypedComponentsAreNotSupported(context.Implementation)
+                .At(element);
+
         if (!context.ComponentTypingProvider.IsValidComponentType(context, symbol.ReturnType, cancellationToken))
             return element.IdentifierTextSpanOrElementTextSpan.Report(
                 Diagnostic.FunctionalComponentDoesntReturnAComponentType(symbol)
@@ -79,8 +85,60 @@ public sealed record FunctionalState(
             childrenParameter
         );
 
-        if (childrenParameter is not null)
-            state.SetPropertyValueToChildren(childrenParameter);
+        if (childrenParameter is not null && childrenParameterSymbol is not null)
+        {
+            if (
+                context.ComponentTypingProvider.IsValidComponentType(
+                    context,
+                    childrenParameterSymbol.Type,
+                    cancellationToken
+                )
+            )
+            {
+                initializationContext?.PushAsChildren(element.Children, cancellationToken);
+
+                state.SetPropertyValueToChildren(childrenParameter);
+            }
+            else
+            {
+                using var __ = ObjectPool<List<CXValue>>.GetScoped(out var values);
+                values.Clear();
+                
+                foreach (var child in element.Children)
+                {
+                    if (child is not CXValue cxValue)
+                    {
+                        diagnostics.Add(
+                            Diagnostic
+                                .ComponentDoesntAllowChildren(symbol.Name)
+                                .At(child)
+                        );
+
+                        continue;
+                    }
+
+                    values.Add(cxValue);
+                }
+
+                if (values.Count is 1)
+                    state.SetPropertyValue(childrenParameter, values[0]);
+                else if (values.Count > 1)
+                {
+                    state.SetPropertyValue(
+                        childrenParameter,
+                        new ComponentPropertyValue.Many(
+                            childrenParameter,
+                            [..values.Select(x => new ComponentPropertyValue.SyntaxValue(childrenParameter, x))]
+                        )
+                    );
+                }
+            }
+        }
+        else
+        {
+            // push children anyway, let the validator handle diagnostics
+            initializationContext?.PushAsChildren(element.Children, cancellationToken);
+        }
 
         return state;
     }

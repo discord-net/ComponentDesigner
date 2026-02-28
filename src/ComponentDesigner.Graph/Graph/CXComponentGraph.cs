@@ -183,6 +183,7 @@ public sealed class CXComponentGraph : IEquatable<CXComponentGraph>
             {
                 if (context.Options.AllowAutoTextDisplays)
                 {
+                    
                     var autoTextDisplayGraphNode = context.Tree.Push(
                         AutoTextDisplayComponentNode.Instance,
                         parent: parent
@@ -202,6 +203,12 @@ public sealed class CXComponentGraph : IEquatable<CXComponentGraph>
                         textControlGraphNode,
                         null,
                         result
+                    );
+
+                    // set the contents property to the 'textControlGraphNode'
+                    autoTextDisplayGraphNode.State.SetPropertyValueToChild(
+                        AutoTextDisplayComponentNode.Instance.Content,
+                        textControlGraphNode
                     );
                 }
                 else
@@ -238,7 +245,9 @@ public sealed class CXComponentGraph : IEquatable<CXComponentGraph>
                     interpolation,
                     context.CX.Interpolations[interpolation.InterpolationIndex],
                     parent,
-                    context, cancellationToken);
+                    context,
+                    cancellationToken
+                );
                 return;
 
             case CXValue.Multipart multipart:
@@ -273,6 +282,16 @@ public sealed class CXComponentGraph : IEquatable<CXComponentGraph>
         CancellationToken cancellationToken = default
     )
     {
+        if (context.ComponentTypingProvider is null)
+        {
+            context.Diagnostics.Add(
+                Diagnostic
+                    .TypedComponentsAreNotSupported(context.Implementation)
+                    .At(cxNode)
+            );
+            return;
+        }
+
         if (!context.ComponentTypingProvider.IsValidComponentType(context, info.Symbol, cancellationToken))
         {
             // TODO: diagnostic can be improved to include type info etc
@@ -285,7 +304,7 @@ public sealed class CXComponentGraph : IEquatable<CXComponentGraph>
         }
 
         var graphNode = context.Tree.Push(
-            ComponentNode.GetNode<InterpolationComponentNode>(),
+            InterpolationComponentNode.Instance,
             parent: parent
         );
 
@@ -344,8 +363,18 @@ public sealed class CXComponentGraph : IEquatable<CXComponentGraph>
         CancellationToken cancellationToken = default
     )
     {
-        // for now, just assume it to be a functional component
-        result = FunctionalComponentNode.Instance;
+        if (context.HasTypedCustomComponentSupport)
+        {
+            // for now, just assume it to be a functional component
+            result = FunctionalComponentNode.Instance;
+            return;
+        }
+
+        context.Diagnostics.Add(
+            Diagnostic
+                .UnknownComponentElement(element.Identifier)
+                .At(element)
+        );
     }
 
     public static GraphNode? CreateFromInitializationRequest(

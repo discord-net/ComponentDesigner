@@ -2,10 +2,25 @@
 
 namespace ComponentDesigner.Nodes;
 
-public abstract class ComponentNode<T> :
+public delegate void ComponentValidator<in TSelf, in TState>(
+    IComponentContext context,
+    TSelf self,
+    TState state,
+    IDiagnosticBag bag
+) where TSelf : IComponentNode where TState : ComponentState;
+
+public delegate Result<RenderedComponent> ComponentRenderer<in TSelf, in TState>(
+    IRendererContext context,
+    TSelf self,
+    TState state,
+    RendererTypingContext? typingContext,
+    CancellationToken cancellationToken
+) where TSelf : IComponentNode where TState : ComponentState;
+
+public abstract class ComponentNode<TState> :
     IComponentNode,
-    IEquatable<ComponentNode<T>>
-    where T : ComponentState
+    IEquatable<ComponentNode<TState>>
+    where TState : ComponentState
 {
     public abstract string Name { get; }
 
@@ -21,14 +36,14 @@ public abstract class ComponentNode<T> :
 
     public virtual bool HasExternalDependencies => false;
 
-    public abstract T? Initialize(
+    public abstract TState? Initialize(
         ComponentNodeInitializationContext context,
         IDiagnosticBag diagnostics,
         CancellationToken cancellationToken = default
     );
 
-    public virtual T UpdateState(
-        T state,
+    public virtual TState UpdateState(
+        TState state,
         IComponentContext context,
         IDiagnosticBag diagnostics,
         CancellationToken cancellationToken = default) => state;
@@ -55,7 +70,7 @@ public abstract class ComponentNode<T> :
     }
 
     public abstract Result<RenderedComponent> Emit(
-        T state,
+        TState state,
         ComponentEmitContext context,
         ComponentOptions options,
         CancellationToken cancellationToken = default
@@ -63,13 +78,13 @@ public abstract class ComponentNode<T> :
 
     protected Result<RenderedComponent> ValidateAndRender<TSelf>(
         TSelf self,
-        T state,
+        TState state,
         ComponentEmitContext context,
         ComponentOptions options,
-        Action<IComponentContext, TSelf, T, IDiagnosticBag> validator,
-        Func<IRendererContext, TSelf, T, RendererTypingContext?, CancellationToken, Result<RenderedComponent>> renderer,
+        ComponentValidator<TSelf, TState> validator,
+        ComponentRenderer<TSelf, TState> renderer,
         CancellationToken cancellationToken = default
-    ) where TSelf : ComponentNode<T>
+    ) where TSelf : ComponentNode<TState>
     {
         using var bag = PooledDiagnosticBag.Get();
 
@@ -77,17 +92,41 @@ public abstract class ComponentNode<T> :
 
         if (bag.HasErrors) return new(bag.ToCollection());
 
-        return renderer(context, self, state, options.TypingContext, cancellationToken).AddDiagnostics(bag);
+        var result = renderer(context, self, state, options.TypingContext, cancellationToken)
+            .AddDiagnostics(bag);
+
+        if (context.ComponentTypingProvider is null)
+            return result;
+
+        return result.Map(render =>
+        {
+            if (options.TypingContext?.ConformingType is null || render.Type is null)
+            {
+                // TODO: error?
+                return result;
+            }
+
+            return context
+                .ComponentTypingProvider
+                .Convert(
+                    context,
+                    render.Source.SourcedAt(state.TextSpan),
+                    render.Type,
+                    options.TypingContext.Value.ConformingType,
+                    cancellationToken
+                )
+                .Map(converted => new RenderedComponent(converted, options.TypingContext.Value.ConformingType));
+        });
     }
 
-    public bool Equals(ComponentNode<T>? other)
+    public bool Equals(ComponentNode<TState>? other)
         => ReferenceEquals(this, other);
 
     public bool Equals(IComponentNode? other)
-        => other is ComponentNode<T> comp && Equals(comp);
+        => other is ComponentNode<TState> comp && Equals(comp);
 
     public override bool Equals(object? obj)
-        => obj is ComponentNode<T> other && Equals(other);
+        => obj is ComponentNode<TState> other && Equals(other);
 
     public override int GetHashCode()
     {
@@ -105,12 +144,12 @@ public abstract class ComponentNode<T> :
     ComponentState IComponentNode.UpdateState(ComponentState state,
         IComponentContext context,
         IDiagnosticBag diagnostics,
-        CancellationToken cancellationToken) => UpdateState((T)state, context, diagnostics, cancellationToken);
+        CancellationToken cancellationToken) => UpdateState((TState)state, context, diagnostics, cancellationToken);
 
     Result<RenderedComponent> IComponentNode.Emit(
         ComponentState state,
         ComponentEmitContext context,
         ComponentOptions options,
         CancellationToken cancellationToken
-    ) => Emit((T)state, context, options, cancellationToken);
+    ) => Emit((TState)state, context, options, cancellationToken);
 }

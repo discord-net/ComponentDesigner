@@ -18,11 +18,20 @@ partial class DiscordNetRenderer
                 context, state, cancellationToken,
                 ("id", section.Id, CSharpValueGenerator.NullableInteger),
                 ("accessory", section.Accessory, new(RenderAsSingleChildComponent)),
-                ("components", section.Components, new(RenderAsChildComponents))
+                ("components", section.Components, new(RenderSectionComponents))
             ),
             (symbol, properties) => new RenderedComponent(
                 $"new {symbol.ToQualifiedName()}({properties})",
                 symbol
             )
         );
+    
+    private static Result<string> RenderSectionComponents(
+        IRendererContext context,
+        ComponentPropertyValue value,
+        CancellationToken cancellationToken
+    ) => context
+        .CompilationProvider
+        .IEnumerableOfIMessageComponentBuilder(value, cancellationToken)
+        .Map(symbol => RenderAsChildComponents(context, value, symbol, cancellationToken, true));
 }

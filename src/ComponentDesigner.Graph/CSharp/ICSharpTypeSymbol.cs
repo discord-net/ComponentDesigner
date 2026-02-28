@@ -40,4 +40,6 @@ public interface ICSharpTypeSymbol : ICSharpSymbol, IEquatable<ICSharpTypeSymbol
     bool IsValueType { get; }
 
     IReadOnlyList<ICSharpFieldSymbol> Fields { get; }
+
+    ICSharpTypeSymbol ConstructGeneric(params IEnumerable<ICSharpTypeSymbol> typeArguments);
 }

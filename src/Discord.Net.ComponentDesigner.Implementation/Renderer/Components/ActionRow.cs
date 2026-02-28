@@ -17,11 +17,20 @@ partial class DiscordNetRenderer
             RenderPropertiesAsParameters(
                 context, state, cancellationToken,
                 ("id", actionRow.Id, CSharpValueGenerator.NullableInteger),
-                ("components", actionRow.Components, new(RenderAsChildComponents))
+                ("components", actionRow.Components, new(RenderActionRowComponents))
             ),
             (symbol, parameters) => new RenderedComponent(
                 $"new {symbol.ToQualifiedName()}({parameters})",
                 symbol
             )
         );
+
+    private static Result<string> RenderActionRowComponents(
+        IRendererContext context,
+        ComponentPropertyValue value,
+        CancellationToken cancellationToken
+    ) => context
+        .CompilationProvider
+        .IEnumerableOfIMessageComponentBuilder(value, cancellationToken)
+        .Map(symbol => RenderAsChildComponents(context, value, symbol, cancellationToken, true));
 }

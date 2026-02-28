@@ -19,10 +19,19 @@ partial class DiscordNetRenderer
                 ("id", container.Id, CSharpValueGenerator.NullableInteger),
                 ("accentColor", container.AccentColor, CSharpValueGenerator.NullableColor),
                 ("isSpoiler", container.IsSpoiler, CSharpValueGenerator.NullableBoolean),
-                ("components", container.Components, new(RenderAsChildComponents))
+                ("components", container.Components, new(RenderContainerComponents))
             ),
             (symbol, parameters) => new RenderedComponent(
                 $"new {symbol.ToQualifiedName()}({parameters})"
             )
         );
+    
+    private static Result<string> RenderContainerComponents(
+        IRendererContext context,
+        ComponentPropertyValue value,
+        CancellationToken cancellationToken
+    ) => context
+        .CompilationProvider
+        .IEnumerableOfIMessageComponentBuilder(value, cancellationToken)
+        .Map(symbol => RenderAsChildComponents(context, value, symbol, cancellationToken, true));
 }

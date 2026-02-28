@@ -34,11 +34,11 @@ public readonly record struct ComponentBuilderType(
             isCollection = true;
         }
 
-        if (Is(compilationProvider.IMessageComponentBuilder))
+        if (AssignableFrom(compilationProvider.IMessageComponentBuilder))
         {
             kind = ComponentBuilderKind.IMessageComponentBuilder;
         }
-        else if (Is(compilationProvider.IMessageComponent))
+        else if (AssignableFrom(compilationProvider.IMessageComponent))
         {
             kind = ComponentBuilderKind.IMessageComponent;
         }
@@ -82,5 +82,12 @@ public readonly record struct ComponentBuilderType(
 
         bool Is(Func<CXTextSpan, CancellationToken, Result<ICSharpTypeSymbol>> func)
             => current.Equals(func(default, cancellationToken).GetValueOrDefault());
+
+        bool AssignableFrom(Func<CXTextSpan, CancellationToken, Result<ICSharpTypeSymbol>> func)
+            => compilationProvider.HasImplicitConversionBetween(
+                current,
+                func(default, cancellationToken).GetValueOrDefault(),
+                cancellationToken
+            );
     }
 }

@@ -47,6 +47,8 @@ public abstract class CSharpValueGenerator
                 result = IntegerGenerator.Get(allowNullable: nullable);
             else if (symbol.Equals(compilation.UInt64!))
                 result = SnowflakeGenerator.Get(allowNullable: nullable);
+            else if (symbol.Equals(compilation.Boolean))
+                result = BooleanGenerator.Get(allowNullable: nullable);
             else result = null;
 
             return result is not null;

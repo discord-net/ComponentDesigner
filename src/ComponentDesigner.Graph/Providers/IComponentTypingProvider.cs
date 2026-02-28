@@ -9,4 +9,12 @@ public interface IComponentTypingProvider
         ICSharpTypeSymbol? symbol, 
         CancellationToken cancellationToken = default
     );
+
+    Result<string> Convert(
+        IComponentContext context,
+        SourcedValue<string> source,
+        ICSharpTypeSymbol from,
+        ICSharpTypeSymbol to,
+        CancellationToken cancellationToken = default
+    );
 }

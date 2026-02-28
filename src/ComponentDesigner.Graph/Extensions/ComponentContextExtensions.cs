@@ -1,4 +1,5 @@
-﻿using ComponentDesigner.Nodes;
+﻿using System.Diagnostics.CodeAnalysis;
+using ComponentDesigner.Nodes;
 using ComponentDesigner.Parser;
 
 namespace ComponentDesigner;
@@ -9,10 +10,12 @@ public static class ComponentContextExtensions
     {
         public IComponentRenderer Renderer => context.Implementation.Renderer;
         public ITextControlProvider TextControlProvider => context.Implementation.TextControlProvider;
-        public IComponentTypingProvider ComponentTypingProvider => context.Implementation.ComponentTypingProvider;
+        public IComponentTypingProvider? ComponentTypingProvider => context.Implementation.ComponentTypingProvider;
+
+        public bool HasTypedCustomComponentSupport => context.ComponentTypingProvider is not null;
         
         public bool IsInterpolatedComponent(ICXNode? node, CancellationToken cancellationToken = default)
-            => node switch
+            => context.ComponentTypingProvider is not null && node switch
             {
                 CXValue.Interpolation { InterpolationIndex: { } index } => context
                     .ComponentTypingProvider
@@ -30,10 +33,10 @@ public static class ComponentContextExtensions
                     ),
                 _ => false
             };
-        
+
         public IInterpolationInfo GetInterpolationInfo(CXValue.Interpolation interpolation)
             => context.CX.Interpolations[interpolation.InterpolationIndex];
-        
+
         public IInterpolationInfo GetInterpolationInfo(int id)
             => context.CX.Interpolations[id];
 
@@ -53,7 +56,7 @@ public static class ComponentContextExtensions
             CXValue.Interpolation interpolation,
             string? type = null
         ) => context.GetReferenceToDesignerValue(interpolation.InterpolationIndex, type);
-        
+
         public string GetReferenceToDesignerValue(
             IInterpolationInfo info,
             string? type = null
@@ -68,7 +71,7 @@ public static class ComponentContextExtensions
             CXValue.Interpolation interpolation,
             ICSharpTypeSymbol? type
         ) => context.GetReferenceToDesignerValue(interpolation.InterpolationIndex, type);
-        
+
         public string GetReferenceToDesignerValue(
             IInterpolationInfo info,
             ICSharpTypeSymbol? type

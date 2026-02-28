@@ -7,6 +7,7 @@ namespace Discord;
 ///     Represents components built with the Component Designer.
 /// </summary>
 public sealed class CXMessageComponent :
+    CXComponent,
     INestedComponent,
     IComponentContainer
 {
@@ -15,41 +16,14 @@ public sealed class CXMessageComponent :
     /// </summary>
     public static readonly CXMessageComponent Empty = new();
 
-    /// <summary>
-    ///     Gets whether this <see cref="CXMessageComponent"/> represents a single component.
-    /// </summary>
-    public bool IsSingle => Components.Count is 1;
-
-    /// <summary>
-    ///     Gets whether this <see cref="CXMessageComponent"/> contains no components.
-    /// </summary>
-    public bool IsEmpty => Components.Count is 0;
-
-    /// <summary>
-    ///     Gets a read-only list of built <see cref="IMessageComponent"/>s contained within this
-    ///     <see cref="CXMessageComponent"/>.
-    /// </summary>
-    public IReadOnlyList<IMessageComponent> Components
-        => _components ??= [..(_builders ??= []).Select(x => x.Build())];
-
-    /// <summary>
-    ///     Gets a read-only list of <see cref="IMessageComponentBuilder"/>s contained within this
-    ///     <see cref="CXMessageComponent"/>.
-    /// </summary>
-    public IReadOnlyList<IMessageComponentBuilder> Builders
-        => _builders ??= [..(_components ??= []).Select(x => x.ToBuilder())];
-
-    private IReadOnlyList<IMessageComponentBuilder>? _builders;
-    private IReadOnlyList<IMessageComponent>? _components;
-
     private MessageComponent? _built;
 
     /// <summary>
     ///     Constructs a new, empty <see cref="CXMessageComponent"/>.
     /// </summary>
     public CXMessageComponent()
+        : base()
     {
-        _builders = [];
     }
 
     /// <summary>
@@ -57,8 +31,8 @@ public sealed class CXMessageComponent :
     /// </summary>
     /// <param name="components">The components for the newly constructed <see cref="CXMessageComponent"/>.</param>
     public CXMessageComponent(params IEnumerable<IMessageComponentBuilder> components)
+        : base(components)
     {
-        _builders = [..components];
     }
 
     /// <summary>
@@ -66,8 +40,8 @@ public sealed class CXMessageComponent :
     /// </summary>
     /// <param name="components">The components for the newly constructed <see cref="CXMessageComponent"/>.</param>
     public CXMessageComponent(params IEnumerable<IMessageComponent> components)
+        : base(components)
     {
-        _components = [..components];
     }
 
     /// <summary>

@@ -10,6 +10,11 @@ public sealed class FunctionalComponentNode : ComponentNode<FunctionalState>
 
     public override bool IsUserAccessible => false;
 
+    public override void RegisterGraphNode(
+        ComponentGraphInitializationContext context,
+        CancellationToken cancellationToken = default
+    ) => base.RegisterGraphNode(context, includeElementChildren: false, cancellationToken);
+
     public override FunctionalState? Initialize(
         ComponentNodeInitializationContext context,
         IDiagnosticBag diagnostics,
@@ -21,6 +26,7 @@ public sealed class FunctionalComponentNode : ComponentNode<FunctionalState>
         return SearchForTargetMethod(element, context.GraphContext, cancellationToken)
             .Map(symbol => FunctionalState
                 .FromSymbol(
+                    context,
                     context.GraphContext,
                     symbol,
                     context.GraphNode,
@@ -40,6 +46,7 @@ public sealed class FunctionalComponentNode : ComponentNode<FunctionalState>
     ) => SearchForTargetMethod(state.CXNode, context, cancellationToken)
         .Map(symbol => FunctionalState
             .FromSymbol(
+                initializationContext: null,
                 context,
                 symbol,
                 state.GraphNode,

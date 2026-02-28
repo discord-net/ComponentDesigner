@@ -4,170 +4,241 @@ namespace Discord;
 
 internal static class Symbols
 {
-
     extension(ICompilationProvider compilation)
     {
-        public Result<ICSharpTypeSymbol> CXModalComponent(
-            CXTextSpan textSpan,
+        public Result<ICSharpTypeSymbol> IEnumerableOfIMessageComponentBuilder<T>(
+            T source,
             CancellationToken cancellationToken = default
-        ) => compilation.GetSymbol<ICSharpTypeSymbol>("Discord.CXModalComponent", textSpan, cancellationToken);
+        ) where T : ISourceLocatable
+            => compilation.IEnumerableOf(compilation.IMessageComponentBuilder, source, cancellationToken); 
         
-        public Result<ICSharpTypeSymbol> CXMessageComponent(
-            CXTextSpan textSpan,
+        public Result<ICSharpTypeSymbol> IEnumerableOfMediaGalleryItemProperties<T>(
+            T source,
             CancellationToken cancellationToken = default
-        ) => compilation.GetSymbol<ICSharpTypeSymbol>("Discord.CXMessageComponent", textSpan, cancellationToken);
-        
-        public Result<ICSharpTypeSymbol> CXComponent(
-            CXTextSpan textSpan,
+        ) where T : ISourceLocatable
+            => compilation.IEnumerableOf(compilation.MediaGalleryItemProperties, source, cancellationToken);
+
+        public Result<ICSharpTypeSymbol> CXModalComponent<T>(
+            T source,
             CancellationToken cancellationToken = default
-        ) => compilation.GetSymbol<ICSharpTypeSymbol>("Discord.CXComponent", textSpan, cancellationToken);
-        
-        public Result<ICSharpTypeSymbol> ModalBuilder(
-            CXTextSpan textSpan,
+        ) where T : ISourceLocatable =>
+            compilation.GetSymbol<ICSharpTypeSymbol>("Discord.CXModalComponent", source.TextSpan, cancellationToken);
+
+        public Result<ICSharpTypeSymbol> CXMessageComponent<T>(
+            T source,
             CancellationToken cancellationToken = default
-        ) => compilation.GetSymbol<ICSharpTypeSymbol>("Discord.ModalBuilder", textSpan, cancellationToken);
-        
-        public Result<ICSharpTypeSymbol> ModalComponent(
-            CXTextSpan textSpan,
+        ) where T : ISourceLocatable =>
+            compilation.GetSymbol<ICSharpTypeSymbol>("Discord.CXMessageComponent", source.TextSpan, cancellationToken);
+
+        public Result<ICSharpTypeSymbol> CXComponent<T>(
+            T source,
             CancellationToken cancellationToken = default
-        ) => compilation.GetSymbol<ICSharpTypeSymbol>("Discord.ModalComponent", textSpan, cancellationToken);
-        
-        public Result<ICSharpTypeSymbol> ComponentBuilderV2(
-            CXTextSpan textSpan,
+        ) where T : ISourceLocatable =>
+            compilation.GetSymbol<ICSharpTypeSymbol>("Discord.CXComponent", source.TextSpan, cancellationToken);
+
+        public Result<ICSharpTypeSymbol> ModalBuilder<T>(
+            T source,
             CancellationToken cancellationToken = default
-        ) => compilation.GetSymbol<ICSharpTypeSymbol>("Discord.ComponentBuilderV2", textSpan, cancellationToken);
-        
-        public Result<ICSharpTypeSymbol> MessageComponent(
-            CXTextSpan textSpan,
+        ) where T : ISourceLocatable =>
+            compilation.GetSymbol<ICSharpTypeSymbol>("Discord.ModalBuilder", source.TextSpan, cancellationToken);
+
+        public Result<ICSharpTypeSymbol> ModalComponent<T>(
+            T source,
             CancellationToken cancellationToken = default
-        ) => compilation.GetSymbol<ICSharpTypeSymbol>("Discord.MessageComponent", textSpan, cancellationToken);
-        
-        public Result<ICSharpTypeSymbol> IMessageComponent(
-            CXTextSpan textSpan,
+        ) where T : ISourceLocatable =>
+            compilation.GetSymbol<ICSharpTypeSymbol>("Discord.ModalComponent", source.TextSpan, cancellationToken);
+
+        public Result<ICSharpTypeSymbol> ComponentBuilderV2<T>(
+            T source,
             CancellationToken cancellationToken = default
-        ) => compilation.GetSymbol<ICSharpTypeSymbol>("Discord.IMessageComponent", textSpan, cancellationToken);
-        
-        public Result<ICSharpTypeSymbol> IMessageComponentBuilder(
-            CXTextSpan textSpan,
+        ) where T : ISourceLocatable =>
+            compilation.GetSymbol<ICSharpTypeSymbol>("Discord.ComponentBuilderV2", source.TextSpan, cancellationToken);
+
+        public Result<ICSharpTypeSymbol> MessageComponent<T>(
+            T source,
             CancellationToken cancellationToken = default
-        ) => compilation.GetSymbol<ICSharpTypeSymbol>("Discord.IMessageComponentBuilder", textSpan, cancellationToken);
-        
-        public Result<ICSharpTypeSymbol> SystemUri(
-            CXTextSpan textSpan,
+        ) where T : ISourceLocatable =>
+            compilation.GetSymbol<ICSharpTypeSymbol>("Discord.MessageComponent", source.TextSpan, cancellationToken);
+
+        public Result<ICSharpTypeSymbol> IMessageComponent<T>(
+            T source,
             CancellationToken cancellationToken = default
-        ) => compilation.GetSymbol<ICSharpTypeSymbol>("System.Uri", textSpan, cancellationToken);
-        
-        public Result<ICSharpTypeSymbol> TextDisplayBuilder(
-            CXTextSpan textSpan,
+        ) where T : ISourceLocatable =>
+            compilation.GetSymbol<ICSharpTypeSymbol>("Discord.IMessageComponent", source.TextSpan, cancellationToken);
+
+        public Result<ICSharpTypeSymbol> IMessageComponentBuilder<T>(
+            T source,
             CancellationToken cancellationToken = default
-        ) => compilation.GetSymbol<ICSharpTypeSymbol>("Discord.TextDisplayBuilder", textSpan, cancellationToken);
-        
-        public Result<ICSharpTypeSymbol> LabelBuilder(
-            CXTextSpan textSpan,
+        ) where T : ISourceLocatable => compilation.GetSymbol<ICSharpTypeSymbol>("Discord.IMessageComponentBuilder",
+            source.TextSpan, cancellationToken);
+
+        public Result<ICSharpTypeSymbol> SystemUri<T>(
+            T source,
             CancellationToken cancellationToken = default
-        ) => compilation.GetSymbol<ICSharpTypeSymbol>("Discord.LabelBuilder", textSpan, cancellationToken);
-        
-        public Result<ICSharpTypeSymbol> FileUploadComponentBuilder(
-            CXTextSpan textSpan,
+        ) where T : ISourceLocatable =>
+            compilation.GetSymbol<ICSharpTypeSymbol>("System.Uri", source.TextSpan, cancellationToken);
+
+        public Result<ICSharpTypeSymbol> TextDisplayBuilder<T>(
+            T source,
             CancellationToken cancellationToken = default
-        ) => compilation.GetSymbol<ICSharpTypeSymbol>("Discord.FileUploadComponentBuilder", textSpan, cancellationToken);
-        
-        public Result<ICSharpTypeSymbol> TextInputBuilder(
-            CXTextSpan textSpan,
+        ) where T : ISourceLocatable =>
+            compilation.GetSymbol<ICSharpTypeSymbol>("Discord.TextDisplayBuilder", source.TextSpan, cancellationToken);
+
+        public Result<ICSharpTypeSymbol> LabelBuilder<T>(
+            T source,
             CancellationToken cancellationToken = default
-        ) => compilation.GetSymbol<ICSharpTypeSymbol>("Discord.TextInputBuilder", textSpan, cancellationToken);
-        
-        public Result<ICSharpTypeSymbol> TextInputStyle(
-            CXTextSpan textSpan,
+        ) where T : ISourceLocatable =>
+            compilation.GetSymbol<ICSharpTypeSymbol>("Discord.LabelBuilder", source.TextSpan, cancellationToken);
+
+        public Result<ICSharpTypeSymbol> FileUploadComponentBuilder<T>(
+            T source,
             CancellationToken cancellationToken = default
-        ) => compilation.GetSymbol<ICSharpTypeSymbol>("Discord.TextInputStyle", textSpan, cancellationToken);
-        
-        public Result<ICSharpTypeSymbol> ButtonStyle(
-            CXTextSpan textSpan,
+        ) where T : ISourceLocatable => compilation.GetSymbol<ICSharpTypeSymbol>("Discord.FileUploadComponentBuilder",
+            source.TextSpan, cancellationToken);
+
+        public Result<ICSharpTypeSymbol> TextInputBuilder<T>(
+            T source,
             CancellationToken cancellationToken = default
-        ) => compilation.GetSymbol<ICSharpTypeSymbol>("Discord.ButtonStyle", textSpan, cancellationToken);
-        
-        public Result<ICSharpTypeSymbol> ButtonBuilder(
-            CXTextSpan textSpan,
+        ) where T : ISourceLocatable =>
+            compilation.GetSymbol<ICSharpTypeSymbol>("Discord.TextInputBuilder", source.TextSpan, cancellationToken);
+
+        public Result<ICSharpTypeSymbol> TextInputStyle<T>(
+            T source,
             CancellationToken cancellationToken = default
-        ) => compilation.GetSymbol("Discord.ButtonBuilder", textSpan, cancellationToken);
-        
-        public Result<ICSharpTypeSymbol> IEmote(
-            CXTextSpan textSpan,
+        ) where T : ISourceLocatable =>
+            compilation.GetSymbol<ICSharpTypeSymbol>("Discord.TextInputStyle", source.TextSpan, cancellationToken);
+
+        public Result<ICSharpTypeSymbol> ButtonStyle<T>(
+            T source,
             CancellationToken cancellationToken = default
-        ) => compilation.GetSymbol("Discord.IEmote", textSpan, cancellationToken);
-        
-        public Result<ICSharpTypeSymbol> SelectMenuDefaultValue(
-            CXTextSpan textSpan,
+        ) where T : ISourceLocatable =>
+            compilation.GetSymbol<ICSharpTypeSymbol>("Discord.ButtonStyle", source.TextSpan, cancellationToken);
+
+        public Result<ICSharpTypeSymbol> ButtonBuilder<T>(
+            T source,
             CancellationToken cancellationToken = default
-        ) => compilation.GetSymbol("Discord.SelectMenuDefaultValue", textSpan, cancellationToken);
-        
-        public Result<ICSharpTypeSymbol> SelectMenuBuilder(
-            CXTextSpan textSpan,
+        ) where T : ISourceLocatable =>
+            compilation.GetSymbol("Discord.ButtonBuilder", source.TextSpan, cancellationToken);
+
+        public Result<ICSharpTypeSymbol> IEmote<T>(
+            T source,
             CancellationToken cancellationToken = default
-        ) => compilation.GetSymbol("Discord.SelectMenuBuilder", textSpan, cancellationToken);
-        
-        public Result<ICSharpTypeSymbol> SelectMenuOptionBuilder(
-            CXTextSpan textSpan,
+        ) where T : ISourceLocatable => compilation.GetSymbol("Discord.IEmote", source.TextSpan, cancellationToken);
+
+        public Result<ICSharpTypeSymbol> SelectMenuDefaultValue<T>(
+            T source,
             CancellationToken cancellationToken = default
-        ) => compilation.GetSymbol("Discord.SelectMenuOptionBuilder", textSpan, cancellationToken);
-        
-        public Result<ICSharpTypeSymbol> ContainerBuilder(
-            CXTextSpan textSpan,
+        ) where T : ISourceLocatable =>
+            compilation.GetSymbol("Discord.SelectMenuDefaultValue", source.TextSpan, cancellationToken);
+
+        public Result<ICSharpTypeSymbol> SelectMenuBuilder<T>(
+            T source,
             CancellationToken cancellationToken = default
-        ) => compilation.GetSymbol("Discord.ContainerBuilder", textSpan, cancellationToken);
-        
-        public Result<ICSharpTypeSymbol> MediaGalleryBuilder(
-            CXTextSpan textSpan,
+        ) where T : ISourceLocatable =>
+            compilation.GetSymbol("Discord.SelectMenuBuilder", source.TextSpan, cancellationToken);
+
+        public Result<ICSharpTypeSymbol> SelectMenuOptionBuilder<T>(
+            T source,
             CancellationToken cancellationToken = default
-        ) => compilation.GetSymbol("Discord.MediaGalleryBuilder", textSpan, cancellationToken);
-        
-        public Result<ICSharpTypeSymbol> MediaGalleryItemProperties(
-            CXTextSpan textSpan,
+        ) where T : ISourceLocatable =>
+            compilation.GetSymbol("Discord.SelectMenuOptionBuilder", source.TextSpan, cancellationToken);
+
+        public Result<ICSharpTypeSymbol> ContainerBuilder<T>(
+            T source,
             CancellationToken cancellationToken = default
-        ) => compilation.GetSymbol("Discord.MediaGalleryItemProperties", textSpan, cancellationToken);
-        
-        public Result<ICSharpTypeSymbol> ActionRowBuilder(
-            CXTextSpan textSpan,
+        ) where T : ISourceLocatable =>
+            compilation.GetSymbol("Discord.ContainerBuilder", source.TextSpan, cancellationToken);
+
+        public Result<ICSharpTypeSymbol> MediaGalleryBuilder<T>(
+            T source,
             CancellationToken cancellationToken = default
-        ) => compilation.GetSymbol("Discord.ActionRowBuilder", textSpan, cancellationToken);
-        
-        public Result<ICSharpTypeSymbol> FileBuilder(
-            CXTextSpan textSpan,
+        ) where T : ISourceLocatable =>
+            compilation.GetSymbol("Discord.MediaGalleryBuilder", source.TextSpan, cancellationToken);
+
+        public Result<ICSharpTypeSymbol> MediaGalleryItemProperties<T>(
+            T source,
             CancellationToken cancellationToken = default
-        ) => compilation.GetSymbol("Discord.FileComponentBuilder", textSpan, cancellationToken);
-        
-        public Result<ICSharpTypeSymbol> SectionBuilder(
-            CXTextSpan textSpan,
+        ) where T : ISourceLocatable =>
+            compilation.GetSymbol("Discord.MediaGalleryItemProperties", source.TextSpan, cancellationToken);
+
+        public Result<ICSharpTypeSymbol> ActionRowBuilder<T>(
+            T source,
             CancellationToken cancellationToken = default
-        ) => compilation.GetSymbol("Discord.SectionBuilder", textSpan, cancellationToken);
-        
-        public Result<ICSharpTypeSymbol> ThumbnailBuilder(
-            CXTextSpan textSpan,
+        ) where T : ISourceLocatable =>
+            compilation.GetSymbol("Discord.ActionRowBuilder", source.TextSpan, cancellationToken);
+
+        public Result<ICSharpTypeSymbol> FileBuilder<T>(
+            T source,
             CancellationToken cancellationToken = default
-        ) => compilation.GetSymbol("Discord.ThumbnailBuilder", textSpan, cancellationToken);
-        
-        public Result<ICSharpTypeSymbol> SeparatorBuilder(
-            CXTextSpan textSpan,
+        ) where T : ISourceLocatable =>
+            compilation.GetSymbol("Discord.FileComponentBuilder", source.TextSpan, cancellationToken);
+
+        public Result<ICSharpTypeSymbol> SectionBuilder<T>(
+            T source,
             CancellationToken cancellationToken = default
-        ) => compilation.GetSymbol("Discord.SeparatorBuilder", textSpan, cancellationToken);
-        
-        public Result<ICSharpTypeSymbol> SeparatorSpacingSize(
-            CXTextSpan textSpan,
+        ) where T : ISourceLocatable =>
+            compilation.GetSymbol("Discord.SectionBuilder", source.TextSpan, cancellationToken);
+
+        public Result<ICSharpTypeSymbol> ThumbnailBuilder<T>(
+            T source,
             CancellationToken cancellationToken = default
-        ) => compilation.GetSymbol<ICSharpTypeSymbol>("Discord.SeparatorSpacingSize", textSpan, cancellationToken);
-        
-        public Result<ICSharpTypeSymbol> UnfurledMediaItemProperties(
-            CXTextSpan textSpan,
+        ) where T : ISourceLocatable =>
+            compilation.GetSymbol("Discord.ThumbnailBuilder", source.TextSpan, cancellationToken);
+
+        public Result<ICSharpTypeSymbol> SeparatorBuilder<T>(
+            T source,
             CancellationToken cancellationToken = default
-        ) => compilation.GetSymbol("Discord.UnfurledMediaItemProperties", textSpan, cancellationToken);
-        
+        ) where T : ISourceLocatable =>
+            compilation.GetSymbol("Discord.SeparatorBuilder", source.TextSpan, cancellationToken);
+
+        public Result<ICSharpTypeSymbol> SeparatorSpacingSize<T>(
+            T source,
+            CancellationToken cancellationToken = default
+        ) where T : ISourceLocatable =>
+            compilation.GetSymbol<ICSharpTypeSymbol>("Discord.SeparatorSpacingSize", source.TextSpan,
+                cancellationToken);
+
+        public Result<ICSharpTypeSymbol> UnfurledMediaItemProperties<T>(
+            T source,
+            CancellationToken cancellationToken = default
+        ) where T : ISourceLocatable =>
+            compilation.GetSymbol("Discord.UnfurledMediaItemProperties", source.TextSpan, cancellationToken);
+
         public Result<ICSharpTypeSymbol> GetSymbol(
             string name,
             CXTextSpan reference,
             CancellationToken cancellationToken = default
         ) => compilation.GetSymbol<ICSharpTypeSymbol>(name, reference, cancellationToken);
-        
+
+        // public Result<ICSharpTypeSymbol> IEnumerableOfIMessageComponentBuilder<T>(
+        //     T source,
+        //     CancellationToken cancellationToken = default
+        // ) where T : ISourceLocatable => compilation
+        //     .IMessageComponentBuilder(source, cancellationToken)
+        //     .Map(builder =>
+        //     {
+        //         if (compilation.IEnumerableOfT is not { } enumerableOfT)
+        //             return Diagnostic
+        //                 .TypeNotFound("IEnumerable`1")
+        //                 .At(source);
+        //
+        //         return new Result<ICSharpTypeSymbol>(enumerableOfT.ConstructGeneric(builder));
+        //     });
+
+        public Result<ICSharpTypeSymbol> IEnumerableOf<T>(
+            Func<T, CancellationToken, Result<ICSharpTypeSymbol>> symbol,
+            T source,
+            CancellationToken cancellationToken = default
+        ) where T : ISourceLocatable => symbol(source, cancellationToken)
+            .Map(symbol =>
+            {
+                if (compilation.IEnumerableOfT is not { } enumerableOfT)
+                    return Diagnostic
+                        .TypeNotFound("IEnumerable`1")
+                        .At(source);
+                return new Result<ICSharpTypeSymbol>(enumerableOfT.ConstructGeneric(symbol));
+            });
+
         public Result<T> GetSymbol<T>(
             string name,
             CXTextSpan reference,
@@ -175,10 +246,10 @@ internal static class Symbols
         ) where T : ICSharpTypeSymbol
         {
             var symbol = compilation.GetTypeFromQualifiedName(name, cancellationToken);
-        
+
             if (symbol is not T expected)
                 return Diagnostic.TypeNotFound(name).At(reference);
-        
+
             return new(expected);
         }
     }

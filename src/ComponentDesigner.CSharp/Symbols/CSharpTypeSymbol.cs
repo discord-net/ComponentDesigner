@@ -58,6 +58,15 @@ public sealed class CSharpTypeSymbol : ICSharpTypeSymbol, IEquatable<CSharpTypeS
         Modifiers = SymbolModifiers.From(inner);
     }
 
+    public ICSharpTypeSymbol ConstructGeneric(params IEnumerable<ICSharpTypeSymbol> typeArguments)
+        => _provider.GetTypeSymbol(
+            ((INamedTypeSymbol)InnerSymbol).Construct(
+                typeArguments
+                    .OfType<CSharpTypeSymbol>()
+                    .Select(x => x.InnerSymbol)
+                    .ToArray()
+            )
+        );
 
     public string ToQualifiedName() => InnerSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
 

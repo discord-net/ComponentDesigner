@@ -8,7 +8,7 @@ namespace ComponentDesigner.CSharp;
 public sealed class CSharpCompilationProvider : ICompilationProvider
 {
     private static readonly ConditionalWeakTable<Compilation, CSharpCompilationProvider> _cache = new();
-    private static readonly Dictionary<int, WeakReference<ICSharpSymbol>> _symbolsCache = [];
+    private readonly Dictionary<int, WeakReference<ICSharpSymbol>> _symbolsCache = [];
 
     public Compilation Inner { get; }
 

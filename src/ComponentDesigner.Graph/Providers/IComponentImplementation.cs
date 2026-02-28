@@ -8,5 +8,5 @@ public interface IComponentImplementation
     
     ITextControlProvider TextControlProvider { get; }
     
-    IComponentTypingProvider ComponentTypingProvider { get; }
+    IComponentTypingProvider? ComponentTypingProvider { get; }
 }
