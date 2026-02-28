@@ -1,10 +1,7 @@
-﻿using ComponentDesigner;
-using Discord;
-using Color = System.Drawing.Color;
+﻿using static Discord.ComponentDesigner;
 
-class X
-{
-    public X(Color? accentColor = null, bool? isSpoiler = null, int? id = null, params IEnumerable<IMessageComponentBuilder> components)
-    {
-    }
-}
+var x = cx("""
+    <text>
+        Foo
+    </text>  
+""");

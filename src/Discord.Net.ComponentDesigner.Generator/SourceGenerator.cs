@@ -23,6 +23,7 @@ namespace ComponentDesigner;
 
 using FinalProduct = (ImmutableArray<EmittedGraph>, ImmutableArray<ComponentDesignerTarget>);
 
+[Generator]
 public sealed class SourceGenerator : IIncrementalGenerator
 {
     private const string ENABLE_AUTO_ROWS_KEY = "build_property.EnableAutoRows";
@@ -97,10 +98,14 @@ public sealed class SourceGenerator : IIncrementalGenerator
 
             foreach (var diagnostic in emitted.Diagnostics)
             {
+                var location = GetNormalizedLocation(
+                    emitted.Graph.Document.Source!,
+                    target.CX.Location,
+                    diagnostic.TextSpan
+                );
+                
                 context.ReportDiagnostic(
-                    diagnostic.ToRoslyn(
-                        GetLocation(emitted.Graph.Document.Source!, target.CX.Location, diagnostic.TextSpan)
-                    )
+                    diagnostic.ToRoslyn(location)
                 );
             }
 
@@ -141,7 +146,7 @@ public sealed class SourceGenerator : IIncrementalGenerator
             else
             {
                 var path = bucket.Key.StartsWith(rootDir)
-                    ? bucket.Key.Substring(0, rootDir.Length)
+                    ? bucket.Key.Substring(rootDir.Length)
                     : bucket.Key;
 
                 // replace file ext with .g.cs
@@ -198,7 +203,9 @@ public sealed class SourceGenerator : IIncrementalGenerator
         ) => $"""
               [global::System.Runtime.CompilerServices.InterceptsLocation(version: {location.Version}, data: "{location.Data}")]
               public static {returnType} _{Math.Abs(location.GetHashCode())}({parameters})
-                  => {source};
+                  => new {returnType}([
+                      {source.WithNewlinePadding(8)}
+                  ]);
               """;
 
 
@@ -234,7 +241,7 @@ public sealed class SourceGenerator : IIncrementalGenerator
             return minPath;
         }
 
-        static Location GetLocation(
+        static Location GetNormalizedLocation(
             CXSourceText source,
             LocationInfo cxInfo,
             CXTextSpan textSpan
@@ -251,11 +258,11 @@ public sealed class SourceGenerator : IIncrementalGenerator
                 ),
                 new Microsoft.CodeAnalysis.Text.LinePositionSpan(
                     new Microsoft.CodeAnalysis.Text.LinePosition(
-                        cxInfo.LineSpan.Start.Line + sourceLineSpan.Start.Line,
+                        cxInfo.LineSpan.Start.Line + sourceLineSpan.Start.Line ,
                         sourceLineSpan.Start.Character
                     ),
                     new Microsoft.CodeAnalysis.Text.LinePosition(
-                        cxInfo.LineSpan.End.Line + sourceLineSpan.End.Line,
+                        cxInfo.LineSpan.Start.Line + sourceLineSpan.End.Line,
                         sourceLineSpan.End.Character
                     )
                 )
@@ -273,7 +280,7 @@ public sealed class SourceGenerator : IIncrementalGenerator
         return new(
             parameters.Graph,
             result.GetValueOrDefault(),
-            result.Diagnostics,
+            [..parameters.Graph.Diagnostics, ..result.Diagnostics],
             parameters.CompilationProvider
         );
     }

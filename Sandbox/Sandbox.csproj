@@ -5,7 +5,7 @@
         <TargetFramework>net9.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <InterceptorsNamespaces>$(InterceptorsNamespaces);InlineComponent</InterceptorsNamespaces>
+        <InterceptorsNamespaces>$(InterceptorsNamespaces);ComponentDesignerInterceptors</InterceptorsNamespaces>
         <EnableAutoRows>true</EnableAutoRows>
         <EnableAutoTextDisplay>true</EnableAutoTextDisplay>
     </PropertyGroup>
@@ -16,19 +16,14 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\src\ComponentDesigner.Core\ComponentDesigner.Core.csproj" />
-      <ProjectReference Include="..\src\ComponentDesigner.Graph\ComponentDesigner.Graph.csproj" />
-      <ProjectReference Include="..\src\ComponentDesigner.Parser\ComponentDesigner.Parser.csproj" />
+      <ProjectReference Include="..\src\ComponentDesigner.Core\ComponentDesigner.Core.csproj" OutputItemType="Analyzer" />
+      <ProjectReference Include="..\src\ComponentDesigner.Graph\ComponentDesigner.Graph.csproj" OutputItemType="Analyzer" />
+      <ProjectReference Include="..\src\ComponentDesigner.Parser\ComponentDesigner.Parser.csproj" OutputItemType="Analyzer" />
+      <ProjectReference Include="..\src\ComponentDesigner.CSharp\ComponentDesigner.CSharp.csproj" OutputItemType="Analyzer" />
+      <ProjectReference Include="..\src\Discord.Net.ComponentDesigner.Implementation\Discord.Net.ComponentDesigner.Implementation.csproj" OutputItemType="Analyzer" />
+      <ProjectReference Include="..\src\Discord.Net.ComponentDesigner.Generator\Discord.Net.ComponentDesigner.Generator.csproj" OutputItemType="Analyzer" />
+      <ProjectReference Include="..\src\Discord.Net.ComponentDesigner\Discord.Net.ComponentDesigner.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-      <PackageReference Include="Discord.Net.Core" Version="3.18.0" />
-    </ItemGroup>
-    
-<!--    <ItemGroup>-->
-<!--        <ProjectReference Include="..\src\Discord.Net.ComponentDesigner.Generator\Discord.Net.ComponentDesigner.Generator.csproj" OutputItemType="Analyzer" />-->
-<!--        <ProjectReference Include="..\src\Discord.Net.ComponentDesigner.Parser\Discord.Net.ComponentDesigner.Parser.csproj" OutputItemType="Analyzer"/>-->
-<!--        <ProjectReference Include="..\src\Discord.Net.ComponentDesigner\Discord.Net.ComponentDesigner.csproj"/>-->
-<!--    </ItemGroup>-->
 
 </Project>
