@@ -26,7 +26,7 @@ public readonly record struct ComponentBuilderType(
         var current = symbol;
 
         if (
-            !current.Equals(compilationProvider.String) &&
+            !current.Equals(compilationProvider.String!) &&
             current.TryGetEnumerableType(out var enumerableInnerType)
         )
         {
@@ -70,6 +70,10 @@ public readonly record struct ComponentBuilderType(
         {
             kind = ComponentBuilderKind.CXModalComponent;
         }
+        else if (Is(compilationProvider.SelectMenuOptionBuilder))
+        {
+            kind = ComponentBuilderKind.SelectMenuOptionBuilder;
+        }
 
         if (kind is not ComponentBuilderKind.None)
         {
@@ -81,7 +85,7 @@ public readonly record struct ComponentBuilderType(
         return false;
 
         bool Is(Func<CXTextSpan, CancellationToken, Result<ICSharpTypeSymbol>> func)
-            => current.Equals(func(default, cancellationToken).GetValueOrDefault());
+            => current.Equals(func(default, cancellationToken).GetValueOrDefault()!);
 
         bool AssignableFrom(Func<CXTextSpan, CancellationToken, Result<ICSharpTypeSymbol>> func)
             => compilationProvider.HasImplicitConversionBetween(

@@ -1,5 +1,7 @@
 ﻿using ComponentDesigner;
 using ComponentDesigner.Nodes;
+using ComponentDesigner.Parser;
+using ComponentDesigner.Util;
 
 namespace Discord;
 
@@ -39,9 +41,67 @@ partial class DiscordNetRenderer
         CancellationToken cancellationToken
     )
     {
-        // TODO: node or interpolation
-        
-        return string.Empty;
+        return context
+            .CompilationProvider
+            .SelectMenuDefaultValue(propertyValue, cancellationToken)
+            .Map(Render);
+
+        Result<string> Render(ICSharpTypeSymbol symbol)
+            => (propertyValue switch
+            {
+                ComponentPropertyValue.Many many =>
+                    many
+                        .Values
+                        .Select(x => RenderSingle(symbol, x))
+                        .FlattenAll()
+                        .Map(x => string.Join($",{Environment.NewLine}", x)),
+                _ => RenderSingle(symbol, propertyValue)
+            }).Map(x =>
+                $"""
+
+                 [
+                     {x.WithNewlinePadding(4)}
+                 ]
+                 """
+            );
+
+        Result<string> RenderSingle(
+            ICSharpTypeSymbol symbol,
+            ComponentPropertyValue value
+        )
+        {
+            switch (value)
+            {
+                case {GraphNode: {} graphNode}:
+                    return context
+                        .RenderGraphNode(
+                            graphNode,
+                            new(new(symbol)),
+                            cancellationToken
+                        )
+                        .Map(static x => x.Source);
+
+                case { CXValue: CXValue.Interpolation interpolation }:
+                    var info = context.GetInterpolationInfo(interpolation);
+
+                    if (symbol.Equals(info.Symbol!))
+                        return context.GetReferenceToDesignerValue(info, info.Symbol);
+
+                    if (info.Symbol.TryGetEnumerableType(out var inner) && inner.Equals(symbol))
+                        return $"..{context.GetReferenceToDesignerValue(info, info.Symbol)}";
+
+                    return Diagnostic.TypeMismatch(symbol, info.Symbol!).At(value);
+
+                default:
+                    return Diagnostic
+                        .InvalidPropertyValue(
+                            value,
+                            ComponentPropertyValueKind.SyntaxValue,
+                            ComponentPropertyValueKind.Component
+                        )
+                        .At(value);
+            }
+        }
     }
 
     private static Result<string> RenderSelectMenuOptionProperty(
@@ -50,9 +110,67 @@ partial class DiscordNetRenderer
         CancellationToken cancellationToken
     )
     {
-        // TODO: node or interpolation
+        return context
+            .CompilationProvider
+            .SelectMenuOptionBuilder(propertyValue, cancellationToken)
+            .Map(Render);
 
-        return string.Empty;
+        Result<string> Render(ICSharpTypeSymbol symbol)
+            => (propertyValue switch
+            {
+                ComponentPropertyValue.Many many =>
+                    many
+                        .Values
+                        .Select(x => RenderSingle(symbol, x))
+                        .FlattenAll()
+                        .Map(x => string.Join($",{Environment.NewLine}", x)),
+                _ => RenderSingle(symbol, propertyValue)
+            }).Map(x =>
+                $"""
+
+                 [
+                     {x.WithNewlinePadding(4)}
+                 ]
+                 """
+            );
+
+        Result<string> RenderSingle(
+            ICSharpTypeSymbol symbol,
+            ComponentPropertyValue value
+        )
+        {
+            switch (value)
+            {
+                case {GraphNode: {} graphNode}:
+                    return context
+                        .RenderGraphNode(
+                            graphNode,
+                            new(new(symbol)),
+                            cancellationToken
+                        )
+                        .Map(static x => x.Source);
+
+                case { CXValue: CXValue.Interpolation interpolation }:
+                    var info = context.GetInterpolationInfo(interpolation);
+
+                    if (symbol.Equals(info.Symbol!))
+                        return context.GetReferenceToDesignerValue(info, info.Symbol);
+
+                    if (info.Symbol.TryGetEnumerableType(out var inner) && inner.Equals(symbol))
+                        return $"..{context.GetReferenceToDesignerValue(info, info.Symbol)}";
+
+                    return Diagnostic.TypeMismatch(symbol, info.Symbol!).At(value);
+
+                default:
+                    return Diagnostic
+                        .InvalidPropertyValue(
+                            value,
+                            ComponentPropertyValueKind.SyntaxValue,
+                            ComponentPropertyValueKind.Component
+                        )
+                        .At(value);
+            }
+        }
     }
 
     private static string ToDiscordNetComponentTypeEnum(SelectMenuKind kind)

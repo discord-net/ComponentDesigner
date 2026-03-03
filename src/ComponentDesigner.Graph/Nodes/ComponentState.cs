@@ -78,13 +78,23 @@ public record ComponentState(
 
         if (attribute.Value is CXValue.Element attributeElement)
         {
-            var graphNode = GraphNode
-                ?.Children
-                .FirstOrDefault(x => ReferenceEquals(x.State.CXNode, attributeElement.Value));
+            var graphNodes = GraphNode
+                .Children
+                .Where(x =>
+                    x.State.CXNode is not null &&
+                    attributeElement.TextSpan.Contains(x.State.CXNode.TextSpan)
+                )
+                .ToArray();
 
-            return _propertyValues[property] = graphNode is null
-                ? new ComponentPropertyValue.Missing(property, TextSpan)
-                : new ComponentPropertyValue.AttributeComponent(property, attribute, graphNode);
+            return _propertyValues[property] = graphNodes.Length switch
+            {
+                0 => new ComponentPropertyValue.Missing(property, TextSpan),
+                1 => new ComponentPropertyValue.AttributeComponent(property, attribute, graphNodes[0]),
+                _ => new ComponentPropertyValue.Many(
+                    property,
+                    [..graphNodes.Select(x => new ComponentPropertyValue.AttributeComponent(property, attribute, x))]
+                )
+            };
         }
 
         return _propertyValues[property] = new ComponentPropertyValue.AttributeValue(

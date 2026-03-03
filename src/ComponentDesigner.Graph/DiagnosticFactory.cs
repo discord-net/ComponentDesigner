@@ -445,6 +445,14 @@ public static class DiagnosticFactory
                 DiagnosticSeverity.Error,
                 $"'{property.Name}' is not allowed for {kind} buttons"
             );
+        
+        public static DiagnosticDescriptor SelectMenuPropertyNotAllowed(SelectMenuKind kind, ComponentProperty property)
+            => Create(
+                DiagnosticSource.Graph,
+                DiagnosticCode.PropertyNotAllowed,
+                DiagnosticSeverity.Error,
+                $"'{property.Name}' is not allowed for {kind} select menus"
+            );
 
         public static DiagnosticDescriptor InvalidFunctionalComponent(
             SearchResult result,

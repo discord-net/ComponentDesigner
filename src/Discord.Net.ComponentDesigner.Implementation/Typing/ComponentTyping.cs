@@ -23,6 +23,7 @@ public sealed class ComponentTyping : IComponentTypingProvider
         { ComponentBuilderKind.CXComponent, ConvertToCXComponent },
         { ComponentBuilderKind.CXMessageComponent, ConvertToCXMessageComponent },
         { ComponentBuilderKind.CXModalComponent, ConvertToCXModalComponent },
+        { ComponentBuilderKind.SelectMenuOptionBuilder, ConvertToSelectMenuOptionBuilder },
     };
 
     public bool IsValidComponentType(
@@ -80,6 +81,31 @@ public sealed class ComponentTyping : IComponentTypingProvider
             cancellationToken
         );
     }
+
+    private static Result<string> ConvertToSelectMenuOptionBuilder(
+        IComponentContext context,
+        SourcedValue<string> source,
+        ComponentBuilderType target,
+        bool asCollection,
+        CancellationToken cancellationToken
+    ) => target.Kind switch
+    {
+        ComponentBuilderKind.SelectMenuOptionBuilder => (asCollection, target.IsCollection) switch
+        {
+            (_, false) => source.Value,
+            (true, true) => $"..{source.Value}",
+            (false, true) => (
+                $"{source}.Single()",
+                Diagnostic.UsingRuntimeValidation("IEnumerable.Single()").At(source)
+            )
+        },
+        _ => Diagnostic
+            .NoConversionForComponents(
+                FormatName(ComponentBuilderKind.SelectMenuOptionBuilder, asCollection),
+                FormatName(target)
+            )
+            .At(source)
+    };
 
     private static Result<string> ConvertToCXModalComponent(
         IComponentContext context,

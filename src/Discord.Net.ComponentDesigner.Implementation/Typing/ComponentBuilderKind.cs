@@ -15,4 +15,6 @@ public enum ComponentBuilderKind
     CXComponent,
     CXMessageComponent,
     CXModalComponent,
+    
+    SelectMenuOptionBuilder
 }

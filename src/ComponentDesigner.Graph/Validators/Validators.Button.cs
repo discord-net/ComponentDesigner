@@ -21,16 +21,16 @@ partial class Validators
         LabelIsNotDuplicatedInChildrenOfElement();
 
         ValueValidators.StringRange(
-            context, state, button.Label, bag,
+            context, state.GetPropertyValue(button.Label), bag,
             upper: BUTTON_LABEL_MAX_LENGTH
         );
         ValueValidators.StringRange(
-            context, state, button.CustomId, bag,
+            context, state.GetPropertyValue(button.CustomId), bag,
             lower: BUTTON_CUSTOM_ID_MIN_LENGTH,
             upper: BUTTON_CUSTOM_ID_MAX_LENGTH
         );
         ValueValidators.StringRange(
-            context, state, button.Url, bag,
+            context, state.GetPropertyValue(button.Url), bag,
             upper: BUTTON_URL_MAX_LENGTH
         );
 

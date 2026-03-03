@@ -9,15 +9,11 @@ public static class ValueValidators
 {
     public static void PropertyRange(
         IComponentContext context,
-        ComponentState state,
-        ComponentProperty lower,
-        ComponentProperty upper,
+        ComponentPropertyValue lowerPropertyValue,
+        ComponentPropertyValue upperPropertyValue,
         IDiagnosticBag bag
     )
     {
-        var lowerPropertyValue = state.GetPropertyValue(lower);
-        var upperPropertyValue = state.GetPropertyValue(upper);
-
         if (
             lowerPropertyValue is not ComponentPropertyValue.AttributeValue { Attribute.Value: { } lowerValue } ||
             upperPropertyValue is not ComponentPropertyValue.AttributeValue { Attribute.Value: { } upperValue }
@@ -32,7 +28,12 @@ public static class ValueValidators
         {
             bag.Add(
                 upperPropertyValue.TextSpan.Report(
-                    Diagnostic.OutOfRange(lower, upper, lowerInt, upperInt)
+                    Diagnostic.OutOfRange(
+                        lowerPropertyValue.Property,
+                        upperPropertyValue.Property,
+                        lowerInt,
+                        upperInt
+                    )
                 )
             );
         }
@@ -40,26 +41,23 @@ public static class ValueValidators
 
     public static void IntRange(
         IComponentContext context,
-        ComponentState state,
-        ComponentProperty property,
+        ComponentPropertyValue propertyValue,
         IDiagnosticBag bag,
         int? lower = null,
         int? upper = null
-    ) => Range(context, state, property, bag, asString: false, lower, upper);
+    ) => Range(context, propertyValue, bag, asString: false, lower, upper);
 
     public static void StringRange(
         IComponentContext context,
-        ComponentState state,
-        ComponentProperty property,
+        ComponentPropertyValue propertyValue,
         IDiagnosticBag bag,
         int? lower = null,
         int? upper = null
-    ) => Range(context, state, property, bag, asString: true, lower, upper);
+    ) => Range(context, propertyValue, bag, asString: true, lower, upper);
 
     public static void Range(
         IComponentContext context,
-        ComponentState state,
-        ComponentProperty property,
+        ComponentPropertyValue propertyValue,
         IDiagnosticBag bag,
         bool asString,
         int? lower = null,
@@ -67,8 +65,6 @@ public static class ValueValidators
     )
     {
         Debug.Assert(lower.HasValue || upper.HasValue);
-
-        var propertyValue = state.GetPropertyValue(property);
 
         if (propertyValue is not ComponentPropertyValue.AttributeValue { Attribute.Value: { } cxValue }) return;
 
@@ -150,13 +146,13 @@ public static class ValueValidators
                     propertyValue.TextSpan.Report(
                         asString
                             ? Diagnostic.StringOutOfRange(
-                                property,
+                                propertyValue.Property,
                                 target,
                                 lower,
                                 upper
                             )
                             : Diagnostic.IntegerOutOfRange(
-                                property,
+                                propertyValue.Property,
                                 target,
                                 lower,
                                 upper

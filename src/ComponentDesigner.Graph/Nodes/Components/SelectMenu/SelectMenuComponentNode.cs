@@ -4,6 +4,8 @@ namespace ComponentDesigner.Nodes;
 
 public enum SelectMenuKind
 {
+    Unknown,
+
     String,
     User,
     Role,
@@ -46,6 +48,7 @@ public sealed class SelectMenuComponentNode : ComponentNode<SelectMenuState>
     public ComponentProperty Id { get; }
     public ComponentProperty Type { get; }
     public ComponentProperty CustomId { get; }
+    public ComponentProperty ChannelTypes { get; }
     public ComponentProperty Placeholder { get; }
     public ComponentProperty MinValues { get; }
     public ComponentProperty MaxValues { get; }
@@ -63,6 +66,7 @@ public sealed class SelectMenuComponentNode : ComponentNode<SelectMenuState>
             Id = ComponentProperty.Id,
             Type = new("type", isOptional: true, isSynthetic: true),
             CustomId = new("customId"),
+            ChannelTypes = new("channelTypes", isOptional: true),
             Placeholder = new("placeholder", isOptional: true),
             MinValues = new("minValues", aliases: ["min"], isOptional: true),
             MaxValues = new("maxValues", aliases: ["max"], isOptional: true),
@@ -79,7 +83,7 @@ public sealed class SelectMenuComponentNode : ComponentNode<SelectMenuState>
     )
     {
         if (!AutoActionRowComponentNode.TryInsertActionRow(this, context))
-            base.RegisterGraphNode(context, cancellationToken);
+            base.RegisterGraphNode(context, includeElementChildren: false, cancellationToken);
     }
 
     public override SelectMenuState? Initialize(
@@ -88,16 +92,62 @@ public sealed class SelectMenuComponentNode : ComponentNode<SelectMenuState>
         CancellationToken cancellationToken = default
     )
     {
-        if (
-            context.CXNode is not CXElement element ||
-            !InferKind(context.GraphContext, element).TryUnwrap(diagnostics, out var kind)
-        ) return null;
+        if (context.CXNode is not CXElement element) return null;
 
-        return new SelectMenuState(
+        InferKind(context.GraphContext, element).TryUnwrap(diagnostics, out var kind);
+
+        var state = new SelectMenuState(
             context.GraphNode,
             element,
             kind
         );
+
+        if (kind is SelectMenuKind.Unknown) return state;
+
+        var childValues = new List<ComponentPropertyValue>();
+
+        var childProperty = kind is SelectMenuKind.String
+            ? Options
+            : DefaultValues;
+
+        foreach (var childSyntax in element.Children)
+        {
+            switch (childSyntax)
+            {
+                case CXElement childElement:
+                    childValues.AddRange(
+                        context
+                            .PushAsChildren(childElement, cancellationToken)
+                            .Select(x => new ComponentPropertyValue.Component(childProperty, x))
+                    );
+                    break;
+
+                case CXValue value:
+                    childValues.Add(
+                        new ComponentPropertyValue.SyntaxValue(childProperty, value)
+                    );
+                    break;
+                default:
+                    diagnostics.Add(
+                        Diagnostic.InvalidChildOfComponent(this, childSyntax).At(childSyntax)
+                    );
+                    break;
+            }
+        }
+
+        if (childValues.Count is 1)
+        {
+            state.SetPropertyValue(childProperty, childValues[0]);
+        }
+        else if (childValues.Count > 1)
+        {
+            state.SetPropertyValue(
+                childProperty,
+                new ComponentPropertyValue.Many(childProperty, childValues)
+            );
+        }
+
+        return state;
     }
 
     private Result<SelectMenuKind> InferKind(
