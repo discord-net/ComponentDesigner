@@ -38,18 +38,15 @@ public sealed class FileUploadComponentNode : ComponentNode
         ];
     }
 
-    public override Result<RenderedComponent> Emit(
-        ComponentState state,
+    public override void Validate(
+        IComponentContext context, ComponentState state, IDiagnosticBag bag,
+        CancellationToken cancellationToken = default
+    ) => Validators.ValidateFileUpload(context, this, state, bag);
+
+    public override Result<RenderedComponent> Render(
         ComponentEmitContext context,
+        ComponentState state,
         ComponentOptions options,
         CancellationToken cancellationToken = default
-    ) => ValidateAndRender(
-        this,
-        state,
-        context,
-        options,
-        Validators.ValidateFileUpload,
-        context.Renderer.RenderFileUpload,
-        cancellationToken
-    );
+    ) => context.Renderer.RenderFileUpload(context, this, state, options.TypingContext, cancellationToken);
 }

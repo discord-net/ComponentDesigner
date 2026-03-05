@@ -1,0 +1,29 @@
+<idea-plugin>
+    <id>dev.discordnet.ComponentDesigner</id>
+
+   <name>CX Language</name>
+
+    <vendor url="https://github.com/discord-net/ComponentDesigner">Discord.Net</vendor>
+
+    <description>Provides language support for the CX language</description>
+
+    <depends>com.intellij.modules.lsp</depends>
+    <depends>org.jetbrains.plugins.textmate</depends>
+    <depends>org.jetbrains.kotlin</depends>
+
+    <extensions defaultExtensionNs="org.jetbrains.kotlin">
+        <supportsKotlinPluginMode supportsK2="true" />
+    </extensions>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <fileType name="cx"
+                  language="cx"
+                  implementationClass="dev.discordnet.componentdesigner.CXFileType"
+                  extensions="cx"
+                  fieldName="INSTANCE"/>
+        <editorHighlighterProvider filetype="cx" implementationClass="dev.discordnet.componentdesigner.highlighting.CXEditorHighlighterProvider"/>
+        <projectService serviceImplementation="dev.discordnet.componentdesigner.CXSettings"/>
+        <projectConfigurable groupId="tools" instance="dev.discordnet.componentdesigner.CXConfigurable"/>
+        <platform.lsp.serverSupportProvider implementation="dev.discordnet.componentdesigner.CXLspServerSupportProvider"/>
+    </extensions>
+</idea-plugin>

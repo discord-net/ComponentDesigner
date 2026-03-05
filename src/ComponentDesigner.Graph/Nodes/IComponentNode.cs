@@ -24,10 +24,20 @@ public interface IComponentNode : IEquatable<IComponentNode>
 
     void RegisterGraphNode(ComponentGraphInitializationContext context, CancellationToken cancellationToken = default);
 
-    Result<RenderedComponent> Emit(
-        ComponentState state,
-        ComponentEmitContext context,
-        ComponentOptions options,
+    void Validate(
+        IComponentContext context, ComponentState state, IDiagnosticBag bag,
         CancellationToken cancellationToken = default
     );
+
+    Result<RenderedComponent> Render(
+        ComponentEmitContext context, ComponentState state, ComponentOptions options,
+        CancellationToken cancellationToken = default
+    );
+
+    // Result<RenderedComponent> Emit(
+    //     ComponentState state,
+    //     ComponentEmitContext context,
+    //     ComponentOptions options,
+    //     CancellationToken cancellationToken = default
+    // );
 }

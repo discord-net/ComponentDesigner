@@ -18,7 +18,7 @@ public sealed partial class DiscordNetRenderer : BaseCSharpRenderer
         
         foreach (var node in graph.RootNodes)
         {
-            var render = node.Emit(context, cancellationToken: cancellationToken);
+            var render = node.Render(context, cancellationToken: cancellationToken);
             
             bag.Add(render.Diagnostics);
             if(!render.HasValue) continue;

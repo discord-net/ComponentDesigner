@@ -183,7 +183,6 @@ public sealed class CXComponentGraph : IEquatable<CXComponentGraph>
             {
                 if (context.Options.AllowAutoTextDisplays)
                 {
-                    
                     var autoTextDisplayGraphNode = context.Tree.Push(
                         AutoTextDisplayComponentNode.Instance,
                         parent: parent
@@ -413,7 +412,11 @@ public sealed class CXComponentGraph : IEquatable<CXComponentGraph>
 
         var state = node.Component.Initialize(initContext, context.Diagnostics, cancellationToken);
 
-        if (state is null) return null;
+        if (state is null)
+        {
+            context.Tree.DereferenceFromTree(node);
+            return null;
+        }
 
         node.State = state;
 
@@ -478,14 +481,54 @@ public sealed class CXComponentGraph : IEquatable<CXComponentGraph>
         );
     }
 
+    private IReadOnlyList<Diagnostic>? _validationDiagnostics;
+    private bool _validationHasErrors;
+
+    public IReadOnlyList<Diagnostic> Validate(
+        ICompilationProvider compilationProvider,
+        CancellationToken cancellationToken = default
+    ) => Validate(compilationProvider, out _, cancellationToken);
+
+    public IReadOnlyList<Diagnostic> Validate(
+        ICompilationProvider compilationProvider,
+        out bool hasErrors,
+        CancellationToken cancellationToken = default
+    )
+    {
+        if (_validationDiagnostics is not null)
+        {
+            hasErrors = _validationHasErrors;
+            return _validationDiagnostics;
+        }
+
+        using var bag = PooledDiagnosticBag.Get();
+        var context = new ComponentValidationContext(this, compilationProvider);
+
+        for (var i = 0; i < _tree.Count; i++)
+        {
+            var node = _tree[i];
+
+            node.Component.Validate(context, node.State, bag, cancellationToken);
+        }
+
+        hasErrors = _validationHasErrors = bag.HasErrors;
+        return _validationDiagnostics = bag.ToCollection();
+    }
+
     public Result<string> Emit(ICompilationProvider compilationProvider, CancellationToken cancellationToken = default)
     {
-        var context = new ComponentEmitContext(this, compilationProvider);
+        var validation = Validate(compilationProvider, out var hasErrors, cancellationToken);
 
-        return Implementation.Renderer.RenderComponents(
-            this,
-            context,
-            cancellationToken
-        );
+        if (hasErrors) return new(validation);
+
+        return Implementation
+            .Renderer
+            .RenderComponents(
+                this,
+                new ComponentEmitContext(this, compilationProvider),
+                cancellationToken
+            )
+            .PrefaceDiagnostics(validation);
+
     }
 }

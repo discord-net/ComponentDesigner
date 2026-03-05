@@ -15,7 +15,7 @@ public sealed record TextControlState(
 public sealed class TextControlNode : ComponentNode<TextControlState>
 {
     public static readonly TextControlNode Instance = new();
-    
+
     public override string Name => "<text controls>";
 
     public override bool IsUserAccessible => false;
@@ -46,16 +46,22 @@ public sealed class TextControlNode : ComponentNode<TextControlState>
         {
             return null;
         }
-        
+
         // TODO: check remaining children
 
         return new TextControlState(context.GraphNode, cxNodes, graph);
     }
 
-    public override Result<RenderedComponent> Emit(
-        TextControlState state,
-        ComponentEmitContext context,
-        ComponentOptions options,
+    public override void Validate(
+        IComponentContext context, TextControlState state, IDiagnosticBag bag,
+        CancellationToken cancellationToken = default
+    )
+    {
+        // no validation
+    }
+
+    public override Result<RenderedComponent> Render(
+        ComponentEmitContext context, TextControlState state, ComponentOptions options,
         CancellationToken cancellationToken = default
     ) => context
         .Renderer

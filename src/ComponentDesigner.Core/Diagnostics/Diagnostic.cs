@@ -1,8 +1,9 @@
 ﻿using System.Diagnostics;
+using ComponentDesigner.Util;
 
 namespace ComponentDesigner;
 
-public readonly record struct Diagnostic
+public readonly struct Diagnostic : IEquatable<Diagnostic>
 {
     public CXTextSpan TextSpan { get; init; }
     public DiagnosticDescriptor Descriptor { get; init; }
@@ -25,9 +26,10 @@ public readonly record struct Diagnostic
         StackTrace = new();
     }
 
-    public void Deconstruct(out CXTextSpan TextSpan, out DiagnosticDescriptor Descriptor)
-    {
-        TextSpan = this.TextSpan;
-        Descriptor = this.Descriptor;
-    }
+    public bool Equals(Diagnostic other)
+        => TextSpan == other.TextSpan &&
+           Descriptor == other.Descriptor;
+
+    public override int GetHashCode()
+        => Hash.Combine(TextSpan, Descriptor);
 }

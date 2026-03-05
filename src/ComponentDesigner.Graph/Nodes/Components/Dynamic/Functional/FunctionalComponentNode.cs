@@ -2,7 +2,7 @@
 
 namespace ComponentDesigner.Nodes;
 
-public sealed class FunctionalComponentNode : ComponentNode<FunctionalState>
+public sealed class FunctionalComponentNode : ComponentNode<FunctionalState>, IDynamicComponentNode
 {
     public static readonly FunctionalComponentNode Instance = new();
     
@@ -150,18 +150,16 @@ public sealed class FunctionalComponentNode : ComponentNode<FunctionalState>
 
     #endregion
 
-    public override Result<RenderedComponent> Emit(
-        FunctionalState state,
+    public override void Validate(
+        IComponentContext context, FunctionalState state, IDiagnosticBag bag,
+        CancellationToken cancellationToken = default
+    ) => Validators.ValidateFunctionalComponent(context, this, state, bag);
+
+    public override Result<RenderedComponent> Render(
         ComponentEmitContext context,
+        FunctionalState state,
         ComponentOptions options,
         CancellationToken cancellationToken = default
-    ) => ValidateAndRender(
-        this,
-        state,
-        context,
-        options,
-        Validators.ValidateFunctionalComponent,
-        context.Renderer.RenderFunctionalComponent,
-        cancellationToken
-    );
+    ) => context.Renderer.RenderFunctionalComponent(context, this, state, options.TypingContext, cancellationToken);
+    
 }

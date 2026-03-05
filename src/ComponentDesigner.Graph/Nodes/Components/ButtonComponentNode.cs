@@ -203,18 +203,15 @@ public sealed class ButtonComponentNode : ComponentNode<ButtonState>
         }
     }
 
-    public override Result<RenderedComponent> Emit(
-        ButtonState state,
+    public override void Validate(
+        IComponentContext context, ButtonState state, IDiagnosticBag bag,
+        CancellationToken cancellationToken = default
+    ) => Validators.ValidateButton(context, this, state, bag);
+
+    public override Result<RenderedComponent> Render(
         ComponentEmitContext context,
+        ButtonState state,
         ComponentOptions options,
         CancellationToken cancellationToken = default
-    ) => ValidateAndRender(
-        this,
-        state,
-        context,
-        options,
-        Validators.ValidateButton,
-        context.Renderer.RenderButton,
-        cancellationToken
-    );
+    ) => context.Renderer.RenderButton(context, this, state, options.TypingContext, cancellationToken);
 }

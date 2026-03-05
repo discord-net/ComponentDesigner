@@ -5,8 +5,8 @@ namespace ComponentDesigner;
 
 public sealed class CXComponentTree : IEquatable<CXComponentTree>
 {
-    public static CXComponentTree Empty => new ();
-    
+    public static CXComponentTree Empty => new();
+
     public int Count => _nodes.Count;
     public GraphNode this[int id] => _nodes[id];
 
@@ -16,24 +16,24 @@ public sealed class CXComponentTree : IEquatable<CXComponentTree>
         => _nodesWithExternalDependencies ?? [];
 
     public IReadOnlyList<GraphNode> RootNodes => _rootNodes ?? [];
-    
+
     private List<GraphNode> _nodes;
-    
+
     private List<GraphNode>? _nodesWithExternalDependencies;
     private List<GraphNode>? _rootNodes;
-    
+
     public CXComponentTree()
     {
         _nodes = [];
     }
-    
+
     public GraphNode Reuse(
         GraphNode graphNode,
         ComponentState? state = null
     )
     {
         var newNode = graphNode.Reuse(this, state);
-        
+
         _nodes.Add(newNode);
 
         if (newNode.Component.HasExternalDependencies)
@@ -44,7 +44,14 @@ public sealed class CXComponentTree : IEquatable<CXComponentTree>
 
         return newNode;
     }
-    
+
+    public void DereferenceFromTree(GraphNode graphNode)
+    {
+        graphNode?.Parent?.RemoveChild(graphNode);
+        _rootNodes?.Remove(graphNode!);
+        _nodesWithExternalDependencies?.Remove(graphNode!);
+    }
+
     public GraphNode Push(
         IComponentNode component,
         ComponentState? state = null,
@@ -55,12 +62,12 @@ public sealed class CXComponentTree : IEquatable<CXComponentTree>
         var node = new GraphNode(
             this,
             _nodes.Count,
-            component, 
+            component,
             state,
             children,
             parent?.Id
         );
-        
+
         _nodes.Add(node);
 
         if (component.HasExternalDependencies)
@@ -74,7 +81,7 @@ public sealed class CXComponentTree : IEquatable<CXComponentTree>
             _rootNodes ??= [];
             _rootNodes.Add(node);
         }
-        
+
         return node;
     }
 

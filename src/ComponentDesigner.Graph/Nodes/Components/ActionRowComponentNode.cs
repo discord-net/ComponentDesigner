@@ -18,7 +18,7 @@ public class ActionRowComponentNode : ComponentNode
         Properties =
         [
             Id = ComponentProperty.Id,
-            
+
             // validated manually
             Components = new("components")
         ];
@@ -31,24 +31,21 @@ public class ActionRowComponentNode : ComponentNode
     )
     {
         var state = base.Initialize(context, diagnostics, cancellationToken);
-        
+
         state?.SetPropertyValueToChildren(Components);
 
         return state;
     }
 
-    public override Result<RenderedComponent> Emit(
-        ComponentState state,
+    public override void Validate(
+        IComponentContext context, ComponentState state, IDiagnosticBag bag,
+        CancellationToken cancellationToken = default
+    ) => Validators.ValidateActionRow(context, this, state, bag);
+
+    public override Result<RenderedComponent> Render(
         ComponentEmitContext context,
+        ComponentState state,
         ComponentOptions options,
         CancellationToken cancellationToken = default
-    ) => ValidateAndRender(
-        this,
-        state,
-        context,
-        options,
-        Validators.ValidateActionRow,
-        context.Renderer.RenderActionRow,
-        cancellationToken
-    );
+    ) => context.Renderer.RenderActionRow(context, this, state, options.TypingContext, cancellationToken);
 }

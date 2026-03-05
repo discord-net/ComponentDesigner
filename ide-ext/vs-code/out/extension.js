@@ -15,13 +15,10 @@ const vscode = require("vscode");
 const languageClientNode = require("vscode-languageclient/node");
 const path = require("path");
 const fs = require("fs");
-const languageServerPath = "server/Discord.Net.ComponentDesigner.LanguageServer.exe";
+const languageServerPath = "server/ComponentDesigner.LanguageServer.exe";
 let configuration = vscode.workspace.getConfiguration();
-let outputChannel = vscode.window.createOutputChannel("DiscordNet Components (CX)");
-function activateLanguageServer(context, dotnetPath) {
-    if (!dotnetPath || dotnetPath.length === 0) {
-        dotnetPath = "dotnet";
-    }
+let outputChannel = vscode.window.createOutputChannel("Component Designer LSP");
+function activateLanguageServer(context) {
     let pathFile = context.asAbsolutePath(languageServerPath);
     if (!fs.existsSync(pathFile)) {
         outputChannel.appendLine("Language server not found at path: " + pathFile);
@@ -48,38 +45,16 @@ function activateLanguageServer(context, dotnetPath) {
     let disposable = client.start();
     context.subscriptions.push(disposable);
 }
-function activateDotNet() {
-    return __awaiter(this, void 0, void 0, function* () {
-        try {
-            outputChannel.appendLine("CX extension attempting to acquire .NET 8");
-            const requestingExtensionId = "discord-cx";
-            const result = yield vscode.commands.executeCommand("dotnet.acquire", {
-                version: "8.0",
-                requestingExtensionId,
-            });
-            outputChannel.appendLine("CX extension NET 8 Acquire result: " +
-                result +
-                ": " +
-                result["dotnetPath"]);
-            return result["dotnetPath"];
-        }
-        catch (error) {
-            outputChannel.appendLine("Error: " + error);
-            return "";
-        }
-    });
-}
 function activate(context) {
     return __awaiter(this, void 0, void 0, function* () {
-        const disposable = vscode.commands.registerCommand('extension.helloWorld', () => {
+        const disposable = vscode.commands.registerCommand("extension.helloWorld", () => {
             // The code you place here will be executed every time your command is executed
             // Display a message box to the user
-            vscode.window.showInformationMessage('Hello World!');
+            vscode.window.showInformationMessage("Hello World!");
         });
         context.subscriptions.push(disposable);
         outputChannel.appendLine("activiating...");
-        let path = yield activateDotNet();
-        activateLanguageServer(context, path);
+        activateLanguageServer(context);
         outputChannel.appendLine("CX extension has been activated");
     });
 }

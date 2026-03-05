@@ -97,18 +97,15 @@ public sealed class LabelComponentNode : ComponentNode
         return state;
     }
 
-    public override Result<RenderedComponent> Emit(
-        ComponentState state,
+    public override void Validate(
+        IComponentContext context, ComponentState state, IDiagnosticBag bag,
+        CancellationToken cancellationToken = default
+    ) => Validators.ValidateLabel(context, this, state, bag);
+
+    public override Result<RenderedComponent> Render(
         ComponentEmitContext context,
+        ComponentState state,
         ComponentOptions options,
         CancellationToken cancellationToken = default
-    ) => ValidateAndRender(
-        this,
-        state,
-        context,
-        options,
-        Validators.ValidateLabel,
-        context.Renderer.RenderLabel,
-        cancellationToken
-    );
+    ) => context.Renderer.RenderLabel(context, this, state, options.TypingContext, cancellationToken);
 }

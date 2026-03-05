@@ -3,7 +3,7 @@
 namespace System.Runtime.CompilerServices
 {
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Interface)]
-    public sealed class CollectionBuilderAttribute : Attribute
+    internal sealed class CollectionBuilderAttribute : Attribute
     {
         public CollectionBuilderAttribute(Type builderType, string methodName)
         {
@@ -15,16 +15,16 @@ namespace System.Runtime.CompilerServices
         public string MethodName { get; }
     }
     
-    public sealed class IsExternalInit : Attribute;
+    internal sealed class IsExternalInit : Attribute;
 
-    public sealed class CompilerFeatureRequiredAttribute(string s) : Attribute;
+    internal sealed class CompilerFeatureRequiredAttribute(string s) : Attribute;
 
-    public sealed class RequiredMemberAttribute : Attribute;
+    internal sealed class RequiredMemberAttribute : Attribute;
 }
 
 namespace System.Diagnostics.CodeAnalysis
 {
-    public sealed class MemberNotNullAttribute(params string[] members) : Attribute
+    internal sealed class MemberNotNullAttribute(params string[] members) : Attribute
     {
         public string[] Members { get; } = members;
 
@@ -33,7 +33,7 @@ namespace System.Diagnostics.CodeAnalysis
         }
     }
 
-    public sealed class MemberNotNullWhenAttribute(bool returnValue, params string[] members) : Attribute
+    internal sealed class MemberNotNullWhenAttribute(bool returnValue, params string[] members) : Attribute
     {
         public string[] Members { get; } = members;
         public bool ReturnValue { get; } = returnValue;
@@ -43,16 +43,16 @@ namespace System.Diagnostics.CodeAnalysis
         }
     }
 
-    public sealed class MaybeNullWhenAttribute(bool returnValue) : Attribute
+    internal sealed class MaybeNullWhenAttribute(bool returnValue) : Attribute
     {
         public bool ReturnValue { get; } = returnValue;
     }
     
-    public sealed class MaybeNullAttribute() : Attribute
+    internal sealed class MaybeNullAttribute() : Attribute
     {
     }
 
-    public sealed class NotNullIfNotNullAttribute(string parameterName) : Attribute
+    internal sealed class NotNullIfNotNullAttribute(string parameterName) : Attribute
     {
         public string ParameterName { get; } = parameterName;
     }

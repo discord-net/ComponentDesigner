@@ -69,55 +69,19 @@ public abstract class ComponentNode<TState> :
         );
     }
 
-    public abstract Result<RenderedComponent> Emit(
+    public virtual void Validate(
+        IComponentContext context,
         TState state,
+        IDiagnosticBag bag,
+        CancellationToken cancellationToken = default
+    ) => Validators.ValidateGenericComponent(this, state, bag);
+
+    public abstract Result<RenderedComponent> Render(
         ComponentEmitContext context,
+        TState state,
         ComponentOptions options,
         CancellationToken cancellationToken = default
     );
-
-    protected Result<RenderedComponent> ValidateAndRender<TSelf>(
-        TSelf self,
-        TState state,
-        ComponentEmitContext context,
-        ComponentOptions options,
-        ComponentValidator<TSelf, TState> validator,
-        ComponentRenderer<TSelf, TState> renderer,
-        CancellationToken cancellationToken = default
-    ) where TSelf : ComponentNode<TState>
-    {
-        using var bag = PooledDiagnosticBag.Get();
-
-        validator(context, self, state, bag);
-
-        if (bag.HasErrors) return new(bag.ToCollection());
-
-        var result = renderer(context, self, state, options.TypingContext, cancellationToken)
-            .AddDiagnostics(bag);
-
-        if (context.ComponentTypingProvider is null)
-            return result;
-
-        return result.Map(render =>
-        {
-            if (options.TypingContext?.ConformingType is null || render.Type is null)
-            {
-                // TODO: error?
-                return result;
-            }
-
-            return context
-                .ComponentTypingProvider
-                .Convert(
-                    context,
-                    render.Source.SourcedAt(state.TextSpan),
-                    render.Type,
-                    options.TypingContext.Value.ConformingType,
-                    cancellationToken
-                )
-                .Map(converted => new RenderedComponent(converted, options.TypingContext.Value.ConformingType));
-        });
-    }
 
     public bool Equals(ComponentNode<TState>? other)
         => ReferenceEquals(this, other);
@@ -146,10 +110,21 @@ public abstract class ComponentNode<TState> :
         IDiagnosticBag diagnostics,
         CancellationToken cancellationToken) => UpdateState((TState)state, context, diagnostics, cancellationToken);
 
-    Result<RenderedComponent> IComponentNode.Emit(
-        ComponentState state,
-        ComponentEmitContext context,
-        ComponentOptions options,
+    void IComponentNode.Validate(
+        IComponentContext context, ComponentState state, IDiagnosticBag bag,
         CancellationToken cancellationToken
-    ) => Emit((TState)state, context, options, cancellationToken);
+    )
+    {
+        if(state is TState typedState) Validate(context, typedState, bag, cancellationToken);
+    }
+
+    Result<RenderedComponent> IComponentNode.Render(
+        ComponentEmitContext context, ComponentState state, ComponentOptions options,
+        CancellationToken cancellationToken
+    )
+    {
+        if (state is TState typedState) return Render(context, typedState, options, cancellationToken);
+
+        return default;
+    }
 }

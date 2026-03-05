@@ -6,8 +6,8 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <InterceptorsNamespaces>$(InterceptorsNamespaces);ComponentDesignerInterceptors</InterceptorsNamespaces>
-        <EnableAutoRows>true</EnableAutoRows>
-        <EnableAutoTextDisplay>true</EnableAutoTextDisplay>
+        <EnableAutoRows>false</EnableAutoRows>
+        <EnableAutoTextDisplay>false</EnableAutoTextDisplay>
     </PropertyGroup>
 
     <ItemGroup>

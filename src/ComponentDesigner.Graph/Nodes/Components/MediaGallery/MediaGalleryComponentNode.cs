@@ -80,18 +80,15 @@ public sealed class MediaGalleryComponentNode : ComponentNode
         return state;
     }
 
-    public override Result<RenderedComponent> Emit(
-        ComponentState state,
+    public override void Validate(
+        IComponentContext context, ComponentState state, IDiagnosticBag bag,
+        CancellationToken cancellationToken = default
+    ) => Validators.ValidateMediaGallery(context, this, state, bag);
+
+    public override Result<RenderedComponent> Render(
         ComponentEmitContext context,
+        ComponentState state,
         ComponentOptions options,
         CancellationToken cancellationToken = default
-    ) => ValidateAndRender(
-        this,
-        state,
-        context,
-        options,
-        Validators.ValidateMediaGallery,
-        context.Renderer.RenderMediaGallery,
-        cancellationToken
-    );
+    ) => context.Renderer.RenderMediaGallery(context, this, state, options.TypingContext, cancellationToken);
 }

@@ -6,7 +6,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ComponentDesigner.Parser", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Discord.Net.ComponentDesigner.Generator", "src\Discord.Net.ComponentDesigner.Generator\Discord.Net.ComponentDesigner.Generator.csproj", "{E5A1D032-F6EB-4066-80EB-D1E4B80CB11C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Discord.Net.ComponentDesigner.LanguageServer", "src\Discord.Net.ComponentDesigner.LanguageServer\Discord.Net.ComponentDesigner.LanguageServer.csproj", "{43290F70-5CED-46E3-AFBE-C7B89E345022}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ComponentDesigner.LanguageServer", "src\ComponentDesigner.LanguageServer\ComponentDesigner.LanguageServer.csproj", "{43290F70-5CED-46E3-AFBE-C7B89E345022}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sandbox", "Sandbox\Sandbox.csproj", "{3892EA16-52F8-4120-9E8E-5E29D486F3B3}"
 EndProject
@@ -27,6 +27,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ComponentDesigner.CSharp", "src\ComponentDesigner.CSharp\ComponentDesigner.CSharp.csproj", "{7785168F-57D7-4FF8-9E42-2E2C9E0D8583}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Discord.Net.ComponentDesigner.Implementation", "src\Discord.Net.ComponentDesigner.Implementation\Discord.Net.ComponentDesigner.Implementation.csproj", "{C5B1B427-EB96-47F3-A5A5-A3196BABDBA0}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tools", "Tools", "{33843AC0-ACD6-47F6-9B7E-255E3A8C3A78}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -85,5 +87,6 @@ Global
 		{E5A1D032-F6EB-4066-80EB-D1E4B80CB11C} = {2CD05700-CAF2-4686-AA6E-B43B38337FC4}
 		{7785168F-57D7-4FF8-9E42-2E2C9E0D8583} = {C0F7B7F7-0182-4181-B3D3-EC97998D6382}
 		{C5B1B427-EB96-47F3-A5A5-A3196BABDBA0} = {2CD05700-CAF2-4686-AA6E-B43B38337FC4}
+		{43290F70-5CED-46E3-AFBE-C7B89E345022} = {33843AC0-ACD6-47F6-9B7E-255E3A8C3A78}
 	EndGlobalSection
 EndGlobal

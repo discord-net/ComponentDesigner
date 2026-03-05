@@ -22,7 +22,7 @@ public sealed class ComponentEmitContext(CXComponentGraph graph, ICompilationPro
         GraphNode node,
         ComponentOptions options = default,
         CancellationToken cancellationToken = default
-    ) => node.Emit(this, options, cancellationToken);
+    ) => node.Render(this, options, cancellationToken);
 
     public string CreateVariable(string hint = "local_")
     {

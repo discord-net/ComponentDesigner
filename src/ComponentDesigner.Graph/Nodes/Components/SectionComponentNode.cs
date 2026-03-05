@@ -146,18 +146,15 @@ public sealed class SectionComponentNode : ComponentNode
         }
     }
 
-    public override Result<RenderedComponent> Emit(
-        ComponentState state,
+    public override void Validate(
+        IComponentContext context, ComponentState state, IDiagnosticBag bag,
+        CancellationToken cancellationToken = default
+    ) => Validators.ValidateSection(context, this, state, bag);
+
+    public override Result<RenderedComponent> Render(
         ComponentEmitContext context,
+        ComponentState state,
         ComponentOptions options,
         CancellationToken cancellationToken = default
-    ) => ValidateAndRender(
-        this,
-        state,
-        context,
-        options,
-        Validators.ValidateSection,
-        context.Renderer.RenderSection,
-        cancellationToken
-    );
+    ) => context.Renderer.RenderSection(context, this, state, options.TypingContext, cancellationToken);
 }

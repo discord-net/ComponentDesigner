@@ -16,17 +16,11 @@ public sealed class GraphNode : IEquatable<GraphNode>, ISourceLocatable
 
     public IComponentNode Component { get; }
 
-    public ComponentState State
-    {
-        get => _state ?? throw new InvalidOperationException("Attempt to access node state before initialization");
-        set => _state = value;
-    }
+    public ComponentState State { get; internal set; }
 
     public bool HasChildren => _children?.Count > 0;
 
     public IReadOnlyList<GraphNode> Children => _children ?? (IReadOnlyList<GraphNode>)[];
-
-    private ComponentState? _state;
 
     internal readonly CXComponentTree Tree;
 
@@ -49,7 +43,7 @@ public sealed class GraphNode : IEquatable<GraphNode>, ISourceLocatable
         Component = component;
         _children = children;
         _parentId = parentId;
-        _state = state;
+        State = state ?? new(this, null);
 
         if (Parent is { } parent)
         {
@@ -57,6 +51,9 @@ public sealed class GraphNode : IEquatable<GraphNode>, ISourceLocatable
             parent._children.Add(this);
         }
     }
+
+    internal bool RemoveChild(GraphNode child)
+        => _children?.Remove(child) ?? false;
 
     public GraphNode Reuse(
         CXComponentTree tree,
@@ -70,23 +67,18 @@ public sealed class GraphNode : IEquatable<GraphNode>, ISourceLocatable
         _parentId
     );
 
-    public Result<RenderedComponent> Emit(
+    public Result<RenderedComponent> Render(
         ComponentEmitContext context,
         ComponentOptions options = default,
         CancellationToken cancellationToken = default
-    )
-    {
-        Debug.Assert(_state is not null, "State should not be null by build time");
-
-        return _result ??= Component.Emit(State, context, options, cancellationToken);
-    }
+    ) => _result ??= Component.Render(context, State, options, cancellationToken);
 
     public bool Equals(GraphNode? other)
     {
         if (other is null) return false;
 
         return
-            (_state?.Equals(other._state) ?? other._state is null) &&
+            State.Equals(other.State) &&
             Component.Equals(other.Component) &&
             (
                 (_children?.Count ?? 0) == (other._children?.Count ?? 0) &&
@@ -98,7 +90,7 @@ public sealed class GraphNode : IEquatable<GraphNode>, ISourceLocatable
     public override int GetHashCode()
         => Hash.Combine(
             Component,
-            _state,
+            State,
             _children,
             _parentId
         );

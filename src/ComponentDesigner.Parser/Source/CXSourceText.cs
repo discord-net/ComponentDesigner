@@ -340,6 +340,8 @@ public abstract partial class CXSourceText
             if (position < 0 || position > _source.Length)
                 throw new ArgumentOutOfRangeException(nameof(position));
 
+            if (position is 0) return 0;
+            
             var lineNumber = _lineOffsets.BinarySearch(position);
 
             if (lineNumber < 0) lineNumber = ~lineNumber - 1;

@@ -1,0 +1,125 @@
+{
+  "name": "cx",
+  "scopeName": "source.cx",
+  "fileTypes":[
+    "cx"
+  ],
+  "patterns": [{
+    "include": "#element"
+  }],
+  "repository": {
+    "element": {
+
+      "begin": "(</?)\\s*([_a-zA-Z][_\\-.a-zA-Z0-9]*)",
+      "beginCaptures": {
+        "1": {
+          "name": "punctuation.definition.tag.open.cx"
+        },
+        "2": {
+          "name": "entity.name.tag.cx"
+        }
+      },
+      "end": "(\\s*\\/?>)",
+      "endCaptures": {
+        "1": {
+           "name": "punctuation.definition.tag.close.cx"
+        }
+      },
+      "patterns": [
+        {
+          "include": "#attributes"
+        }
+      ]
+    },
+
+    "attributes": {
+      "begin": "\\s+",
+      "end": "(?=/?>)",
+      "name": "meta.tag.attributes.cx",
+      "patterns": [{ "include": "#attribute" }, { "include": "#string" }, {"include": "#element-value"}]
+    },
+
+    "element-value": {
+      "begin": "(\\()",
+      "end": "(\\))",
+      "beginCaptures": {
+        "1": {
+          "name": "punctuation.paren.open.cx"
+        }
+      },
+      "endCaptures": {
+        "1": {
+          "name": "punctuation.paren.close.cx"
+        }
+      },
+      "patterns": [{"include": "#element"}]
+    },
+
+    "attribute": {
+      "match": "([_a-zA-Z][_\\-.a-zA-Z0-9]*)(?=[=\\s]|/?>|/\\*)",
+      "captures": {
+        "1": {
+          "name": "entity.other.attribute-name.cx"
+        }
+      }
+    },
+
+    "string": {
+      "patterns": [
+        {
+          "include": "#single-quoted-string"
+        },
+        {
+          "include": "#double-quoted-string"
+        }
+      ]
+    },
+
+    "single-quoted-string": {
+      "begin": "'",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.definition.string.begin.cx"
+        }
+      },
+      "end": "'",
+      "endCaptures": {
+        "1": {
+          "name": "punctuation.definition.string.end.cx"
+        }
+      },
+      "name": "string.quoted.double.cx",
+      "patterns": [
+        {
+          "include": "#string-escapes"
+        }
+      ]
+    },
+
+    "double-quoted-string": {
+      "begin": "\"",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.definition.string.begin.cx"
+        }
+      },
+      "end": "\"",
+      "endCaptures": {
+        "1": {
+          "name": "punctuation.definition.string.end.cx"
+        }
+      },
+      "name": "string.quoted.double.cx",
+      "patterns": [
+        {
+          "include": "#string-escapes"
+        }
+      ]
+    },
+
+    "string-escapes": {
+      "match": "\\\\(x\\h{2}|u\\h{4}|u\\{\\h+}|[012][0-7]{0,2}|3[0-6][0-7]?|37[0-7]?|[4-7][0-7]?|.|$)",
+      "name": "constant.character.escape.cx"
+    }
+  }
+}

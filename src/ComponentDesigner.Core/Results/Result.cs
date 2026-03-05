@@ -64,6 +64,15 @@ public readonly struct Result<T> :
         return new(_value, HasValue, newDiagnostics);
     }
     
+    public Result<T> PrefaceDiagnostics(params IReadOnlyList<Diagnostic> diagnostics)
+    {
+        var newDiagnostics = _diagnostics is null or { Count: 0 }
+            ? diagnostics.Count is 0 ? null : diagnostics
+            : diagnostics.Count is 0 ? _diagnostics : [..diagnostics, .._diagnostics];
+
+        return new(_value, HasValue, newDiagnostics);
+    }
+    
     public bool Equals(Result<T> other)
         => HasValue == other.HasValue &&
            EqualityComparer<T>.Default.Equals(_value, other._value) &&

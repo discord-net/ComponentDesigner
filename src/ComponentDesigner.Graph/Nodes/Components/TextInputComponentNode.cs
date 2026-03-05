@@ -32,18 +32,15 @@ public sealed class TextInputComponentNode : ComponentNode
         ];
     }
 
-    public override Result<RenderedComponent> Emit(
-        ComponentState state,
+    public override void Validate(
+        IComponentContext context, ComponentState state, IDiagnosticBag bag,
+        CancellationToken cancellationToken = default
+    ) => Validators.ValidateTextInput(context, this, state, bag);
+
+    public override Result<RenderedComponent> Render(
         ComponentEmitContext context,
+        ComponentState state,
         ComponentOptions options,
         CancellationToken cancellationToken = default
-    )=> ValidateAndRender(
-        this,
-        state,
-        context,
-        options,
-        Validators.ValidateTextInput,
-        context.Renderer.RenderTextInput,
-        cancellationToken
-    );
+    ) => context.Renderer.RenderTextInput(context, this, state, options.TypingContext, cancellationToken);
 }

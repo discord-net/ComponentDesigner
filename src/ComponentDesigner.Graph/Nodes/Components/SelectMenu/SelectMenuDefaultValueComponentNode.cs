@@ -25,7 +25,7 @@ public sealed class SelectMenuDefaultValueComponentNode : ComponentNode<DefaultV
     public override IReadOnlyList<string> Aliases { get; } = ["user", "role", "channel"];
 
     public override IReadOnlyList<ComponentProperty> Properties { get; }
-    
+
     public ComponentProperty Id { get; }
 
     public SelectMenuDefaultValueComponentNode()
@@ -53,10 +53,10 @@ public sealed class SelectMenuDefaultValueComponentNode : ComponentNode<DefaultV
     {
         if (element.Identifier.Equals("user", StringComparison.InvariantCultureIgnoreCase))
             return DefaultValueKind.User;
-        
+
         if (element.Identifier.Equals("role", StringComparison.InvariantCultureIgnoreCase))
             return DefaultValueKind.Role;
-        
+
         if (element.Identifier.Equals("channel", StringComparison.InvariantCultureIgnoreCase))
             return DefaultValueKind.Channel;
 
@@ -65,18 +65,15 @@ public sealed class SelectMenuDefaultValueComponentNode : ComponentNode<DefaultV
         );
     }
 
-    public override Result<RenderedComponent> Emit(
-        DefaultValueState state,
+    public override void Validate(
+        IComponentContext context, DefaultValueState state, IDiagnosticBag bag,
+        CancellationToken cancellationToken = default
+    ) => Validators.ValidateSelectMenuDefaultValue(context, this, state, bag);
+
+    public override Result<RenderedComponent> Render(
         ComponentEmitContext context,
+        DefaultValueState state,
         ComponentOptions options,
         CancellationToken cancellationToken = default
-    ) => ValidateAndRender(
-        this,
-        state,
-        context,
-        options,
-        Validators.ValidateSelectMenuDefaultValue,
-        context.Renderer.RenderSelectMenuDefaultValue,
-        cancellationToken
-    );
+    ) => context.Renderer.RenderSelectMenuDefaultValue(context, this, state, options.TypingContext, cancellationToken);
 }

@@ -14,15 +14,12 @@ public readonly struct CXTextChange : IEquatable<CXTextChange>
 
     public CXTextChange(CXTextSpan span, string? newText)
     {
-        if (newText is null)
-            throw new ArgumentNullException(nameof(newText));
-
         Span = span;
-        NewText = newText;
+        NewText = newText ?? throw new ArgumentNullException(nameof(newText));
     }
 
     public override string ToString()
-        => $"{nameof(CXTextChange)}: {{ {Span}, \"{NewText}\" }}";
+        => $"{{ {Span}, \"{NewText}\" }}";
 
     public override bool Equals(object? obj)
         => obj is CXTextChange other && Equals(other);

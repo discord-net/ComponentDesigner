@@ -66,18 +66,8 @@ public sealed class AutoActionRowComponentNode : ActionRowComponentNode
         return true;
     }
     
-    public override Result<RenderedComponent> Emit(
-        ComponentState state,
-        ComponentEmitContext context,
-        ComponentOptions options,
+    public override void Validate(
+        IComponentContext context, ComponentState state, IDiagnosticBag bag,
         CancellationToken cancellationToken = default
-    ) => ValidateAndRender(
-        this,
-        state,
-        context,
-        options,
-        Validators.ValidateAutoActionRow,
-        context.Renderer.RenderActionRow,
-        cancellationToken
-    );
+    ) => Validators.ValidateAutoActionRow(context, this, state, bag);
 }

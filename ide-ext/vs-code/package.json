@@ -13,30 +13,11 @@
   "categories": [
     "Programming Languages"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onLanguage:cx"
+  ],
   "main": "./out/extension.js",
   "contributes": {
-    "semanticTokenScopes": [
-      {
-        "scopes": {
-          "Identifier": ["entity.name.tag.html"],
-          "LessThan": ["punctuation.definition.tag.begin.html"],
-          "GreaterThan": ["punctuation.definition.tag.end.html"],
-          "ForwardSlashGreaterThan": ["punctuation.definition.tag.end.html"],
-          "LessThanForwardSlash": ["punctuation.definition.tag.begin.html"],
-          "Equals": ["punctuation.separator.key-value.html"],
-          "Text": ["text.html.derivative"],
-          "StringLiteralStart": ["punctuation.definition.string.begin.html"],
-          "StringLiteralEnd": ["punctuation.definition.string.end.html"]
-        }
-      }
-    ],
-    "commands": [
-      {
-        "command": "extension.helloWorld",
-        "title": "Hello World"
-      }
-    ],
     "languages": [
       {
         "id": "cx",
@@ -45,31 +26,22 @@
         ],
         "extensions": [
           ".cx"
-        ]
+        ],
+        "configuration": "./language-configuration.json"
       }
     ],
-    "configurationDefaults": {
-      "[discord-cx]": {
-        "editor.insertSpaces": true,
-        "editor.wordBasedSuggestions": "off",
-        "editor.autoIndent": "keep"
+    "grammars": [
+      {
+        "language": "cx",
+        "scopeName": "source.cx",
+        "path": "./syntaxes/cx.tmLanguage.json"
       }
-    },
-    "scripts": {
+    ]
+  },
+  "scripts": {
       "vscode:prepublish": "pnpm run compile",
       "compile": "tsc -p ./ --skipLibCheck"
     },
-    "devDependencies": {
-      "@types/node": "^8.10.25",
-      "typescript": "^2.6.1"
-    },
-    "dependencies": {
-      "vscode-languageclient": "^7.0.0"
-    },
-    "extensionDependencies": [
-      "ms-dotnettools.vscode-dotnet-runtime"
-    ]
-  },
   "devDependencies": {
     "@types/node": "^16.18.126",
     "@types/vscode": "^1.104.0"

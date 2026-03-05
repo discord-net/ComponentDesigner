@@ -22,18 +22,15 @@ public sealed class MediaGalleryItemComponentNode : ComponentNode
         ];
     }
 
-    public override Result<RenderedComponent> Emit(
-        ComponentState state,
+    public override void Validate(
+        IComponentContext context, ComponentState state, IDiagnosticBag bag,
+        CancellationToken cancellationToken = default
+    ) => Validators.ValidateMediaGalleryItem(context, this, state, bag);
+
+    public override Result<RenderedComponent> Render(
         ComponentEmitContext context,
+        ComponentState state,
         ComponentOptions options,
         CancellationToken cancellationToken = default
-    ) => ValidateAndRender(
-        this,
-        state,
-        context,
-        options,
-        Validators.ValidateMediaGalleryItem,
-        context.Renderer.RenderMediaGalleryItem,
-        cancellationToken
-    );
+    ) => context.Renderer.RenderMediaGalleryItem(context, this, state, options.TypingContext, cancellationToken);
 }

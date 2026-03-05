@@ -58,18 +58,15 @@ public sealed class SelectMenuOptionComponentNode : ComponentNode
         return state;
     }
 
-    public override Result<RenderedComponent> Emit(
-        ComponentState state,
+    public override void Validate(
+        IComponentContext context, ComponentState state, IDiagnosticBag bag,
+        CancellationToken cancellationToken = default
+    ) => Validators.ValidateSelectMenuOption(context, this, state, bag);
+
+    public override Result<RenderedComponent> Render(
         ComponentEmitContext context,
+        ComponentState state,
         ComponentOptions options,
         CancellationToken cancellationToken = default
-    ) => ValidateAndRender(
-        this,
-        state,
-        context,
-        options,
-        Validators.ValidateSelectMenuOption,
-        context.Renderer.RenderSelectMenuOption,
-        cancellationToken
-    );
+    ) => context.Renderer.RenderSelectMenuOption(context, this, state, options.TypingContext, cancellationToken);
 }
