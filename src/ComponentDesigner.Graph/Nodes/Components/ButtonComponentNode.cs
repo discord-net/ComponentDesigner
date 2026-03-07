@@ -63,33 +63,41 @@ public sealed class ButtonComponentNode : ComponentNode<ButtonState>
             Id = ComponentProperty.Id,
             Style = new ComponentProperty(
                 "style",
-                isOptional: true
+                isOptional: true,
+                autoFillMode: PropertyAutoFillMode.String,
+                autoFillChoices: ValidButtonStyles
             ),
             Label = new ComponentProperty(
                 "label",
-                isOptional: true
+                isOptional: true,
+                autoFillMode: PropertyAutoFillMode.String
             ),
             Emoji = new ComponentProperty(
                 "emoji",
                 isOptional: true,
-                aliases: ["emote"]
+                aliases: ["emote"],
+                autoFillMode: PropertyAutoFillMode.String
             ),
             CustomId = new(
                 "customId",
-                isOptional: true
+                isOptional: true,
+                autoFillMode: PropertyAutoFillMode.String
             ),
             SkuId = new(
                 "skuId",
                 aliases: ["sku"],
-                isOptional: true
+                isOptional: true,
+                autoFillMode: PropertyAutoFillMode.String
             ),
             Url = new(
                 "url",
-                isOptional: true
+                isOptional: true,
+                autoFillMode: PropertyAutoFillMode.String
             ),
             Disabled = new(
                 "disabled",
-                isOptional: true
+                isOptional: true,
+                autoFillChoices: ["true", "false"]
             )
         ];
     }

@@ -19,8 +19,14 @@ public sealed class SectionComponentNode : ComponentNode
         Properties =
         [
             Id = ComponentProperty.Id,
-            Accessory = new("accessory"),
-            Components = new("components")
+            Accessory = new(
+                "accessory",
+                autoFillMode: PropertyAutoFillMode.InlineComponent
+            ),
+            Components = new(
+                "components",
+                autoFillMode: PropertyAutoFillMode.InlineComponent
+            )
         ];
     }
 

@@ -18,9 +18,10 @@ public class ActionRowComponentNode : ComponentNode
         Properties =
         [
             Id = ComponentProperty.Id,
-
-            // validated manually
-            Components = new("components")
+            Components = new(
+                "components",
+                autoFillMode: PropertyAutoFillMode.InlineComponent
+            )
         ];
     }
 

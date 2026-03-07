@@ -10,6 +10,8 @@ public sealed class CXComponentTree : IEquatable<CXComponentTree>
     public int Count => _nodes.Count;
     public GraphNode this[int id] => _nodes[id];
 
+    public IReadOnlyList<GraphNode> Nodes => _nodes;
+
     public bool HasExternalDependencies => _nodesWithExternalDependencies?.Count > 0;
 
     public IReadOnlyList<GraphNode> NodesWithExternalDependencies
@@ -17,7 +19,7 @@ public sealed class CXComponentTree : IEquatable<CXComponentTree>
 
     public IReadOnlyList<GraphNode> RootNodes => _rootNodes ?? [];
 
-    private List<GraphNode> _nodes;
+    private readonly List<GraphNode> _nodes;
 
     private List<GraphNode>? _nodesWithExternalDependencies;
     private List<GraphNode>? _rootNodes;

@@ -21,14 +21,17 @@ public sealed class LabelComponentNode : ComponentNode
         [
             Id = ComponentProperty.Id,
             Component = new(
-                "component"
+                "component",
+                autoFillMode: PropertyAutoFillMode.InlineComponent
             ),
             Value = new(
-                "value"
+                "value",
+                autoFillMode: PropertyAutoFillMode.String
             ),
             Description = new(
                 "description",
-                isOptional: true
+                isOptional: true,
+                autoFillMode: PropertyAutoFillMode.String
             )
         ];
     }

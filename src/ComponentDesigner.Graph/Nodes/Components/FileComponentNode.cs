@@ -17,12 +17,15 @@ public sealed class FileComponentNode : ComponentNode
             Id = ComponentProperty.Id,
             Media = new(
                 "media",
-                aliases: ["url"]
+                aliases: ["url"],
+                autoFillMode: PropertyAutoFillMode.String
             ),
             IsSpoiler = new(
                 "spoiler",
                 isOptional: true,
-                requiresValue: false
+                requiresValue: false,
+                autoFillMode: PropertyAutoFillMode.String,
+                autoFillChoices: ["true", "false"]
             )
         ];
     }

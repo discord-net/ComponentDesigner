@@ -15,8 +15,18 @@ public sealed class SeparatorComponentNode : ComponentNode
         Properties =
         [
             Id = ComponentProperty.Id,
-            Divider = new("divider", isOptional: true),
-            Spacing = new("spacing", aliases: ["size"], isOptional: true)
+            Divider = new(
+                "divider",
+                isOptional: true,
+                autoFillMode: PropertyAutoFillMode.String,
+                autoFillChoices: ["true", "false"]
+            ),
+            Spacing = new(
+                "spacing",
+                aliases: ["size"],
+                isOptional: true,
+                autoFillMode: PropertyAutoFillMode.String
+            )
         ];
     }
 

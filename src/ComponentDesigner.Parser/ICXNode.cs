@@ -15,11 +15,6 @@ public interface ICXNode : IEquatable<ICXNode>, ICloneable, ISourceLocatable
     CXTextSpan FullTextSpan { get; }
     
     /// <summary>
-    ///     Gets the span representing this node in the source.
-    /// </summary>
-    new CXTextSpan TextSpan { get; }
-
-    /// <summary>
     ///     Gets the full width in characters of this node.
     /// </summary>
     int Width { get; }

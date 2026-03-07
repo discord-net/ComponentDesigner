@@ -83,7 +83,7 @@ public readonly record struct CXTextSpan(
     ///     <c>true</c> if the spans intersect, otherwise <c>false</c>.
     /// </returns>
     public bool IntersectsWith(CXTextSpan span)
-        => span.Start <= this.End && span.End >= Start;
+        => span.Start <= End && span.End >= Start;
 
     /// <summary>
     ///     Determines whether <paramref name="position"/> intersects this span. 

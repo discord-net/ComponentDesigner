@@ -14,7 +14,7 @@ Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Debug()
     .CreateLogger();
 
-Log.Logger.Information("Starting...");
+Log.Logger.Information("Starting LSP server...");
 
 
 var server = await LanguageServer
@@ -26,6 +26,7 @@ var server = await LanguageServer
             .AddLanguageProtocolLogging()
             .SetMinimumLevel(LogLevel.Debug)
         )
+        .AddHandler<CompletionHandler>()
         .AddHandler<DocumentHandler>()
         .OnInitialize((languageServer, request, token) =>
         {
@@ -34,7 +35,7 @@ var server = await LanguageServer
         })
         .OnInitialized((languageServer, request, response, token) =>
         {
-            Log.Logger.Information("Server initialized!");
+            Log.Logger.Information("Server initialized! Capabilities:\n{Res}", response.Capabilities);
             return Task.CompletedTask;
         })
         .OnStarted((languageServer, token) =>

@@ -24,6 +24,8 @@ public sealed class ComponentDocument
     private CXDocument? _document;
     private CXComponentGraph? _graph;
 
+    private readonly object _lock = new();
+
     public ComponentDocument(
         DocumentUri uri,
         string source,
@@ -83,6 +85,14 @@ public sealed class ComponentDocument
     }
 
     public CXComponentGraph GetGraph(CancellationToken cancellationToken)
+    {
+        lock (_lock)
+        {
+            return GetGraphInternal(cancellationToken);
+        }
+    }
+
+    private CXComponentGraph GetGraphInternal(CancellationToken cancellationToken)
         => _graph ??= CXComponentGraph.Create(
             new GraphParameters(
                 LanguageServerComponentImplementation.Instance,
@@ -90,12 +100,21 @@ public sealed class ComponentDocument
                 _cxModel,
                 new LSPGraphOptions(false, false)
             ),
-            GetParsedSource(cancellationToken)
+            GetParsedSourceInternal(cancellationToken),
+            cancellationToken
         );
 
     public CXDocument GetParsedSource(CancellationToken cancellationToken)
-        => _document ??= CXParser.Parse(Source.CreateReader(), cancellationToken);
+    {
+        lock (_lock)
+        {
+            return GetParsedSourceInternal(cancellationToken);
+        }
+    }
 
+    private CXDocument GetParsedSourceInternal(CancellationToken cancellationToken)
+        =>  _document ??= CXParser.Parse(Source.CreateReader(), cancellationToken);
+    
     public IReadOnlyList<LSPDiagnostic> GetDiagnostics(CancellationToken cancellationToken)
     {
         var graph = GetGraph(cancellationToken);
@@ -124,10 +143,23 @@ public sealed class ComponentDocument
             };
     }
 
-    public LSPRange GetRange(CXTextSpan span)
+    public int GetSourceOffsetFromPosition(Position position)
     {
-        var start = Source.Lines.GetLinePositon(span.Start);
-        var end = Source.Lines.GetLinePositon(span.End);
+        if (position.Line >= Source.Lines.Count) return Source.Length;
+
+        return Math.Min(
+            Source.Lines[position.Line].Start + position.Character,
+            Source.Length
+        );
+    }
+
+    public LSPRange GetRange(CXTextSpan span)
+        => GetRange(Source, span);
+    
+    public static LSPRange GetRange(CXSourceText source, CXTextSpan span)
+    {
+        var start = source.Lines.GetLinePositon(span.Start);
+        var end = source.Lines.GetLinePositon(span.End);
 
         return new()
         {

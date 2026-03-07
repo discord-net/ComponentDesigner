@@ -30,7 +30,8 @@ public class TextDisplayComponentNode : ComponentNode<TextDisplayState>
             Id = ComponentProperty.Id,
             Content = new(
                 name: "content",
-                isOptional: true
+                isOptional: true,
+                autoFillMode: PropertyAutoFillMode.String
             )
         ];
     }

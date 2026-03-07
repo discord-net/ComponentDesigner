@@ -20,7 +20,7 @@ public sealed record DefaultValueState(
 
 public sealed class SelectMenuDefaultValueComponentNode : ComponentNode<DefaultValueState>
 {
-    public override string Name => "<default value>";
+    public override string Name => "select-menu-default-value";
 
     public override IReadOnlyList<string> Aliases { get; } = ["user", "role", "channel"];
 

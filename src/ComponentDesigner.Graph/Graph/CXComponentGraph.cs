@@ -15,6 +15,8 @@ public sealed class CXComponentGraph : IEquatable<CXComponentGraph>
     public IGraphOptions Options { get; }
     public IComponentImplementation Implementation { get; }
 
+    public IReadOnlyList<GraphNode> Nodes => _tree.Nodes;
+    
     private readonly IReadOnlyList<Diagnostic> _diagnostics;
     private readonly IReadOnlyList<Diagnostic>? _updateDiagnostics;
 
@@ -124,16 +126,6 @@ public sealed class CXComponentGraph : IEquatable<CXComponentGraph>
             .AllDiagnostics
             .Select(x => x.ToNormalDiagnostic())
             .ToArray();
-
-        if (document.HasErrors)
-        {
-            return new CXComponentGraph(
-                document,
-                CXComponentTree.Empty,
-                parserDiagnostics,
-                parameters
-            );
-        }
 
         using var diagnostics = PooledDiagnosticBag.Get(parserDiagnostics);
 

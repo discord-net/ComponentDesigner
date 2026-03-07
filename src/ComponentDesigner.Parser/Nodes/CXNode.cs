@@ -14,8 +14,8 @@ namespace ComponentDesigner.Parser;
 /// </summary>
 public abstract class CXNode : ICXNode
 {
-    /// <inheritdoc/>
-    public CXNode? Parent { get; set; }
+    /// <inheritdoc cref="ICXNode.Parent"/>
+    public CXNode? Parent { get; internal set; }
 
     /// <inheritdoc/>
     public int Width { get; private set; }
@@ -119,7 +119,7 @@ public abstract class CXNode : ICXNode
     /// <inheritdoc/>
     public CXTextSpan FullTextSpan => new(this.Offset, Width);
 
-    /// <inheritdoc/>
+    /// <inheritdoc />
     public CXTextSpan TextSpan
         => FirstTerminal is { } first && LastTerminal is { } last
             ? CXTextSpan.FromBounds(first.TextSpan.Start, last.TextSpan.End)
@@ -352,4 +352,10 @@ public abstract class CXNode : ICXNode
     
     CXDiagnostic ICXNode.CreateDiagnostic(CXDiagnosticDescriptor descriptor)
         => CreateDiagnostic(descriptor);
+
+    CXNode? ICXNode.Parent
+    {
+        get => Parent;
+        set => Parent = value;
+    }
 }

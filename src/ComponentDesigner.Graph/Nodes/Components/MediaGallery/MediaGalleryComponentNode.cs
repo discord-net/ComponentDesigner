@@ -20,7 +20,7 @@ public sealed class MediaGalleryComponentNode : ComponentNode
         Properties =
         [
             Id = ComponentProperty.Id,
-            Items = new("items")
+            Items = new("items", autoFillMode: PropertyAutoFillMode.InlineComponent)
         ];
     }
 

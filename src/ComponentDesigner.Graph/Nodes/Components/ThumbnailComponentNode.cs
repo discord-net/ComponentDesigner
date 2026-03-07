@@ -16,9 +16,23 @@ public sealed class ThumbnailComponentNode : ComponentNode
         Properties =
         [
             Id = ComponentProperty.Id,
-            Media = new("media", aliases: ["href", "url"]),
-            Description = new("description", isOptional: true),
-            IsSpoiler = new("spoiler", isOptional: true, requiresValue: false)
+            Media = new(
+                "media",
+                aliases: ["href", "url"],
+                autoFillMode: PropertyAutoFillMode.String
+            ),
+            Description = new(
+                "description",
+                isOptional: true,
+                autoFillMode: PropertyAutoFillMode.String
+            ),
+            IsSpoiler = new(
+                "spoiler",
+                isOptional: true,
+                requiresValue: false,
+                autoFillMode: PropertyAutoFillMode.String,
+                autoFillChoices: ["true", "false"]
+            )
         ];
     }
 

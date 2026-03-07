@@ -64,16 +64,60 @@ public sealed class SelectMenuComponentNode : ComponentNode<SelectMenuState>
         Properties =
         [
             Id = ComponentProperty.Id,
-            Type = new("type", isOptional: true, isSynthetic: true),
-            CustomId = new("customId"),
-            ChannelTypes = new("channelTypes", isOptional: true),
-            Placeholder = new("placeholder", isOptional: true),
-            MinValues = new("minValues", aliases: ["min"], isOptional: true),
-            MaxValues = new("maxValues", aliases: ["max"], isOptional: true),
-            Required = new("required", isOptional: true, requiresValue: false),
-            Disabled = new("disabled", isOptional: true, requiresValue: false),
-            Options = new("options", isOptional: true),
-            DefaultValues = new("defaultValues", isOptional: true)
+            Type = new(
+                "type",
+                isOptional: true,
+                isSynthetic: true,
+                autoFillMode: PropertyAutoFillMode.String
+            ),
+            CustomId = new(
+                "customId",
+                autoFillMode: PropertyAutoFillMode.String
+            ),
+            ChannelTypes = new(
+                "channelTypes",
+                isOptional: true,
+                autoFillMode: PropertyAutoFillMode.String
+            ),
+            Placeholder = new(
+                "placeholder",
+                isOptional: true,
+                autoFillMode: PropertyAutoFillMode.String
+            ),
+            MinValues = new(
+                "minValues",
+                aliases: ["min"],
+                isOptional: true,
+                autoFillMode: PropertyAutoFillMode.String
+            ),
+            MaxValues = new(
+                "maxValues",
+                aliases: ["max"],
+                isOptional: true,
+                autoFillMode: PropertyAutoFillMode.String
+            ),
+            Required = new(
+                "required",
+                isOptional: true,
+                requiresValue: false,
+                autoFillChoices: ["true", "false"]
+            ),
+            Disabled = new(
+                "disabled",
+                isOptional: true,
+                requiresValue: false,
+                autoFillChoices: ["true", "false"]
+            ),
+            Options = new(
+                "options",
+                isOptional: true,
+                autoFillMode: PropertyAutoFillMode.InlineComponent
+            ),
+            DefaultValues = new(
+                "defaultValues",
+                isOptional: true,
+                autoFillMode: PropertyAutoFillMode.InlineComponent
+            )
         ];
     }
 

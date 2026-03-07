@@ -7,7 +7,7 @@ public sealed class MediaGalleryItemComponentNode : ComponentNode
     public override IReadOnlyList<string> Aliases { get; } = ["media", "gallery-item", "item"];
 
     public override IReadOnlyList<ComponentProperty> Properties { get; }
-    
+
     public ComponentProperty Media { get; }
     public ComponentProperty Description { get; }
     public ComponentProperty IsSpoiler { get; }
@@ -16,9 +16,23 @@ public sealed class MediaGalleryItemComponentNode : ComponentNode
     {
         Properties =
         [
-            Media = new("media", aliases: ["url"]),
-            Description = new("description", isOptional: true),
-            IsSpoiler = new("spoiler", isOptional: true, requiresValue: false)
+            Media = new(
+                "media",
+                aliases: ["url"],
+                autoFillMode: PropertyAutoFillMode.String
+            ),
+            Description = new(
+                "description",
+                isOptional: true,
+                autoFillMode: PropertyAutoFillMode.String
+            ),
+            IsSpoiler = new(
+                "spoiler",
+                isOptional: true,
+                requiresValue: false,
+                autoFillMode: PropertyAutoFillMode.String,
+                autoFillChoices: ["true", "false"]
+            )
         ];
     }
 

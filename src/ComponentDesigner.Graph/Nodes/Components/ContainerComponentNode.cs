@@ -23,14 +23,20 @@ public sealed class ContainerComponentNode : ComponentNode
             AccentColor = new(
                 name: "accentColor",
                 isOptional: true,
-                aliases: ["color", "accent"]
+                aliases: ["color", "accent"],
+                autoFillMode: PropertyAutoFillMode.String
             ),
             IsSpoiler = new(
                 name: "spoiler",
                 isOptional: true,
-                requiresValue: false
+                requiresValue: false,
+                autoFillMode: PropertyAutoFillMode.String,
+                autoFillChoices: ["true", "false"]
             ),
-            Components = new("components")
+            Components = new(
+                "components",
+                autoFillMode: PropertyAutoFillMode.InlineComponent
+            )
         ];
     }
 
@@ -41,7 +47,7 @@ public sealed class ContainerComponentNode : ComponentNode
     )
     {
         var state = base.Initialize(context, diagnostics, cancellationToken);
-        
+
         state?.SetPropertyValueToChildren(Components);
 
         return state;

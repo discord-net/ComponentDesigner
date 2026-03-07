@@ -4,8 +4,8 @@ namespace ComponentDesigner.Nodes;
 
 public abstract class ComponentNode : ComponentNode<ComponentState>
 {
-    private static readonly Dictionary<string, IComponentNode> _nodes;
-
+    public static readonly IReadOnlyDictionary<string, IComponentNode> AccessibleComponents;
+    
     public override ComponentState? Initialize(
         ComponentNodeInitializationContext context,
         IDiagnosticBag diagnostics,
@@ -14,7 +14,7 @@ public abstract class ComponentNode : ComponentNode<ComponentState>
 
     static ComponentNode()
     {
-        _nodes = typeof(ComponentNode)
+        AccessibleComponents = typeof(ComponentNode)
             .Assembly
             .GetTypes()
             .Where(x =>
@@ -34,8 +34,8 @@ public abstract class ComponentNode : ComponentNode<ComponentState>
     public static bool TryGetNode(
         string name,
         [MaybeNullWhen(false)] out IComponentNode node
-    ) => _nodes.TryGetValue(name, out node);
+    ) => AccessibleComponents.TryGetValue(name, out node);
 
     public static T GetNode<T>() where T : IComponentNode
-        => (T)_nodes.Values.First(x => x.GetType() == typeof(T));
+        => (T)AccessibleComponents.Values.First(x => x.GetType() == typeof(T));
 }
