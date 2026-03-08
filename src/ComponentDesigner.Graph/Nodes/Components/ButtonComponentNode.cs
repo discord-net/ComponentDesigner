@@ -97,7 +97,8 @@ public sealed class ButtonComponentNode : ComponentNode<ButtonState>
             Disabled = new(
                 "disabled",
                 isOptional: true,
-                autoFillChoices: ["true", "false"]
+                autoFillChoices: ["true", "false"],
+                requiresValue: false
             )
         ];
     }
@@ -123,7 +124,7 @@ public sealed class ButtonComponentNode : ComponentNode<ButtonState>
 
         // label can be ingested from children
         state.IngestChildrenAsScalarValueForProperty(Label);
-        
+
         return state with
         {
             InferredKind = InferButtonKindFromUsage(context.GraphContext, element, state, diagnostics)

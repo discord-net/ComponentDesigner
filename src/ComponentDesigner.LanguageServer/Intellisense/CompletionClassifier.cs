@@ -21,7 +21,8 @@ public static class CompletionClassifier
 
         while (syntaxNode is not null)
         {
-            logger.LogDebug("Classification at {Pos} in syntax node {Type}[{Span}]: {Val}", position, syntaxNode.GetType().Name, syntaxNode.TextSpan, syntaxNode);
+            logger.LogDebug("Classification at {Pos} in syntax node {Type}[{Span}]: {Val}", position,
+                syntaxNode.GetType().Name, syntaxNode.TextSpan, syntaxNode);
 
             switch (syntaxNode)
             {
@@ -40,7 +41,7 @@ public static class CompletionClassifier
                         attribute.EqualsToken is not null,
                         attribute.Value is not null
                     );
-                    
+
                     // are we typing the attributes name?
                     if (
                         attribute.IdentifierToken.TextSpan.IntersectsWith(position) &&
@@ -112,7 +113,7 @@ public abstract record CompletionResult(CXComponentGraph Graph, int Position)
     public abstract CompletionList ToCompletionList(ILogger logger);
 
     private bool TryGetGraphNode(CXElement element, [MaybeNullWhen(false)] out GraphNode graphNode)
-        => (graphNode = Graph.RootNodes.FirstOrDefault(x => ReferenceEquals(x.State.CXNode, element))) is not null;
+        => Graph.TryLookupGraphNodeRepresentingSyntax(element, out graphNode);
 
     public sealed record AttributeValue(
         CXComponentGraph Graph,
@@ -201,7 +202,11 @@ public abstract record CompletionResult(CXComponentGraph Graph, int Position)
     {
         public override CompletionList ToCompletionList(ILogger logger)
         {
-            if (!TryGetGraphNode(Element, out var graphNode)) return EmptyCompletionList;
+            if (!TryGetGraphNode(Element, out var graphNode))
+            {
+                logger.LogDebug("No graph node found for element");
+                return EmptyCompletionList;
+            }
 
             var items = new List<CompletionItem>();
 
@@ -221,6 +226,19 @@ public abstract record CompletionResult(CXComponentGraph Graph, int Position)
                     _ => string.Empty
                 };
 
+                var description = Documentation.GetDescriptionOfProperty(
+                    graphNode.Component,
+                    property
+                );
+
+                var details = (property.IsOptional, property.RequiresValue) switch
+                {
+                    (false, false) => "(required flag)",
+                    (false, true) => "(required)",
+                    (true, false) => "(optional flag)",
+                    (true, true) => "(optional)"
+                };
+
                 foreach (var name in property.Aliases.Prepend(property.Name))
                 {
                     items.Add(new CompletionItem()
@@ -231,7 +249,13 @@ public abstract record CompletionResult(CXComponentGraph Graph, int Position)
                         InsertText = $"{name}{insertPostfix}",
                         InsertTextFormat = insertPostfix != string.Empty
                             ? InsertTextFormat.Snippet
-                            : InsertTextFormat.PlainText
+                            : InsertTextFormat.PlainText,
+                        Detail = details,
+                        Documentation = description is null ? null : new StringOrMarkupContent(new MarkupContent()
+                        {
+                            Kind = MarkupKind.Markdown,
+                            Value = description
+                        })
                     });
                 }
             }
@@ -252,39 +276,67 @@ public abstract record CompletionResult(CXComponentGraph Graph, int Position)
     {
         public override CompletionList ToCompletionList(ILogger logger)
         {
-            TryGetGraphNode(Element, out var graphNode);
+            Graph.TryLookupGraphNodeContainingSyntax(Element, out var encapsulatingGraphNode);
 
+            var currentGraphNode = ReferenceEquals(encapsulatingGraphNode?.State.CXNode, Element)
+                ? encapsulatingGraphNode
+                : null;
+
+            GraphNode? parentGraphNode;
+
+            if (currentGraphNode is not null)
+            {
+                parentGraphNode = currentGraphNode.Parent;
+            }
+            else
+            {
+                Graph.TryLookupGraphNodeContainingSyntax(Element.FirstAncestorOfTypeOrDefault<CXElement>(), out parentGraphNode);
+            }
+            
             // having a valid graph node which isn't dynamic indicates that the identifier is a valid component, we
             // don't suggest anything
             if (
-                graphNode is not null &&
-                graphNode.Component is not IDynamicComponentNode
+                currentGraphNode is not null &&
+                currentGraphNode.Component is not IDynamicComponentNode
             ) return EmptyCompletionList;
 
             var items = new List<CompletionItem>();
 
             foreach (var (name, component) in ComponentNode.AccessibleComponents)
             {
+                if(!ComponentValidityMap.IsValidHierarchy(parentGraphNode, component))
+                    continue;
+                
                 var insertText = new StringBuilder(name);
 
                 if (Element.OpeningTag.EndToken.IsMissing)
                 {
                     if (component.IsParentOfOtherComponents)
-                        insertText.Append(">$0</").Append(name).Append(">");
+                        insertText.Append(">$0</").Append(name).Append('>');
                     else
                         insertText.Append("$0/>");
                 }
                 else if (!component.IsParentOfOtherComponents &&
                          Element.OpeningTag.EndToken.Kind is CXTokenKind.GreaterThan)
                     insertText.Append("$0/");
-                
+
+                var documentation = Documentation.GetDescriptionOfComponent(component);
+
                 items.Add(new CompletionItem()
                 {
                     Label = name,
                     SortText = PartialIdentifier,
                     Kind = CompletionItemKind.Class,
                     InsertText = insertText.ToString(),
-                    InsertTextFormat = InsertTextFormat.Snippet
+                    InsertTextFormat = InsertTextFormat.Snippet,
+                    Detail = "Built-in component",
+                    Documentation = documentation is not null
+                        ? new StringOrMarkupContent(new MarkupContent()
+                        {
+                            Kind = MarkupKind.Markdown,
+                            Value = documentation
+                        })
+                        : null
                 });
             }
 

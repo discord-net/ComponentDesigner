@@ -38,6 +38,21 @@ public static class CXNodeExtensions
     
     extension(ICXNode node)
     {
+        public T? FirstAncestorOfTypeOrDefault<T>(T? defaultValue = null)
+            where T : CXNode
+        {
+            var current = node.Parent;
+
+            while (current is not null)
+            {
+                if (current is T expected) return expected;
+
+                current = current.Parent;
+            }
+
+            return defaultValue;
+        }
+        
         /// <summary>
         ///     Gets whether this node or any descending nodes contains diagnostics.
         /// </summary>

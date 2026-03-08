@@ -1,4 +1,5 @@
 ﻿using System.Buffers;
+using System.Diagnostics.CodeAnalysis;
 using ComponentDesigner.Nodes;
 using ComponentDesigner.Nodes.TextControls;
 using ComponentDesigner.Parser;
@@ -16,9 +17,11 @@ public sealed class CXComponentGraph : IEquatable<CXComponentGraph>
     public IComponentImplementation Implementation { get; }
 
     public IReadOnlyList<GraphNode> Nodes => _tree.Nodes;
-    
+
     private readonly IReadOnlyList<Diagnostic> _diagnostics;
     private readonly IReadOnlyList<Diagnostic>? _updateDiagnostics;
+
+    private Dictionary<ICXNode, GraphNode>? _syntaxNodeToGraphNodeLookupTable;
 
     private readonly CXComponentTree _tree;
 
@@ -53,6 +56,55 @@ public sealed class CXComponentGraph : IEquatable<CXComponentGraph>
         updateDiagnostics
     )
     {
+    }
+
+    public bool TryLookupGraphNodeRepresentingSyntax(
+        ICXNode? syntaxNode,
+        [MaybeNullWhen(false)] out GraphNode graphNode
+    ) => TryLookupGraphNodeContainingSyntax(syntaxNode, out graphNode) &&
+         ReferenceEquals(syntaxNode, graphNode.State.CXNode);
+
+    public bool TryLookupGraphNodeContainingSyntax(ICXNode? syntaxNode, [MaybeNullWhen(false)] out GraphNode graphNode)
+    {
+        if (syntaxNode is null)
+        {
+            graphNode = null;
+            return false;
+        }
+
+        lock (_tree)
+        {
+            _syntaxNodeToGraphNodeLookupTable ??= BuildLookupTable(Nodes);
+        }
+
+        var current = syntaxNode;
+
+        while (current is not null and not CXDocument)
+        {
+            if (_syntaxNodeToGraphNodeLookupTable.TryGetValue(current, out graphNode))
+                return true;
+
+            current = current.Parent;
+        }
+
+        graphNode = null;
+        return false;
+    }
+
+    private static Dictionary<ICXNode, GraphNode> BuildLookupTable(IReadOnlyList<GraphNode> nodes)
+    {
+        if (nodes.Count is 0) return [];
+
+        var result = new Dictionary<ICXNode, GraphNode>();
+
+        foreach (var graphNode in nodes)
+        {
+            if (graphNode.State.CXNode is null) continue;
+
+            result[graphNode.State.CXNode] = graphNode;
+        }
+
+        return result;
     }
 
     public bool Equals(CXComponentGraph? other)
@@ -521,6 +573,5 @@ public sealed class CXComponentGraph : IEquatable<CXComponentGraph>
                 cancellationToken
             )
             .PrefaceDiagnostics(validation);
-
     }
 }

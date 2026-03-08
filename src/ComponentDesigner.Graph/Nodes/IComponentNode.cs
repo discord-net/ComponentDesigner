@@ -1,4 +1,6 @@
-﻿namespace ComponentDesigner.Nodes;
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace ComponentDesigner.Nodes;
 
 public interface IComponentNode : IEquatable<IComponentNode>
 {
@@ -10,6 +12,8 @@ public interface IComponentNode : IEquatable<IComponentNode>
     bool AllowChildrenInCX { get; }
     bool HasExternalDependencies { get; }
 
+    bool TryGetProperty(string name, [MaybeNullWhen(false)] out ComponentProperty property);
+    
     ComponentState? Initialize(
         ComponentNodeInitializationContext context,
         IDiagnosticBag diagnostics,

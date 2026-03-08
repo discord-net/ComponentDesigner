@@ -1,4 +1,5 @@
-﻿using ComponentDesigner.Parser;
+﻿using System.Diagnostics.CodeAnalysis;
+using ComponentDesigner.Parser;
 
 namespace ComponentDesigner.Nodes;
 
@@ -36,6 +37,26 @@ public abstract class ComponentNode<TState> :
 
     public virtual bool HasExternalDependencies => false;
 
+    private Dictionary<string, ComponentProperty>? _propertyLookupMap;
+
+    public bool TryGetProperty(string name, [MaybeNullWhen(false)] out ComponentProperty property)
+    {
+        if (_propertyLookupMap is null)
+        {
+            _propertyLookupMap = Properties
+                .SelectMany(x => x.Aliases.Prepend(x.Name).Select(y => (K: y, V: x)))
+                .ToDictionary(x => x.K, x => x.V);
+        }
+
+        if (_propertyLookupMap.Count is 0)
+        {
+            property = null;
+            return false;
+        }
+
+        return _propertyLookupMap.TryGetValue(name, out property);
+    }
+    
     public abstract TState? Initialize(
         ComponentNodeInitializationContext context,
         IDiagnosticBag diagnostics,
