@@ -165,7 +165,7 @@ public abstract partial class TextControlElement(
                         interpolationDollarCount = Math
                             .Max(
                                 interpolationDollarCount,
-                                StringGenerator.GetSequentialInterpolationCharacterCount(token.Value)
+                                GetSequentialInterpolationCharacterCount(token.Value)
                             );
                         continue;
                 }
@@ -173,6 +173,41 @@ public abstract partial class TextControlElement(
 
             if (hasInterpolations)
                 interpolationDollarCount++;
+        }
+
+        static int GetSequentialInterpolationCharacterCount(string part)
+        {
+            var result = 0;
+            var count = 0;
+            char? last = null;
+
+            foreach (var ch in part)
+            {
+                if (ch is '{' or '}')
+                {
+                    if (last is null)
+                    {
+                        last = ch;
+                        count = 1;
+                        continue;
+                    }
+
+                    if (last == ch)
+                    {
+                        count++;
+                        continue;
+                    }
+                }
+                
+                if (count > 0)
+                {
+                    result = Math.Max(result, count);
+                    last = null;
+                    count = 0;
+                }
+            }
+            
+            return Math.Max(result, count);
         }
     }
 

@@ -22,14 +22,34 @@ public sealed class SelectMenuOptionComponentNode : ComponentNode
     {
         Properties =
         [
-            Label = new("label"),
-            Value = new("value"),
-            Description = new("description", isOptional: true),
-            Emoji = new("emoji", isOptional: true),
-            IsDefault = new("default", isOptional: true, requiresValue: false)
+            Label = new(
+                "label",
+                kind: ComponentPropertyValueKind.SyntaxValue
+            ),
+            Value = new(
+                "value",
+                kind: ComponentPropertyValueKind.SyntaxValue
+            ),
+            Description = new(
+                "description",
+                isOptional: true,
+                kind: ComponentPropertyValueKind.SyntaxValue
+            ),
+            Emoji = new(
+                "emoji",
+                aliases: ["emote"],
+                isOptional: true,
+                kind: ComponentPropertyValueKind.SyntaxValue
+            ),
+            IsDefault = new(
+                "default",
+                isOptional: true,
+                requiresValue: false,
+                kind: ComponentPropertyValueKind.SyntaxValue
+            )
         ];
     }
-    
+
     public override ComponentState? Initialize(
         ComponentNodeInitializationContext context,
         IDiagnosticBag diagnostics,
@@ -43,16 +63,15 @@ public sealed class SelectMenuOptionComponentNode : ComponentNode
         var value = state.GetPropertyValue(Value);
 
         if (
-            (label.IsSpecified && value.IsSpecified) ||
-            (!label.IsSpecified && !value.IsSpecified) ||
+            label.IsNone == value.IsNone ||
             context.CXNode is not CXElement element
         ) return state;
 
         if (element.Children.Count > 0 && element.Children[0] is CXValue childValue)
         {
-            var propertyToSet = label.IsSpecified ? Value : Label;
+            var propertyToSet = label.IsSome ? Value : Label;
 
-            state.SetPropertyValue(propertyToSet, childValue);
+            state.SetPropertyValue(context, propertyToSet, childValue, cancellationToken);
         }
 
         return state;

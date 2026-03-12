@@ -1,4 +1,6 @@
-﻿using ComponentDesigner.Parser;
+﻿using System.Collections.Immutable;
+using ComponentDesigner.Nodes;
+using ComponentDesigner.Parser;
 using ComponentDesigner.Util;
 
 namespace ComponentDesigner;
@@ -9,6 +11,8 @@ public sealed class EnumGenerator : CSharpValueGenerator
     private readonly bool _renderAsSymbolReference;
     private readonly bool _allowNullable;
 
+    private readonly Dictionary<string, ICSharpFieldSymbol> _fields;
+
     private EnumGenerator(
         ICSharpTypeSymbol enumSymbol,
         bool renderAsSymbolReference,
@@ -18,6 +22,13 @@ public sealed class EnumGenerator : CSharpValueGenerator
         _enumSymbol = enumSymbol;
         _renderAsSymbolReference = renderAsSymbolReference;
         _allowNullable = allowNullable;
+        _fields = enumSymbol
+            .Fields
+            .Where(x =>
+                x.Type.Equals(enumSymbol) &&
+                x is { IsStatic: true, IsReadOnly: true, IsPublic: true }
+            )
+            .ToDictionary(x => x.Name);
     }
 
     public static EnumGenerator Get(
@@ -31,111 +42,70 @@ public sealed class EnumGenerator : CSharpValueGenerator
         static (a, b, c) => new EnumGenerator(a, b, c)
     );
 
-    protected override Result<string> RenderScalar(
-        IRendererContext context,
-        CSharpValueGeneratorTarget target,
-        CXToken token,
-        CSharpValueGeneratorOptions options,
-        CancellationToken cancellationToken = default
-    ) => FromText(context, token.TextSpan, token.Value, cancellationToken);
-
     protected override Result<string> RenderInterpolation(
         IRendererContext context,
-        CSharpValueGeneratorTarget target,
-        CXToken token,
-        IInterpolationInfo info,
-        CSharpValueGeneratorOptions options,
+        ComponentPropertyValue.Interpolation interpolationValue,
+        IInterpolationInfo interpolationInfo,
         CancellationToken cancellationToken = default
     )
     {
-        if (info.ConstantValue.IsSpecified)
+        if (interpolationInfo.ConstantValue.IsSpecified)
         {
-            if (info.ConstantValue.Value is null)
+            switch (interpolationInfo.ConstantValue.Value)
             {
-                if (_allowNullable) return "null";
+                case null:
+                    if (_allowNullable) return "null";
 
-                return token.Report(
-                    Diagnostic.NullValueNotAllowed
-                );
-            }
+                    return Diagnostic
+                        .NullValueNotAllowed
+                        .At(interpolationValue);
 
-            if (info.ConstantValue.Value is string str)
-                return FromText(context, token.TextSpan, str, cancellationToken);
+                case string str:
+                    return FromText(str.SourcedAt(interpolationValue));
 
-            // check for conversion of numbers
-            if (
-                _enumSymbol.BaseType is not null &&
-                context.CompilationProvider.HasImplicitConversionBetween(
-                    info.Symbol,
-                    _enumSymbol.BaseType,
-                    cancellationToken
-                )
-            )
-            {
-                return $"({_enumSymbol.ToQualifiedName()}){info.ConstantValue.Value}";
+                // TODO: maybe numeric type conversions?
             }
         }
 
         if (
             context.CompilationProvider.HasImplicitConversionBetween(
-                info.Symbol,
+                interpolationInfo.Symbol,
                 _enumSymbol,
                 cancellationToken
             )
             ||
             (
                 _allowNullable &&
-                info.Symbol.IsNullableTypeOf(_enumSymbol)
+                interpolationInfo.Symbol.IsNullableTypeOf(_enumSymbol)
             )
         )
         {
-            var designer = context.GetReferenceToDesignerValue(info, info.Symbol);
-
-            if (_renderAsSymbolReference || _enumSymbol.BaseType is null) return designer;
-
-            return $"({_enumSymbol.BaseType.ToQualifiedName()}){designer}";
+            return context.GetReferenceToDesignerValue(interpolationInfo, interpolationInfo.Symbol);
         }
 
-        return token.Report(
-            Diagnostic.TypeMismatch(
+        return Diagnostic
+            .TypeMismatch(
                 _enumSymbol,
-                info.Symbol!
+                interpolationInfo.Symbol!
             )
-        );
+            .At(interpolationValue);
     }
 
-    protected override Result<string> RenderMultipart(
+    protected override Result<string> RenderLiteral(
         IRendererContext context,
-        CSharpValueGeneratorTarget target,
-        CXValue.Multipart multipart,
-        CSharpValueGeneratorOptions options,
+        ComponentPropertyValue.Literal literalValue,
+        string literal,
         CancellationToken cancellationToken = default
-    ) => multipart.Report(
-        Diagnostic.NotAValidEnumVariant(_enumSymbol.ToString(), "<multipart>")
-    );
+    ) => FromText(literal.SourcedAt(literalValue));
 
-    private Result<string> FromText(
-        IRendererContext context,
-        CXTextSpan textSpan,
-        string text,
-        CancellationToken cancellationToken
-    )
+    private Result<string> FromText(SourcedValue<string> text)
     {
-        var field = _enumSymbol
-            .Fields
-            .Where(x =>
-                x.Type.Equals(_enumSymbol) &&
-                x is { IsStatic: true, IsReadOnly: true, IsPublic: true } 
-            )
-            .FirstOrDefault(x => x
-                .Name.Equals(text, StringComparison.InvariantCultureIgnoreCase)
-            );
+        if (_fields.TryGetValue(text.Value, out var field))
+            return RenderField(field);
 
-        if (field is not null) return RenderField(field);
-
-        return textSpan.Report(
-            Diagnostic.NotAValidEnumVariant(_enumSymbol.ToString(), text)
-        );
+        return Diagnostic
+            .NotAValidEnumVariant(_enumSymbol.ToString(), text)
+            .At(text);
     }
 
     private string RenderField(ICSharpFieldSymbol field)

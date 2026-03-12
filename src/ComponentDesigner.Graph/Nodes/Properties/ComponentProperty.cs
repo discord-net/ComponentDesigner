@@ -8,37 +8,37 @@ public sealed class ComponentProperty : IEquatable<ComponentProperty>
 {
     public static readonly ComponentProperty Id = new(
         name: "id",
-        isOptional: true,
-        autoFillMode: PropertyAutoFillMode.String
+        kind: ComponentPropertyValueKind.SyntaxValue,
+        isOptional: true
     );
 
     public string Name { get; }
+    public ComponentPropertyValueKind Kind { get; }
     public IImmutableSet<string> Aliases => _aliases ??= [];
     public bool IsOptional { get; }
     public bool RequiresValue { get; }
     public bool IsSynthetic { get; }
-    public PropertyAutoFillMode AutoFillMode { get; }
-    public IReadOnlyList<string> AutoFillChoices { get; }
+
+    public bool ValueCardinalityOfOne => !Kind.HasFlag(ComponentPropertyValueKind.Many);
+    public bool ValueCardinalityOfMany => Kind.HasFlag(ComponentPropertyValueKind.Many);
 
     private IImmutableSet<string>? _aliases;
 
     public ComponentProperty(
         string name,
+        ComponentPropertyValueKind kind,
         IImmutableSet<string>? aliases = null,
         bool isOptional = false,
         bool requiresValue = true,
-        bool isSynthetic = false,
-        PropertyAutoFillMode autoFillMode = PropertyAutoFillMode.None,
-        IReadOnlyList<string>? autoFillChoices = null
+        bool isSynthetic = false
     )
     {
         Name = name;
+        Kind = kind;
         _aliases = aliases;
         IsOptional = isOptional;
         RequiresValue = requiresValue;
         IsSynthetic = isSynthetic;
-        AutoFillMode = autoFillMode;
-        AutoFillChoices = autoFillChoices ?? [];
     }
 
     public bool MatchesName(string name)

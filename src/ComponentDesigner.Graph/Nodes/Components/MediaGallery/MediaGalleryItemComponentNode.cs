@@ -19,19 +19,18 @@ public sealed class MediaGalleryItemComponentNode : ComponentNode
             Media = new(
                 "media",
                 aliases: ["url"],
-                autoFillMode: PropertyAutoFillMode.String
+                kind: ComponentPropertyValueKind.SyntaxValue
             ),
             Description = new(
                 "description",
                 isOptional: true,
-                autoFillMode: PropertyAutoFillMode.String
+                kind: ComponentPropertyValueKind.SyntaxValue
             ),
             IsSpoiler = new(
                 "spoiler",
                 isOptional: true,
                 requiresValue: false,
-                autoFillMode: PropertyAutoFillMode.String,
-                autoFillChoices: ["true", "false"]
+                kind: ComponentPropertyValueKind.SyntaxValue
             )
         ];
     }

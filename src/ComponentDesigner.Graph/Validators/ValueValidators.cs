@@ -15,13 +15,13 @@ public static class ValueValidators
     )
     {
         if (
-            lowerPropertyValue is not ComponentPropertyValue.AttributeValue { Attribute.Value: { } lowerValue } ||
-            upperPropertyValue is not ComponentPropertyValue.AttributeValue { Attribute.Value: { } upperValue }
+            !lowerPropertyValue.Matches(ComponentPropertyValueKind.SingleSyntaxValue) ||
+            !upperPropertyValue.Matches(ComponentPropertyValueKind.SingleSyntaxValue)
         ) return;
 
         if (
-            !TryGetIntValue(context, lowerValue, out var lowerInt) ||
-            !TryGetIntValue(context, upperValue, out var upperInt)
+            !TryGetIntValue(context, lowerPropertyValue, out var lowerInt) ||
+            !TryGetIntValue(context, upperPropertyValue, out var upperInt)
         ) return;
 
         if (lowerInt > upperInt)
@@ -55,6 +55,8 @@ public static class ValueValidators
         int? upper = null
     ) => Range(context, propertyValue, bag, asString: true, lower, upper);
 
+    private delegate void SumFunc(ComponentPropertyValue value, ref int? sum);
+    
     public static void Range(
         IComponentContext context,
         ComponentPropertyValue propertyValue,
@@ -66,75 +68,49 @@ public static class ValueValidators
     {
         Debug.Assert(lower.HasValue || upper.HasValue);
 
-        if (propertyValue is not ComponentPropertyValue.AttributeValue { Attribute.Value: { } cxValue }) return;
+        int? sum = null;
 
-        int num;
+        SumFunc sumFunc = asString ? SumStr : SumInt;
 
-        switch (cxValue)
+        foreach (var value in propertyValue.AsFlattened)
         {
-            case null or CXValue.Invalid: return;
+            sumFunc(value, ref sum);
+        }
 
-            case CXValue.Interpolation interpolation:
+        if (sum is null) return;
+
+        Check(sum.Value);
+        
+
+        static void SumStr(ComponentPropertyValue value, ref int? sum)
+        {
+            switch (value)
             {
-                var constant = context.GetInterpolationInfo(interpolation).ConstantValue;
-
-                if (!constant.IsSpecified) return;
-
-                if (constant.Value is string str && asString) Check(str.Length);
-                else if (
-                    constant.Value?.GetType().IsNumeric is true &&
-                    int.TryParse(constant.Value.ToString(), out num)
-                ) Check(num);
-
-                break;
-            }
-
-            case CXValue.Multipart { HasInterpolations: false, Tokens: { } tokens } when !asString:
-                if (int.TryParse(tokens.ToString(), out num)) Check(num);
-                break;
-
-            case CXValue.Multipart literal when asString:
-            {
-                int? length = null;
-
-                foreach (var token in literal.Tokens)
-                {
-                    switch (token.Kind)
-                    {
-                        case CXTokenKind.Text:
-                            length ??= 0;
-                            length += token.Value.Length;
-                            break;
-                        case CXTokenKind.Interpolation
-                            when token.InterpolationIndex is { } index:
-                            var constant = context.GetInterpolationInfo(index).ConstantValue;
-
-                            if (constant.TryGetOfType(out string? strConstant) && !string.IsNullOrEmpty(strConstant))
-                            {
-                                length ??= 0;
-                                length += strConstant.Length;
-                            }
-
-                            break;
-                    }
-                }
-
-                if (length.HasValue) Check(length.Value);
-
-                break;
-            }
-
-            case CXValue.Scalar scalar:
-            {
-                int length;
-
-                if (asString) length = scalar.Value.Length;
-                else if (!int.TryParse(scalar.Value, out length))
+                case ComponentPropertyValue.Literal { Value: var str }:
+                    sum += str.Length;
                     return;
+                case ComponentPropertyValue.Interpolation
+                {
+                    Info.ConstantValue: { IsSpecified: true, Value: string str }
+                }:
+                    sum += str.Length;
+                    return;
+            }
+        }
 
-                Check(length);
-
-                return;
+        static void SumInt(ComponentPropertyValue value, ref int? sum)
+        {
+            switch (value)
+            {
+                case ComponentPropertyValue.Literal { Value: var str }
+                    when int.TryParse(str, out var part):
+                case ComponentPropertyValue.Interpolation
+                    {
+                        Info.ConstantValue: { IsSpecified: true, Value: { } constant }
+                    }
+                    when int.TryParse(constant.ToString(), out part):
+                    sum += part;
+                    return;
             }
         }
 
@@ -163,26 +139,18 @@ public static class ValueValidators
         }
     }
 
-    private static bool TryGetIntValue(IComponentContext context, CXValue? value, out int result)
+    private static bool TryGetIntValue(IComponentContext context, ComponentPropertyValue value, out int result)
     {
         switch (value)
         {
-            case CXValue.Interpolation interpolation:
-                var constant = context.GetInterpolationInfo(interpolation).ConstantValue;
+            case ComponentPropertyValue.Literal { Value: var str } when int.TryParse(str, out result):
+            case ComponentPropertyValue.Interpolation { Info.ConstantValue: { IsSpecified: true, Value: { } constant } }
+                when int.TryParse(constant.ToString(), out result):
+                return true;
 
-                if (!constant.IsSpecified) break;
-
-                return int.TryParse(constant.Value?.ToString(), out result);
-
-                break;
-            case CXValue.Multipart { HasInterpolations: false, Tokens: var tokens }:
-                return int.TryParse(tokens.ToString(), out result);
-
-            case CXValue.Scalar scalar:
-                return int.TryParse(scalar.Value, out result);
+            default:
+                result = 0;
+                return false;
         }
-
-        result = 0;
-        return false;
     }
 }

@@ -64,41 +64,40 @@ public sealed class ButtonComponentNode : ComponentNode<ButtonState>
             Style = new ComponentProperty(
                 "style",
                 isOptional: true,
-                autoFillMode: PropertyAutoFillMode.String,
-                autoFillChoices: ValidButtonStyles
+                kind: ComponentPropertyValueKind.SyntaxValue
             ),
             Label = new ComponentProperty(
                 "label",
                 isOptional: true,
-                autoFillMode: PropertyAutoFillMode.String
+                kind: ComponentPropertyValueKind.SyntaxValue
             ),
             Emoji = new ComponentProperty(
                 "emoji",
                 isOptional: true,
                 aliases: ["emote"],
-                autoFillMode: PropertyAutoFillMode.String
+                kind: ComponentPropertyValueKind.SyntaxValue
             ),
             CustomId = new(
                 "customId",
                 isOptional: true,
-                autoFillMode: PropertyAutoFillMode.String
+                kind: ComponentPropertyValueKind.SyntaxValue
             ),
             SkuId = new(
                 "skuId",
                 aliases: ["sku"],
                 isOptional: true,
-                autoFillMode: PropertyAutoFillMode.String
+                kind: ComponentPropertyValueKind.SyntaxValue
             ),
             Url = new(
                 "url",
                 isOptional: true,
-                autoFillMode: PropertyAutoFillMode.String
+                kind: ComponentPropertyValueKind.SyntaxValue
             ),
             Disabled = new(
                 "disabled",
                 isOptional: true,
-                autoFillChoices: ["true", "false"],
-                requiresValue: false
+                requiresValue: false,
+                kind: ComponentPropertyValueKind.SyntaxValue
             )
         ];
     }
@@ -123,37 +122,60 @@ public sealed class ButtonComponentNode : ComponentNode<ButtonState>
         var state = new ButtonState(context.GraphNode, element);
 
         // label can be ingested from children
-        state.IngestChildrenAsScalarValueForProperty(Label);
+        foreach (var childSyntax in element.Children)
+        {
+            if (childSyntax is CXValue valueSyntax)
+            {
+                if (state.GetPropertyValue(Label).IsSome)
+                {
+                    diagnostics.Add(
+                        Diagnostic
+                            .DuplicatePropertyValue(Label)
+                            .At(valueSyntax)
+                    );
+                }
+                else
+                {
+                    state.SetPropertyValue(context, Label, valueSyntax, cancellationToken);
+                }
+
+                continue;
+            }
+
+            diagnostics.Add(
+                Diagnostic
+                    .InvalidChildOfComponent(this, childSyntax)
+                    .At(childSyntax)
+            );
+        }
 
         return state with
         {
-            InferredKind = InferButtonKindFromUsage(context.GraphContext, element, state, diagnostics)
+            InferredKind = InferButtonKindFromUsage(element, state)
         };
     }
 
     private ButtonKind? InferButtonKindFromUsage(
-        IComponentContext context,
         CXElement element,
-        ButtonState state,
-        IDiagnosticBag diagnostics
+        ButtonState state
     )
     {
         if (element.Identifier is "premium-button") return ButtonKind.Premium;
         if (element.Identifier is "link-button") return ButtonKind.Link;
 
         if (
-            state.GetPropertyValue(Url).IsSpecified &&
-            !state.GetPropertyValue(CustomId).IsSpecified &&
-            !state.GetPropertyValue(SkuId).IsSpecified
+            state.GetPropertyValue(Url).IsSome &&
+            state.GetPropertyValue(CustomId).IsNone &&
+            state.GetPropertyValue(SkuId).IsNone
         )
         {
             return ButtonKind.Link;
         }
 
         if (
-            !state.GetPropertyValue(Url).IsSpecified &&
-            !state.GetPropertyValue(CustomId).IsSpecified &&
-            state.GetPropertyValue(SkuId).IsSpecified
+            state.GetPropertyValue(Url).IsNone &&
+            state.GetPropertyValue(CustomId).IsNone &&
+            state.GetPropertyValue(SkuId).IsSome
         )
         {
             return ButtonKind.Premium;
@@ -161,14 +183,9 @@ public sealed class ButtonComponentNode : ComponentNode<ButtonState>
 
         var styleProperty = state.GetPropertyValue(Style);
 
-        switch (styleProperty.CXValue)
+        switch (styleProperty.AsSingle)
         {
-            case CXValue.Multipart multipart
-                when multipart.TryGetSingleInterpolation(context, out var info):
-                return FromInterpolation(info);
-            case CXValue.Interpolation interpolation:
-                return FromInterpolation(context.GetInterpolationInfo(interpolation));
-            case not null when styleProperty.TryGetLiteralValue(out var literal):
+            case ComponentPropertyValue.Literal { Value: var literal }:
                 switch (literal.ToLowerInvariant())
                 {
                     case "link": return ButtonKind.Link;
@@ -178,6 +195,9 @@ public sealed class ButtonComponentNode : ComponentNode<ButtonState>
                 }
 
                 break;
+
+            case ComponentPropertyValue.Interpolation{Info: var info}:
+                return FromInterpolation(info);
         }
 
         return ButtonKind.Default;

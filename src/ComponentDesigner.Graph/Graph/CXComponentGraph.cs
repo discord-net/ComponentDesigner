@@ -462,6 +462,8 @@ public sealed class CXComponentGraph : IEquatable<CXComponentGraph>
             return null;
         }
 
+        state.Initialize(initContext, cancellationToken);
+
         node.State = state;
 
         return node;

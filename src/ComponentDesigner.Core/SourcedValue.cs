@@ -17,6 +17,8 @@ public static class SourcedValueExtensions
 {
     extension<T>(T value)
     {
-        public SourcedValue<T> SourcedAt(CXTextSpan textSpan) => new(textSpan, value);
+        public SourcedValue<T> SourcedAt<TSource>(TSource source)
+            where TSource : ISourceLocatable
+            => new(source.TextSpan, value);
     }
 }

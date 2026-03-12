@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using ComponentDesigner.Nodes;
 using ComponentDesigner.Parser;
 using ComponentDesigner.Parser.Util;
 using ComponentDesigner.Util;
@@ -27,283 +28,401 @@ public sealed class StringGenerator : CSharpValueGenerator
 
     public static StringGenerator Get(StringNullMode stringMode)
         => WeakMemoize.Of(stringMode, static a => new StringGenerator(a));
-    
-    protected override Result<string> RenderInterpolation(
+
+    public override Result<string> Render(
         IRendererContext context,
-        CSharpValueGeneratorTarget target,
-        CXToken token,
-        IInterpolationInfo info,
-        CSharpValueGeneratorOptions options,
+        ComponentPropertyValue value,
         CancellationToken cancellationToken = default
     )
     {
-        if (info.ConstantValue.IsSpecified)
+        if (
+            value is ComponentPropertyValue.Many
+            or ComponentPropertyValue.Literal
+            or ComponentPropertyValue.Interpolation
+        )
         {
-            if (info.ConstantValue.Value?.ToString() is { } str)
-                return ToCSharpString(str);
-
-            if (AllowsNull) return "null";
-
-            if (TreatsNullAsEmptyString) return "string.Empty";
-
-            return token.Report(Diagnostic.NullValueNotAllowed);
+            return ToCSharpString(context, value);
         }
 
-        return context.GetReferenceToDesignerValue(info);
+        return base.Render(context, value, cancellationToken);
     }
 
-    protected override Result<string> RenderMultipart(
-        IRendererContext context,
-        CSharpValueGeneratorTarget target,
-        CXValue.Multipart multipart,
-        CSharpValueGeneratorOptions options,
-        CancellationToken cancellationToken = default
-    ) => ToCSharpString(multipart);
-
-    protected override Result<string> RenderScalar(
-        IRendererContext context,
-        CSharpValueGeneratorTarget target,
-        CXToken token,
-        CSharpValueGeneratorOptions options,
-        CancellationToken cancellationToken = default
-    ) => ToCSharpString(token.Value);
-
-    public static string ToCSharpString(CXValue.Multipart literal)
+    private readonly ref struct PartsBuilder : IDisposable
     {
-        if (literal.Tokens.Count is 0) return "string.Empty";
+        public int Count => Sequence.Count;
+        public IReadOnlyList<ContainsTrivia<string>> Literals => _literals;
+        public IReadOnlyList<ContainsTrivia<IInterpolationInfo>> Interpolations => _interpolations;
+        public IReadOnlyList<bool> Sequence => _sequence;
 
-        using var _ = StringBuilder.Pooled(out var sb);
+        private readonly List<ContainsTrivia<string>> _literals;
+        private readonly List<ContainsTrivia<IInterpolationInfo>> _interpolations;
+        private readonly List<bool> _sequence;
 
-        var literalParts = literal.Tokens
-            .Where(x => x.Kind is CXTokenKind.Text)
-            .Select(x => x.Value)
-            .ToArray();
-
-        if (literalParts.Length > 0)
+        public PartsBuilder()
         {
-            literalParts[0] = literalParts[0].TrimStart();
+            _literals = ObjectPool<List<ContainsTrivia<string>>>.Get();
+            _interpolations = ObjectPool<List<ContainsTrivia<IInterpolationInfo>>>.Get();
+            _sequence = ObjectPool<List<bool>>.Get();
 
-            literalParts[literalParts.Length - 1] = literalParts[literalParts.Length - 1].TrimEnd();
+            _literals.Clear();
+            _interpolations.Clear();
+            _sequence.Clear();
         }
 
-        var quoteCount = literalParts.Length is 0
-            ? 1
-            : literalParts.Select(x => x.Count(x => x is '"')).Max() + 1;
+        public bool IsInterpolationAt(int index)
+            => _sequence[index];
 
-        var hasInterpolations = literal.Tokens.Any(x => x.Kind is CXTokenKind.Interpolation);
-
-        var dollars = hasInterpolations
-            ? new string(
-                '$',
-                literalParts.Length is 0
-                    ? 1
-                    : Math.Max(1, literalParts.Select(GetSequentialInterpolationCharacterCount).Max())
-            )
-            : string.Empty;
-
-        var startInterpolation = dollars.Length > 0
-            ? new string('{', dollars.Length)
-            : string.Empty;
-
-        var endInterpolation = dollars.Length > 0
-            ? new string('}', dollars.Length)
-            : string.Empty;
-
-        var isMultiline = false;
-
-        for (var i = 0; i < literal.Tokens.Count; i++)
+        public void Add(ContainsTrivia<string> part)
         {
-            var token = literal.Tokens[i];
-
-            // first and last token allow one newline before/after as syntax trivia
-            var leadingTrivia = token.LeadingTrivia;
-            var trailingTrivia = token.TrailingTrivia;
-
-            for (var j = 0; j < leadingTrivia.Count; j++)
-            {
-                var trivia = leadingTrivia[j];
-                if (trivia is not CXTrivia.Token { Kind: CXTriviaTokenKind.Newline }) continue;
-
-                if (i != 0) continue;
-
-                // remove all trivia leading up to this newline
-                leadingTrivia = leadingTrivia.RemoveRange(0, j + 1);
-                break;
-            }
-
-            for (var j = trailingTrivia.Count - 1; j >= 0; j--)
-            {
-                var trivia = trailingTrivia[j];
-                if (trivia is not CXTrivia.Token { Kind: CXTriviaTokenKind.Newline }) continue;
-
-                if (i != literal.Tokens.Count - 1) continue;
-
-                // remove all trivia after the newline
-                trailingTrivia = trailingTrivia.RemoveRange(j, trailingTrivia.Count - j);
-                break;
-            }
-
-            isMultiline |=
-            (
-                trailingTrivia.ContainsNewlines ||
-                leadingTrivia.ContainsNewlines ||
-                token.Value.Contains("\n")
-            );
-
-            switch (token.Kind)
-            {
-                case CXTokenKind.Text:
-                    sb
-                        .Append(leadingTrivia)
-                        .Append(EscapeBackslashes(token.Value))
-                        .Append(trailingTrivia);
-                    break;
-                case CXTokenKind.Interpolation:
-                    var index = literal.Document!.InterpolationTokens.IndexOf(token);
-
-                    // TODO: handle better
-                    if (index is -1) throw new InvalidOperationException();
-
-                    sb
-                        .Append(leadingTrivia)
-                        .Append(startInterpolation)
-                        .Append($"designer.GetValueAsString({index})")
-                        .Append(endInterpolation)
-                        .Append(trailingTrivia);
-                    break;
-
-                default: continue;
-            }
+            _literals.Add(part);
+            _sequence.Add(false);
         }
 
-        // normalize the value indentation
-        var value = sb.ToString().NormalizeIndentation().Trim(['\r', '\n']);
+        public void Add(ContainsTrivia<IInterpolationInfo> part)
+        {
+            _interpolations.Add(part);
+            _sequence.Add(true);
+        }
 
-        // pad the value to the amount of dollar signs we have to properly align the value text to the 
-        // multi-line string literal
-        if (hasInterpolations && isMultiline)
-            value = value.Indent(dollars.Length);
+        public void Dispose()
+        {
+            ObjectPool<List<ContainsTrivia<string>>>.Return(_literals);
+            ObjectPool<List<ContainsTrivia<IInterpolationInfo>>>.Return(_interpolations);
+            ObjectPool<List<bool>>.Return(_sequence);
+        }
+    }
+
+    public static Result<string> ToCSharpString(IComponentContext context, ComponentPropertyValue value)
+    {
+        return ToCSharpString(context, value, ExtractParts);
+
+        static void ExtractParts(
+            IComponentContext context,
+            ComponentPropertyValue value,
+            ref readonly PartsBuilder parts,
+            IDiagnosticBag bag
+        )
+        {
+            switch (value)
+            {
+                case ComponentPropertyValue.Literal { Value: var literal }:
+                    parts.Add(literal.WithTriviaFrom(value));
+                    return;
+
+                case ComponentPropertyValue.Interpolation { Info: var info }:
+                    parts.Add(info.WithTriviaFrom(value));
+                    return;
+
+                case ComponentPropertyValue.Many { Values: var values }:
+                    foreach (var subValue in values)
+                        ExtractParts(context, subValue, in parts, bag);
+
+                    return;
+
+                default:
+                    bag.Add(
+                        Diagnostic
+                            .InvalidPropertyValue(
+                                value,
+                                ComponentPropertyValueKind.SyntaxValue
+                            )
+                            .At(value)
+                    );
+                    return;
+            }
+        }
+    }
+
+    public static Result<string> ToCSharpString(IComponentContext context, CXValue value)
+    {
+        return ToCSharpString(context, value, ExtractParts);
+
+        static void ExtractParts(
+            IComponentContext context,
+            CXValue value,
+            ref readonly PartsBuilder parts,
+            IDiagnosticBag bag
+        )
+        {
+            switch (value)
+            {
+                case CXValue.Interpolation interpolation:
+                    parts.Add(
+                        context
+                            .GetInterpolationInfo(interpolation)
+                            .WithTriviaFrom(interpolation)
+                    );
+                    break;
+                case CXValue.Multipart multipart:
+                    foreach (var token in multipart.Tokens)
+                    {
+                        switch (token.Kind)
+                        {
+                            case CXTokenKind.Text:
+                                parts.Add(
+                                    token
+                                        .Value
+                                        .WithTriviaFrom(token)
+                                );
+                                continue;
+
+                            case CXTokenKind.Interpolation when token.InterpolationIndex is { } index:
+                                parts.Add(
+                                    context
+                                        .GetInterpolationInfo(index)
+                                        .WithTriviaFrom(token)
+                                );
+                                continue;
+                            default:
+                                bag.Add(
+                                    Diagnostic
+                                        .InvalidSyntaxValue(token)
+                                        .At(token)
+                                );
+                                continue;
+                        }
+                    }
+
+                    break;
+                case CXValue.Scalar scalar:
+                    parts.Add(
+                        scalar
+                            .Value
+                            .WithTriviaFrom(scalar)
+                    );
+                    break;
+                default:
+                    bag.Add(
+                        Diagnostic
+                            .InvalidSyntaxValue(value)
+                            .At(value)
+                    );
+                    return;
+            }
+        }
+    }
+
+    private delegate void PartExtractor<in TValue>(
+        IComponentContext context,
+        TValue value,
+        scoped ref readonly PartsBuilder parts,
+        IDiagnosticBag bag
+    );
+
+    private static Result<string> ToCSharpString<TValue>(
+        IComponentContext context,
+        TValue value,
+        PartExtractor<TValue> extractor
+    )
+    {
+        using var parts = new PartsBuilder();
+        using var bag = PooledDiagnosticBag.Get();
+
+        extractor(context, value, in parts, bag);
+
+        if (bag.HasAny) return new(bag.ToCollection());
+
+        return BuildCSharpString(context, in parts);
+    }
+
+
+    private static Result<string> BuildCSharpString(
+        IComponentContext context,
+        scoped ref readonly PartsBuilder parts
+    )
+    {
+        if (parts.Count is 0) return "string.Empty";
+
+        GetStringParameters(
+            in parts,
+            out var quoteCount,
+            out var dollarCount,
+            out var isMultiline
+        );
+
+        using var ____ = StringBuilder.Pooled(out var sb);
+
+        int literalIndex = 0, interpolationIndex = 0;
+
+        for (var i = 0; i < parts.Count; i++)
+        {
+            LexedCXTrivia leadingTrivia;
+            LexedCXTrivia trailingTrivia;
+            object part;
+
+            if (parts.IsInterpolationAt(i))
+            {
+                var interpolation = parts.Interpolations[interpolationIndex++];
+                leadingTrivia = interpolation.LeadingTrivia.WhitespaceOnly();
+                trailingTrivia = interpolation.TrailingTrivia.WhitespaceOnly();
+                part = interpolation.Value;
+            }
+            else
+            {
+                var literal = parts.Literals[literalIndex++];
+                leadingTrivia = literal.LeadingTrivia.WhitespaceOnly();
+                trailingTrivia = literal.TrailingTrivia.WhitespaceOnly();
+                part = literal.Value;
+            }
+
+            if (i is 0)
+            {
+                // try to remove trivia leading up to the first newline
+                for (var j = 0; j < leadingTrivia.Count; j++)
+                {
+                    var trivia = leadingTrivia[j];
+
+                    if (trivia is not CXTrivia.Token { Kind: CXTriviaTokenKind.Newline }) continue;
+
+                    // remove all trivia leading up to the newline
+                    leadingTrivia = leadingTrivia.RemoveRange(0, j + 1);
+                    break;
+                }
+            }
+            else if (i == parts.Count - 1)
+            {
+                // try to remove trivia after the last newline
+                for (var j = trailingTrivia.Count - 1; j >= 0; j--)
+                {
+                    var trivia = trailingTrivia[j];
+                    if (trivia is not CXTrivia.Token { Kind: CXTriviaTokenKind.Newline }) continue;
+
+                    // remove all trivia after the newline
+                    trailingTrivia = trailingTrivia.RemoveRange(j, trailingTrivia.Count - 1);
+                    break;
+                }
+            }
+
+            sb.Append(leadingTrivia);
+
+            switch (part)
+            {
+                case string str:
+                    sb.Append(str);
+                    break;
+                case IInterpolationInfo info:
+                    sb.Append('{', dollarCount);
+                    sb.Append(context.GetReferenceToDesignerValue(info));
+                    sb.Append('}', dollarCount);
+                    break;
+
+                default:
+                    // something is really wrong
+                    throw new InvalidOperationException(
+                        $"Expected part to be a string or interpolation, but got {part.GetType().Name}"
+                    );
+            }
+
+            sb.Append(trailingTrivia);
+        }
+
+        var innerStringValue = sb.ToString().NormalizeIndentation().Trim(['\r', '\n']);
 
         sb.Clear();
 
-        if (isMultiline)
-        {
-            sb.AppendLine();
-            quoteCount = Math.Max(quoteCount, 3);
-        }
+        if (parts.Interpolations.Count > 0 && isMultiline)
+            innerStringValue = innerStringValue.Indent(dollarCount);
 
-        var quotes = new string('"', quoteCount);
-
-        sb.Append(dollars).Append(quotes);
+        sb.Append('$', dollarCount);
+        sb.Append('"', quoteCount);
 
         if (isMultiline) sb.AppendLine();
 
-        sb.Append(value);
+        sb.Append(innerStringValue);
 
-        // ending quotes are on a different line 
         if (isMultiline) sb.AppendLine();
 
-        // if it has interpolations, offset the ending quotes by the amount of dollar signs
-        if (hasInterpolations && isMultiline) sb.Append("".PadLeft(dollars.Length));
-        sb.Append(quotes);
+        sb.Append(' ', dollarCount).Append('"', quoteCount);
 
         return sb.ToString();
-    }
 
-    public static string ToCSharpString(string text)
-    {
-        var quoteCount = (GetSequentialQuoteCount(text) + 1) switch
+        static void GetStringParameters(
+            scoped ref readonly PartsBuilder parts,
+            out int quoteCount,
+            out int dollarCount,
+            out bool isMultiline
+        )
         {
-            2 => 3,
-            var r => r
-        };
+            quoteCount = 0;
+            dollarCount = 0;
+            isMultiline = false;
 
-        text = text.NormalizeIndentation().Trim(['\r', '\n']);
+            char? last = null;
+            var currentSequentialQuoteCount = 0;
+            var currentSequentialBracketCount = 0;
 
-        var isMultiline = text.Contains('\n');
-
-        if (isMultiline)
-            quoteCount = Math.Max(3, quoteCount);
-
-        var quotes = new string('"', quoteCount);
-
-        using var _ = StringBuilder.Pooled(out var sb);
-
-        if (isMultiline) sb.AppendLine();
-
-        sb.Append(quotes);
-
-        if (isMultiline) sb.AppendLine();
-
-        sb.Append(text);
-
-        if (isMultiline)
-            sb.AppendLine();
-
-        sb.Append(quotes);
-
-        return sb.ToString();
-    }
-
-    public static int GetSequentialInterpolationCharacterCount(string part)
-    {
-        var result = 0;
-
-        var count = 0;
-        char? last = null;
-
-        foreach (var ch in part)
-        {
-            if (ch is '{' or '}')
+            foreach (var part in parts.Literals)
             {
-                if (last is null)
+                isMultiline |= part.LeadingTrivia.ContainsNewlines || part.TrailingTrivia.ContainsNewlines;
+
+                foreach (var ch in part.Value)
                 {
-                    last = ch;
-                    count = 1;
-                    continue;
+                    switch (ch)
+                    {
+                        case '\n':
+                            isMultiline = true;
+                            break;
+                        case '{' or '}':
+                            if (last is null)
+                            {
+                                last = ch;
+                                currentSequentialBracketCount = 1;
+                                continue;
+                            }
+
+                            if (last == ch)
+                            {
+                                currentSequentialBracketCount++;
+                                continue;
+                            }
+
+                            break;
+
+                        case '"':
+                            if (last is null)
+                            {
+                                last = ch;
+                                currentSequentialQuoteCount = 1;
+                                continue;
+                            }
+
+                            if (last == ch)
+                            {
+                                currentSequentialQuoteCount++;
+                                continue;
+                            }
+
+                            break;
+                    }
+
+                    if (currentSequentialQuoteCount > 0)
+                    {
+                        quoteCount = Math.Max(quoteCount, currentSequentialQuoteCount);
+                        currentSequentialQuoteCount = 0;
+                    }
+
+                    if (currentSequentialBracketCount > 0)
+                    {
+                        dollarCount = Math.Max(dollarCount, currentSequentialBracketCount);
+                        currentSequentialBracketCount = 0;
+                    }
+
+                    last = null;
                 }
-
-                if (last == ch)
-                {
-                    count++;
-                    continue;
-                }
             }
 
-            if (count > 0)
-            {
-                result = Math.Max(result, count);
-                last = null;
-                count = 0;
-            }
+            // we must have more quotes than what has appeared, so add 1 to the final number
+            quoteCount = Math.Max(quoteCount, currentSequentialQuoteCount) + 1;
+
+            // multi-line string literals must have at least 3 quotes
+            if (isMultiline)
+                quoteCount = Math.Max(3, quoteCount);
+            
+            // can't have only 2 quotes for a string 
+            else if (quoteCount is 2)
+                quoteCount = 3;
+
+            dollarCount = Math.Max(dollarCount, currentSequentialBracketCount) + 1;
         }
-
-        return Math.Max(result, count);
-    }
-
-    private static string EscapeBackslashes(string text)
-        => text.Replace("\\", @"\\");
-
-    public static int GetSequentialQuoteCount(string text)
-    {
-        var result = 0;
-        var count = 0;
-
-        foreach (var ch in text)
-        {
-            if (ch is '"')
-            {
-                count++;
-                continue;
-            }
-
-            if (count > 0)
-            {
-                result = Math.Max(result, count);
-                count = 0;
-            }
-        }
-
-        return Math.Max(result, count);
     }
 }

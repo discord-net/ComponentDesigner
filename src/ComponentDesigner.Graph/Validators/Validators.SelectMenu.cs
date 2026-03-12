@@ -116,7 +116,7 @@ partial class Validators
             IDiagnosticBag bag
         )
         {
-            if (propertyValue.IsSpecified)
+            if (propertyValue.IsSome)
             {
                 bag.Add(
                     propertyValue.TextSpan.Report(
@@ -129,8 +129,8 @@ partial class Validators
         void RequireProperty(ComponentProperty property)
             => ValidateProperty(
                 selectMenu, state.GetPropertyValue(property), bag,
-                isOptional: false,
-                requiresValue: true
+                isOptionalOverload: false,
+                requiresValueOverload: true
             );
     }
 

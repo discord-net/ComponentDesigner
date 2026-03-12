@@ -19,26 +19,25 @@ public sealed class FileUploadComponentNode : ComponentNode
             Id = ComponentProperty.Id,
             CustomId = new(
                 "customId",
-                autoFillMode: PropertyAutoFillMode.String
+                kind: ComponentPropertyValueKind.SyntaxValue
             ),
             MinValues = new(
                 "min",
                 aliases: ["minValues"],
                 isOptional: true,
-                autoFillMode: PropertyAutoFillMode.String
+                kind: ComponentPropertyValueKind.SyntaxValue
             ),
             MaxValues = new(
                 "max",
                 aliases: ["maxValues"],
                 isOptional: true,
-                autoFillMode: PropertyAutoFillMode.String
+                kind: ComponentPropertyValueKind.SyntaxValue
             ),
             Required = new(
                 "required",
                 isOptional: true,
                 requiresValue: false,
-                autoFillMode: PropertyAutoFillMode.String,
-                autoFillChoices: ["true", "false"]
+                kind: ComponentPropertyValueKind.SyntaxValue
             )
         ];
     }

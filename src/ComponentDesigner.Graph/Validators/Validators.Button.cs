@@ -18,8 +18,6 @@ partial class Validators
     {
         ValidateGenericComponent(button, state, bag);
 
-        LabelIsNotDuplicatedInChildrenOfElement();
-
         ValueValidators.StringRange(
             context, state.GetPropertyValue(button.Label), bag,
             upper: BUTTON_LABEL_MAX_LENGTH
@@ -76,29 +74,29 @@ partial class Validators
         void RequireProperty(ComponentProperty property)
             => ValidateProperty(
                 button, state.GetPropertyValue(property), bag,
-                isOptional: false,
-                requiresValue: true
+                isOptionalOverload: false,
+                requiresValueOverload: true
             );
 
-        void LabelIsNotDuplicatedInChildrenOfElement()
-        {
-            var label = state.GetPropertyValue(button.Label);
-
-            if (label.HasAttribute && state.CXNode.Children.Count > 0)
-            {
-                bag.Add(
-                    state.CXNode.Children.Report(
-                        Diagnostic.ChildSuppliedExclusivePropertyDuplicated(
-                            label.UsedName
-                        )
-                    )
-                );
-            }
-        }
+        // void LabelIsNotDuplicatedInChildrenOfElement()
+        // {
+        //     var label = state.GetPropertyValue(button.Label);
+        //
+        //     if (label.HasAttribute && state.CXNode.Children.Count > 0)
+        //     {
+        //         bag.Add(
+        //             state.CXNode.Children.Report(
+        //                 Diagnostic.ChildSuppliedExclusivePropertyDuplicated(
+        //                     label.UsedName
+        //                 )
+        //             )
+        //         );
+        //     }
+        // }
 
         static void PropertyNotAllowed(ButtonKind kind, ComponentPropertyValue propertyValue, IDiagnosticBag bag)
         {
-            if (propertyValue.IsSpecified)
+            if (propertyValue.IsSome)
             {
                 bag.Add(
                     propertyValue.TextSpan.Report(

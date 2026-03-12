@@ -53,7 +53,8 @@ public sealed record FunctionalState(
             var parameterProperty = new ComponentProperty(
                 parameter.Name,
                 isOptional: parameter.HasDefaultValue,
-                requiresValue: !parameter.Type.Equals(context.CompilationProvider.Boolean!)
+                requiresValue: !parameter.Type.Equals(context.CompilationProvider.Boolean!),
+                kind: ComponentPropertyValueKind.Any
             );
 
             if (IsChildParameter(parameter))
@@ -101,9 +102,9 @@ public sealed record FunctionalState(
             }
             else
             {
-                using var __ = ObjectPool<List<CXValue>>.GetScoped(out var values);
+                using var __ = List<ComponentPropertyValue>.Pooled(out var values);
                 values.Clear();
-                
+
                 foreach (var child in element.Children)
                 {
                     if (child is not CXValue cxValue)

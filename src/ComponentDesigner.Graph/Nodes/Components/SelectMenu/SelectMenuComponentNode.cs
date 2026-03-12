@@ -68,55 +68,55 @@ public sealed class SelectMenuComponentNode : ComponentNode<SelectMenuState>
                 "type",
                 isOptional: true,
                 isSynthetic: true,
-                autoFillMode: PropertyAutoFillMode.String
+                kind: ComponentPropertyValueKind.SyntaxValue
             ),
             CustomId = new(
                 "customId",
-                autoFillMode: PropertyAutoFillMode.String
+                kind: ComponentPropertyValueKind.SyntaxValue
             ),
             ChannelTypes = new(
                 "channelTypes",
                 isOptional: true,
-                autoFillMode: PropertyAutoFillMode.String
+                kind: ComponentPropertyValueKind.SyntaxValue
             ),
             Placeholder = new(
                 "placeholder",
                 isOptional: true,
-                autoFillMode: PropertyAutoFillMode.String
+                kind: ComponentPropertyValueKind.SyntaxValue
             ),
             MinValues = new(
                 "minValues",
                 aliases: ["min"],
                 isOptional: true,
-                autoFillMode: PropertyAutoFillMode.String
+                kind: ComponentPropertyValueKind.SyntaxValue
             ),
             MaxValues = new(
                 "maxValues",
                 aliases: ["max"],
                 isOptional: true,
-                autoFillMode: PropertyAutoFillMode.String
+                kind: ComponentPropertyValueKind.SyntaxValue
             ),
             Required = new(
                 "required",
                 isOptional: true,
                 requiresValue: false,
-                autoFillChoices: ["true", "false"]
+                kind: ComponentPropertyValueKind.SyntaxValue
             ),
             Disabled = new(
                 "disabled",
                 isOptional: true,
                 requiresValue: false,
-                autoFillChoices: ["true", "false"]
+                kind: ComponentPropertyValueKind.SyntaxValue
             ),
             Options = new(
                 "options",
                 isOptional: true,
-                autoFillMode: PropertyAutoFillMode.InlineComponent
+                kind: ComponentPropertyValueKind.Any
             ),
             DefaultValues = new(
                 "defaultValues",
                 isOptional: true,
-                autoFillMode: PropertyAutoFillMode.InlineComponent
+                kind: ComponentPropertyValueKind.Any
             )
         ];
     }
@@ -148,7 +148,8 @@ public sealed class SelectMenuComponentNode : ComponentNode<SelectMenuState>
 
         if (kind is SelectMenuKind.Unknown) return state;
 
-        var childValues = new List<ComponentPropertyValue>();
+        using var _ = List<ComponentPropertyValue>.Pooled(out var childValues);
+        childValues.Clear();
 
         var childProperty = kind is SelectMenuKind.String
             ? Options
@@ -162,13 +163,22 @@ public sealed class SelectMenuComponentNode : ComponentNode<SelectMenuState>
                     childValues.AddRange(
                         context
                             .PushAsChildren(childElement, cancellationToken)
-                            .Select(x => new ComponentPropertyValue.Component(childProperty, x))
+                            .Select(x => new ComponentPropertyValue.Component(state.ChildSource, childProperty, x))
                     );
                     break;
 
                 case CXValue value:
-                    childValues.Add(
-                        new ComponentPropertyValue.SyntaxValue(childProperty, value)
+                    childValues.AddRange(
+                        state
+                            .BuildPropertyValueFromSyntax(
+                                context,
+                                childProperty,
+                                state.ChildSource,
+                                value,
+                                value.TextSpan,
+                                cancellationToken
+                            )
+                            .AsFlattened
                     );
                     break;
                 default:
@@ -187,7 +197,11 @@ public sealed class SelectMenuComponentNode : ComponentNode<SelectMenuState>
         {
             state.SetPropertyValue(
                 childProperty,
-                new ComponentPropertyValue.Many(childProperty, childValues)
+                new ComponentPropertyValue.Many(
+                    state.ChildSource,
+                    childProperty,
+                    [..childValues]
+                )
             );
         }
 

@@ -32,7 +32,7 @@ public sealed class SelectMenuDefaultValueComponentNode : ComponentNode<DefaultV
     {
         Properties =
         [
-            Id = new("id")
+            Id = new("id", kind: ComponentPropertyValueKind.SyntaxValue)
         ];
     }
 

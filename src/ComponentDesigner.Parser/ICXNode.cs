@@ -7,7 +7,7 @@ namespace ComponentDesigner.Parser;
 /// <summary>
 ///     Represents any AST node within a syntax tree, including terminal nodes.
 /// </summary>
-public interface ICXNode : IEquatable<ICXNode>, ICloneable, ISourceLocatable
+public interface ICXNode : IEquatable<ICXNode>, ICloneable, ISourceLocatable, IContainsTrivia
 {
     /// <summary>
     ///     Gets the full span, including trivia, that this node was parsed from in the source.
@@ -53,16 +53,6 @@ public interface ICXNode : IEquatable<ICXNode>, ICloneable, ISourceLocatable
     ///     <see langword="null"/>.
     /// </remarks>
     CXDocument? Document { get; }
-
-    /// <summary>
-    ///     Gets the lexed leading trivia belonging to this node.
-    /// </summary>
-    LexedCXTrivia LeadingTrivia { get; }
-    
-    /// <summary>
-    ///     Gets the lexed trailing trivia belonging to this node.
-    /// </summary>
-    LexedCXTrivia TrailingTrivia { get; }
     
     /// <summary>
     ///     Gets a read-only list of diagnostic descriptors relating to this node.

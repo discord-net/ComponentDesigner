@@ -31,7 +31,7 @@ public class TextDisplayComponentNode : ComponentNode<TextDisplayState>
             Content = new(
                 name: "content",
                 isOptional: true,
-                autoFillMode: PropertyAutoFillMode.String
+                kind: ComponentPropertyValueKind.SyntaxValue | ComponentPropertyValueKind.Component
             )
         ];
     }

@@ -16,16 +16,6 @@ partial class Validators
         ValidateElementStructure(gallery, state, bag);
         ValidateProperty(gallery, state.GetPropertyValue(gallery.Id), bag);
         ReportDiagnosticsForUnknownProperties(gallery, state, bag);
-
-        var items = state.GetPropertyValue(gallery.Items);
-
-        if (!state.HasGraphChildren && !items.HasValue)
-        {
-            bag.Add(
-                state.TextSpan.Report(Diagnostic.ComponentRequiresAtLeastOneChild(gallery))
-            );
-            return;
-        }
         
         if (state is { HasGraphChildren: true, Children.Count: > MEDIA_GALLERY_MAX_ITEMS })
         {

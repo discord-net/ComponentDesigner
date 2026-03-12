@@ -19,105 +19,58 @@ public sealed class BooleanGenerator : CSharpValueGenerator
 
     protected override Result<string> RenderInterpolation(
         IRendererContext context,
-        CSharpValueGeneratorTarget target,
-        CXToken token,
-        IInterpolationInfo info,
-        CSharpValueGeneratorOptions options,
+        ComponentPropertyValue.Interpolation interpolationValue,
+        IInterpolationInfo interpolationInfo,
         CancellationToken cancellationToken = default
     )
     {
-        if (
-            info.ConstantValue.TryGetOfType(out bool v)
-        ) return v ? "true" : "false";
+        if (interpolationInfo.ConstantValue.TryGetOfType(out bool value))
+            return value ? "true" : "false";
 
-        if (info.ConstantValue.TryGetOfType(out string? str) && str is not null)
-            return FromText(token, str);
+        if (
+            interpolationInfo.ConstantValue.TryGetOfType(out string? strValue) &&
+            strValue is not null
+        ) return FromText(strValue.SourcedAt(interpolationValue));
 
         if (
             context.CompilationProvider.HasImplicitConversionBetween(
-                info.Symbol,
-                context.CompilationProvider.Boolean
+                interpolationInfo.Symbol,
+                context.CompilationProvider.Boolean,
+                cancellationToken
             )
             ||
             (
                 _allowNullable &&
-                info.Symbol is not null &&
-                info.Symbol.IsNullableTypeOf(
-                    context.CompilationProvider.Boolean
-                )
+                interpolationInfo.Symbol.IsNullableTypeOf(context.CompilationProvider.Boolean)
             )
         )
         {
-            return context.GetReferenceToDesignerValue(info, info.Symbol);
+            return context.GetReferenceToDesignerValue(interpolationInfo, interpolationInfo.Symbol);
         }
 
-        string code;
-
-        if (_allowNullable && info.Symbol.CanNullPatternMatch)
-        {
-            var varName = context.CreateVariable();
-            
-            code =
-                $$"""
-                  {{context.GetReferenceToDesignerValue(info, info.Symbol)}} is {} {{varName}}
-                      ? bool.Parse({{varName}}.ToString())
-                      : null
-                  """;
-        }
-        else
-        {
-            code = $"bool.Parse({context.GetReferenceToDesignerValue(info)})";
-        }
-
-
-        return Result<string>.FromValue(
-            code,
-            token.Report(Diagnostic.UsingRuntimeValidation("bool.Parse"))
-        );
+        return Diagnostic
+            .TypeMismatch(
+                context.CompilationProvider.Boolean!,
+                interpolationInfo.Symbol!
+            )
+            .At(interpolationValue);
     }
 
-    protected override Result<string> RenderScalar(
+    protected override Result<string> RenderLiteral(
         IRendererContext context,
-        CSharpValueGeneratorTarget target,
-        CXToken token,
-        CSharpValueGeneratorOptions options,
+        ComponentPropertyValue.Literal literalValue,
+        string literal,
         CancellationToken cancellationToken = default
-    ) => FromText(token, token.Value);
+    ) => FromText(literal.SourcedAt(literalValue));
 
-    protected override Result<string> RenderMultipart(
-        IRendererContext context,
-        CSharpValueGeneratorTarget target,
-        CXValue.Multipart multipart,
-        CSharpValueGeneratorOptions options,
-        CancellationToken cancellationToken = default
+    private static Result<string> FromText(
+        SourcedValue<string> text
     )
     {
-        return Result<string>.FromValue(
-            $"bool.Parse({StringGenerator.ToCSharpString(multipart)})",
-            multipart.Report(Diagnostic.UsingRuntimeValidation("bool.Parse"))
-        );
-    }
-
-    protected override Result<string> RenderMissingValue(
-        IRendererContext context,
-        CSharpValueGeneratorTarget target,
-        CSharpValueGeneratorOptions options,
-        CancellationToken cancellationToken = default
-    )
-    {
-        if (
-            target is CSharpValueGeneratorTarget.ComponentProperty { PropertyValue.Property.RequiresValue: false }
-        ) return "true";
-
-        return base.RenderMissingValue(context, target, options, cancellationToken);
-    }
-
-    private static Result<string> FromText(ICXNode owner, string text)
-    {
-        var lower = text.ToLowerInvariant();
+        var lower = text.Value.ToLowerInvariant();
 
         if (lower is not "true" and not "false")
-            return owner.Report(Diagnostic.TypeMismatch("bool", "string"));
+            return Diagnostic.TypeMismatch("bool", "string").At(text);
 
         return lower;
     }

@@ -47,6 +47,7 @@ public static class DiagnosticFactory
         InvalidChildComponentOfSection,
         CannotConvertComponents,
         NotAComponentType,
+        InvalidSyntax,
         TypedComponentsAreNotSupported
     }
 
@@ -258,6 +259,16 @@ public static class DiagnosticFactory
             DiagnosticCode.ValueVariantCannotBeGenerated,
             DiagnosticSeverity.Error,
             $"'{name}' is not a valid value"
+        );
+        
+        public static DiagnosticDescriptor ValueVariantCannotBeGenerated(
+            ComponentPropertyValue value,
+            CSharpValueGenerator generator
+        ) => Create(
+            DiagnosticSource.Renderer,
+            DiagnosticCode.ValueVariantCannotBeGenerated,
+            DiagnosticSeverity.Error,
+            $"'{value.Kind.ReadableName}' is not a valid value for '{generator.GetType().Name}'"
         );
 
         public static DiagnosticDescriptor UsingRuntimeValidation(
@@ -623,94 +634,18 @@ public static class DiagnosticFactory
         );
 
         public static DiagnosticDescriptor InvalidPropertyValue(
-            ComponentPropertyValue propertyValue,
-            params ReadOnlySpan<ComponentPropertyValueKind> expected
-        )
-        {
-            string message;
-
-            if (expected.Length is 0)
-            {
-                message = $"Unexpected property value for '{propertyValue.Name}': {propertyValue.Kind}";
-            }
-            else
-            {
-                string expectedString;
-
-                if (expected.Length is 1)
-                {
-                    expectedString = expected[0].ToString();
-                }
-                else
-                {
-                    using var _ = StringBuilder.Pooled(out var sb);
-
-                    for (var i = 0; i < expected.Length; i++)
-                    {
-                        sb.Append(expected.Length - 1 == i ? " or " : ", ");
-                        sb.Append('\'').Append(expected[i]).Append('\'');
-                    }
-
-                    expectedString = sb.ToString();
-                }
-
-                message =
-                    $"Expected {expectedString} as the property value for '{propertyValue.UsedName}', but got '{propertyValue.Kind}'";
-            }
-
-
-            return Create(
-                DiagnosticSource.Graph,
-                DiagnosticCode.InvalidPropertyValue,
-                DiagnosticSeverity.Error,
-                message
-            );
-        }
-
+            ComponentPropertyValue propertyValue
+        ) => InvalidPropertyValue(propertyValue, propertyValue.Property.Kind);
+        
         public static DiagnosticDescriptor InvalidPropertyValue(
             ComponentPropertyValue propertyValue,
-            params ReadOnlySpan<string> expected
-        )
-        {
-            string message;
-
-            if (expected.Length is 0)
-            {
-                message = $"Unexpected property value for '{propertyValue.Name}': {propertyValue.Kind}";
-            }
-            else
-            {
-                string expectedString;
-
-                if (expected.Length is 1)
-                {
-                    expectedString = expected[0];
-                }
-                else
-                {
-                    using var _ = StringBuilder.Pooled(out var sb);
-
-                    for (var i = 0; i < expected.Length; i++)
-                    {
-                        sb.Append(expected.Length - 1 == i ? " or " : ", ");
-                        sb.Append('\'').Append(expected[i]).Append('\'');
-                    }
-
-                    expectedString = sb.ToString();
-                }
-
-                message =
-                    $"Expected {expectedString} as the property value for '{propertyValue.UsedName}', but got '{propertyValue.Kind}'";
-            }
-
-
-            return Create(
-                DiagnosticSource.Graph,
-                DiagnosticCode.InvalidPropertyValue,
-                DiagnosticSeverity.Error,
-                message
-            );
-        }
+            ComponentPropertyValueKind expected
+        ) => Create(
+            DiagnosticSource.Graph,
+            DiagnosticCode.InvalidPropertyValue,
+            DiagnosticSeverity.Error,
+            $"'{propertyValue.Kind.ReadableName}' doesn't match the expected property value of '{expected.ReadableName}'"
+        );
 
         public static DiagnosticDescriptor InvalidAccessoryComponentOfSection(
             IComponentNode componentNode
@@ -763,9 +698,21 @@ public static class DiagnosticFactory
             IComponentImplementation implementation
         ) => Create(
             DiagnosticSource.Graph,
-            DiagnosticCode.NotAComponentType,
+            DiagnosticCode.TypedComponentsAreNotSupported,
             DiagnosticSeverity.Error,
             $"'{implementation.Name}' does not support custom components (interpolations, functional, etc)"
+        );
+        
+        public static DiagnosticDescriptor InvalidSyntaxValue(
+            ICXNode syntax
+        ) => Create(
+            DiagnosticSource.Graph,
+            DiagnosticCode.InvalidSyntax,
+            DiagnosticSeverity.Error,
+            $"'{syntax switch {
+                CXToken token => token.Kind.ToString(),
+                _ => syntax.GetType().Name
+            }}' is not a valid value"
         );
     }
 }

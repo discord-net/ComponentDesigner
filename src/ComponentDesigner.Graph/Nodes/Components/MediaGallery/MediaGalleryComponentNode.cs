@@ -20,7 +20,10 @@ public sealed class MediaGalleryComponentNode : ComponentNode
         Properties =
         [
             Id = ComponentProperty.Id,
-            Items = new("items", autoFillMode: PropertyAutoFillMode.InlineComponent)
+            Items = new(
+                "items",
+                kind: ComponentPropertyValueKind.ManyComponents
+            )
         ];
     }
 
@@ -39,7 +42,8 @@ public sealed class MediaGalleryComponentNode : ComponentNode
 
         if (state is not null && context.CXNode is CXElement { Children.Count: > 0 } element)
         {
-            var values = new List<ComponentPropertyValue>();
+            using var _ = List<ComponentPropertyValue>.Pooled(out var values);
+            values.Clear();
 
             foreach (var childCX in element.Children)
             {
@@ -52,6 +56,7 @@ public sealed class MediaGalleryComponentNode : ComponentNode
                             children
                                 .Select(x =>
                                     new ComponentPropertyValue.Component(
+                                        state.ChildSource,
                                         Items,
                                         x
                                     )
@@ -60,7 +65,18 @@ public sealed class MediaGalleryComponentNode : ComponentNode
 
                         break;
                     case CXValue value:
-                        values.Add(new ComponentPropertyValue.SyntaxValue(Items, value));
+                        values.AddRange(
+                            state
+                                .BuildPropertyValueFromSyntax(
+                                    context,
+                                    Items,
+                                    state.ChildSource,
+                                    value,
+                                    value.TextSpan,
+                                    cancellationToken
+                                )
+                                .AsFlattened
+                        );
                         break;
                     default:
                         // TODO: error?
@@ -72,7 +88,9 @@ public sealed class MediaGalleryComponentNode : ComponentNode
             {
                 state.SetPropertyValue(
                     Items,
-                    values.Count is 1 ? values[0] : new ComponentPropertyValue.Many(Items, values)
+                    values.Count is 1
+                        ? values[0]
+                        : new ComponentPropertyValue.Many(state.ChildSource, Items, [..values])
                 );
             }
         }

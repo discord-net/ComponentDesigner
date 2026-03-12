@@ -24,18 +24,17 @@ public sealed class ContainerComponentNode : ComponentNode
                 name: "accentColor",
                 isOptional: true,
                 aliases: ["color", "accent"],
-                autoFillMode: PropertyAutoFillMode.String
+                kind: ComponentPropertyValueKind.SyntaxValue
             ),
             IsSpoiler = new(
                 name: "spoiler",
                 isOptional: true,
                 requiresValue: false,
-                autoFillMode: PropertyAutoFillMode.String,
-                autoFillChoices: ["true", "false"]
+                kind: ComponentPropertyValueKind.SyntaxValue
             ),
             Components = new(
                 "components",
-                autoFillMode: PropertyAutoFillMode.InlineComponent
+                kind: ComponentPropertyValueKind.ManyComponents
             )
         ];
     }

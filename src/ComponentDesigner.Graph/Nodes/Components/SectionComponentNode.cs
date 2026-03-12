@@ -21,11 +21,11 @@ public sealed class SectionComponentNode : ComponentNode
             Id = ComponentProperty.Id,
             Accessory = new(
                 "accessory",
-                autoFillMode: PropertyAutoFillMode.InlineComponent
+                kind: ComponentPropertyValueKind.Component
             ),
             Components = new(
                 "components",
-                autoFillMode: PropertyAutoFillMode.InlineComponent
+                kind: ComponentPropertyValueKind.ManyComponents
             )
         ];
     }
@@ -49,20 +49,11 @@ public sealed class SectionComponentNode : ComponentNode
         using var _ = ObjectPool<List<ICXNode>>.GetScoped(out var children);
         children.Clear();
 
-        ComponentPropertyValue? accessory = null;
-
         foreach (var child in element.Children)
         {
             if (child is CXElement { Identifier: "accessory" } accessoryElement)
             {
-                ExtractChildAccessory(
-                    context,
-                    this,
-                    diagnostics,
-                    accessoryElement,
-                    ref accessory,
-                    cancellationToken
-                );
+                ExtractChildAccessory(accessoryElement);
                 continue;
             }
 
@@ -80,26 +71,18 @@ public sealed class SectionComponentNode : ComponentNode
             );
         }
 
-        if (accessory is not null)
-            state.SetPropertyValue(Accessory, accessory);
-
         return state;
 
-        static void ExtractChildAccessory(
-            ComponentNodeInitializationContext context,
-            SectionComponentNode self,
-            IDiagnosticBag bag,
-            CXElement accessoryElement,
-            ref ComponentPropertyValue? result,
-            CancellationToken cancellationToken
+        void ExtractChildAccessory(
+            CXElement accessoryElement
         )
         {
             // do we already have an accessory?
-            if (result is not null)
+            if (!state.GetPropertyValue(Accessory).IsNone)
             {
-                bag.Add(
+                diagnostics.Add(
                     Diagnostic
-                        .DuplicatePropertyValue(self.Accessory)
+                        .DuplicatePropertyValue(this.Accessory)
                         .At(accessoryElement.IdentifierTextSpanOrElementTextSpan)
                 );
                 return;
@@ -107,7 +90,7 @@ public sealed class SectionComponentNode : ComponentNode
 
             if (accessoryElement.Children.Count is 0)
             {
-                bag.Add(
+                diagnostics.Add(
                     Diagnostic
                         .ComponentRequiresAtLeastOneChild(accessoryElement)
                         .At(accessoryElement)
@@ -115,39 +98,12 @@ public sealed class SectionComponentNode : ComponentNode
                 return;
             }
 
-            var accessoryNodes = context.PushAsChildren(
-                accessoryElement.Children,
-                cancellationToken
-            );
-
-            if (accessoryNodes.Count is 0)
-            {
-                // diagnostics should come from the component graph
-                return;
-            }
-
-            if (accessoryNodes.Count is not 1)
-            {
-                bag.Add(
-                    Diagnostic
-                        .TooManyChildren(
-                            accessoryElement,
-                            1
-                        )
-                        .At(
-                            CXTextSpan.FromBounds(
-                                accessoryNodes[1].State.TextSpan.Start,
-                                accessoryNodes[accessoryNodes.Count - 1].State.TextSpan.End
-                            )
-                        )
-                );
-
-                return;
-            }
-
-            result = new ComponentPropertyValue.Component(
-                self.Accessory,
-                accessoryNodes[0]
+            state.SetPropertyValueToChildren(
+                Accessory,
+                context.PushAsChildren(
+                    accessoryElement.Children,
+                    cancellationToken
+                )
             );
         }
     }

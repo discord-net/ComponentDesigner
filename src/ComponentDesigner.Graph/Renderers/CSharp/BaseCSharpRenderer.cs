@@ -78,7 +78,7 @@ public abstract partial class BaseCSharpRenderer : IComponentRenderer
             int interpolationDollarCount
         )
         {
-            var quoteCount = (StringGenerator.GetSequentialQuoteCount(control.Value) + 1) switch
+            var quoteCount = (GetSequentialQuoteCount(control.Value) + 1) switch
             {
                 2 => 3,
                 var r => r
@@ -127,6 +127,28 @@ public abstract partial class BaseCSharpRenderer : IComponentRenderer
             return sb.ToString();
         }
 
+        static int GetSequentialQuoteCount(string text)
+        {
+            var result = 0;
+            var count = 0;
+            foreach (var ch in text)
+            {
+                if (ch is '"')
+                {
+                    count++;
+                    continue;
+                }
+                
+                if (count > 0)
+                {
+                    result = Math.Max(result, count);
+                    count = 0;
+                }
+            }
+            
+            return Math.Max(result, count);
+        }
+        
         static TextControl Join(EquatableArray<TextControl> elements)
         {
             if (elements.Count is 0) return TextControl.Empty;

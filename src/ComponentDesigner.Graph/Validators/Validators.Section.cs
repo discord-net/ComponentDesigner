@@ -24,7 +24,7 @@ partial class Validators
         {
             var accessory = state.GetPropertyValue(section.Accessory);
 
-            if (!accessory.HasValue)
+            if (accessory.IsNone)
             {
                 bag.Add(
                     Diagnostic
@@ -35,14 +35,11 @@ partial class Validators
                 return;
             }
 
-            if (accessory.GraphNode?.Component is not {} accessoryComponent)
+            if (accessory is not ComponentPropertyValue.Component { GraphNode.Component: var accessoryComponent })
             {
                 bag.Add(
                     Diagnostic
-                        .InvalidPropertyValue(
-                            accessory,
-                            ComponentPropertyValueKind.Component
-                        )
+                        .InvalidPropertyValue(accessory)
                         .At(accessory)
                 );
 
@@ -64,7 +61,7 @@ partial class Validators
         {
             var components = state.GetPropertyValue(section.Components);
 
-            if (!components.HasValue)
+            if (components.IsNone)
             {
                 bag.Add(
                     Diagnostic
@@ -78,10 +75,7 @@ partial class Validators
             {
                 bag.Add(
                     Diagnostic
-                        .InvalidPropertyValue(
-                            components,
-                            "components"
-                        )
+                        .InvalidPropertyValue(components)
                         .At(components)
                 );
 
@@ -109,14 +103,11 @@ partial class Validators
 
             foreach (var childComponentValue in many.Values)
             {
-                if (childComponentValue.GraphNode?.Component is not {} childComponent)
+                if (childComponentValue is not ComponentPropertyValue.Component{GraphNode.Component: var childComponent})
                 {
                     bag.Add(
                         Diagnostic
-                            .InvalidPropertyValue(
-                                childComponentValue,
-                                ComponentPropertyValueKind.Component
-                            )
+                            .InvalidPropertyValue(childComponentValue)
                             .At(childComponentValue)
                     );
 

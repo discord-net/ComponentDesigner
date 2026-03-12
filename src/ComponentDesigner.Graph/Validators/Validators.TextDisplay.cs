@@ -21,7 +21,7 @@ partial class Validators
         {
             var content = state.GetPropertyValue(textDisplay.Content);
 
-            if (!content.HasValue)
+            if (content.IsNone)
             {
                 bag.Add(
                     Diagnostic
@@ -32,34 +32,34 @@ partial class Validators
                 return;
             }
 
-            switch (content)
-            {
-                case ComponentPropertyValue.AttributeValue:
-                    // OK
-                    break;
-                case ComponentPropertyValue.Component { GraphNode.Component: { } component }:
-                    if (component is not TextControlNode)
-                    {
-                        bag.Add(
-                            Diagnostic
-                                .InvalidChildOfComponent(textDisplay, component)
-                                .At(content)
-                        );
-                    }
-
-                    break;
-                default:
-                    bag.Add(
-                        Diagnostic
-                            .InvalidPropertyValue(
-                                content,
-                                "string",
-                                "text controls"
-                            )
-                            .At(content)
-                    );
-                    break;
-            }
+            // switch (content)
+            // {
+            //     case ComponentPropertyValue.AttributeValue:
+            //         // OK
+            //         break;
+            //     case ComponentPropertyValue.Component { GraphNode.Component: { } component }:
+            //         if (component is not TextControlNode)
+            //         {
+            //             bag.Add(
+            //                 Diagnostic
+            //                     .InvalidChildOfComponent(textDisplay, component)
+            //                     .At(content)
+            //             );
+            //         }
+            //
+            //         break;
+            //     default:
+            //         bag.Add(
+            //             Diagnostic
+            //                 .InvalidPropertyValue(
+            //                     content,
+            //                     "string",
+            //                     "text controls"
+            //                 )
+            //                 .At(content)
+            //         );
+            //         break;
+            // }
         }
     }
 }

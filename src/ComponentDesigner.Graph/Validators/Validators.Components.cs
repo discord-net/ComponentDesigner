@@ -89,37 +89,31 @@ public static partial class Validators
         IComponentNode component,
         ComponentPropertyValue propertyValue,
         IDiagnosticBag bag,
-        bool? isOptional = null,
-        bool? requiresValue = null
+        bool? isOptionalOverload = null,
+        bool? requiresValueOverload = null
     )
     {
-        var optional = isOptional ?? propertyValue.IsOptional;
-        var requireValue = requiresValue ?? propertyValue.RequiresValue;
+        var isOptional = isOptionalOverload ?? propertyValue.Property.IsOptional;
+        var requiresValue = requiresValueOverload ?? propertyValue.Property.RequiresValue;
 
-        if (
-            (!optional && !propertyValue.IsSpecified) ||
-            (requireValue && propertyValue is { HasValue: false, IsSpecified: true })
-        )
-        {
-            bag.Add(
-                propertyValue.TextSpan.Report(
-                    Diagnostic.RequiredPropertyNotSpecified(component, propertyValue.Property)
-                )
-            );
-        }
-    }
+        if (isOptional && propertyValue.IsNone) return;
 
-    public static void PropertyValueIsOneOf(
-        IDiagnosticBag bag,
-        ComponentPropertyValue propertyValue,
-        params ComponentPropertyValueKind[] kinds
-    )
-    {
-        if (!kinds.Contains(propertyValue.Kind))
+        if (requiresValue && propertyValue.IsNone)
         {
             bag.Add(
                 Diagnostic
-                    .InvalidPropertyValue(propertyValue, kinds)
+                    .RequiredPropertyValueNotSpecified(propertyValue.Property.Name)
+                    .At(propertyValue)
+            );
+
+            return;
+        }
+
+        if (!propertyValue.IsValidBySpec)
+        {
+            bag.Add(
+                Diagnostic
+                    .InvalidPropertyValue(propertyValue)
                     .At(propertyValue)
             );
         }
@@ -136,12 +130,12 @@ public static partial class Validators
         {
             case 0: return;
             case 1:
-                ValidateProperty(component, properties[0], bag, isOptional: false);
+                ValidateProperty(component, properties[0], bag, isOptionalOverload: false);
                 return;
             default:
                 for (var i = 0; i < properties.Length; i++)
                 {
-                    if (properties[0].IsSpecified) return;
+                    if (properties[0].IsSome) return;
                 }
 
                 bag.Add(

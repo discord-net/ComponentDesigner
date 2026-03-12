@@ -24,40 +24,39 @@ public sealed class TextInputComponentNode : ComponentNode
             Id = ComponentProperty.Id,
             CustomId = new(
                 "customId",
-                autoFillMode: PropertyAutoFillMode.String
+                kind: ComponentPropertyValueKind.SyntaxValue
             ),
             Style = new(
                 "style",
                 isOptional: true,
-                autoFillMode: PropertyAutoFillMode.String,
-                autoFillChoices: ["short", "paragraph"]
+                kind: ComponentPropertyValueKind.SyntaxValue
             ),
             MinLength = new(
                 "minLength",
                 aliases: ["min"],
-                isOptional: true
+                isOptional: true,
+                kind: ComponentPropertyValueKind.SyntaxValue
             ),
             MaxLength = new(
                 "maxLength",
                 aliases: ["max"],
                 isOptional: true,
-                autoFillMode: PropertyAutoFillMode.String
+                kind: ComponentPropertyValueKind.SyntaxValue
             ),
             Required = new(
                 "required",
                 isOptional: true,
-                autoFillMode: PropertyAutoFillMode.String,
-                autoFillChoices: ["true", "false"]
+                kind: ComponentPropertyValueKind.SyntaxValue
             ),
             Value = new(
                 "value",
                 isOptional: true,
-                autoFillMode: PropertyAutoFillMode.String
+                kind: ComponentPropertyValueKind.SyntaxValue
             ),
             Placeholder = new(
                 "placeholder",
                 isOptional: true,
-                autoFillMode: PropertyAutoFillMode.String
+                kind: ComponentPropertyValueKind.SyntaxValue
             )
         ];
     }

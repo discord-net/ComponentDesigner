@@ -18,14 +18,13 @@ public sealed class SeparatorComponentNode : ComponentNode
             Divider = new(
                 "divider",
                 isOptional: true,
-                autoFillMode: PropertyAutoFillMode.String,
-                autoFillChoices: ["true", "false"]
+                kind: ComponentPropertyValueKind.SyntaxValue
             ),
             Spacing = new(
                 "spacing",
                 aliases: ["size"],
                 isOptional: true,
-                autoFillMode: PropertyAutoFillMode.String
+                kind: ComponentPropertyValueKind.SyntaxValue
             )
         ];
     }

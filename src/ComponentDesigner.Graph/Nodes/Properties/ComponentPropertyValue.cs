@@ -1,122 +1,169 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using ComponentDesigner.Parser;
+﻿using ComponentDesigner.Parser;
 
 namespace ComponentDesigner.Nodes;
 
-public abstract record ComponentPropertyValue(
-    ComponentProperty Property,
-    CXTextSpan TextSpan
-) : ISourceLocatable
+public abstract record ComponentPropertyValueSource
 {
-    public ComponentPropertyValueKind Kind => this switch
-    {
-        AttributeComponent => ComponentPropertyValueKind.AttributeComponent,
-        AttributeValue => ComponentPropertyValueKind.AttributeValue,
-        Component => ComponentPropertyValueKind.Component,
-        Many => ComponentPropertyValueKind.Many,
-        SyntaxValue => ComponentPropertyValueKind.SyntaxValue,
-        Missing => ComponentPropertyValueKind.Missing,
-        _ => throw new ArgumentOutOfRangeException()
-    };
-    
+    public static readonly ComponentPropertyValueSource None = new Unknown();
+
+    public sealed record Attribute(CXAttribute AttributeSyntax) : ComponentPropertyValueSource;
+
+    public sealed record Child(GraphNode Parent) : ComponentPropertyValueSource;
+
+    public sealed record Unknown : ComponentPropertyValueSource;
+}
+
+public readonly record struct ComponentPropertyLocationInfo(
+    CXTextSpan TextSpan,
+    LexedCXTrivia LeadingTrivia,
+    LexedCXTrivia TrailingTrivia
+) : ISourceLocatable, IContainsTrivia
+{
+    public static ComponentPropertyLocationInfo From(ICXNode node)
+        => new(node.TextSpan, node.LeadingTrivia, node.TrailingTrivia);
+
+    public static implicit operator ComponentPropertyLocationInfo(CXTextSpan textSpan)
+        => new(textSpan, LexedCXTrivia.Empty, LexedCXTrivia.Empty);
+
+    public static implicit operator ComponentPropertyLocationInfo(CXToken token)
+        => From(token);
+
+    public static implicit operator ComponentPropertyLocationInfo(CXNode node)
+        => From(node);
+}
+
+public abstract record ComponentPropertyValue(
+    ComponentPropertyValueSource Source,
+    ComponentProperty Property,
+    ComponentPropertyLocationInfo Location
+) : ISourceLocatable, IContainsTrivia
+{
+    public CXTextSpan TextSpan => Location.TextSpan;
+
+    public LexedCXTrivia LeadingTrivia => Location.LeadingTrivia;
+    public LexedCXTrivia TrailingTrivia => Location.TrailingTrivia;
+
     public string Name => Property.Name;
 
-    public string UsedName => this switch
+    public bool IsSourcedFromAttribute => Source is ComponentPropertyValueSource.Attribute;
+    public bool IsSourcedFromParent => Source is ComponentPropertyValueSource.Child;
+
+    public bool IsSome => !IsNone;
+    public bool IsNone => this is None;
+    public bool IsLiteral => this is Literal;
+    public bool IsInterpolation => this is Interpolation;
+    public bool IsComponent => this is Component;
+    public bool IsMany => this is Many;
+
+    public bool IsOne => !IsMany;
+
+    public ComponentPropertyValue? AsSingle
     {
-        AttributeValue { Attribute.Identifier: var ident } => ident,
-        AttributeComponent { Attribute.Identifier: var ident } => ident,
-        _ => Name
-    };
-
-    public bool HasValue
-        => this
-            is AttributeComponent
-            or AttributeValue { Attribute.Value: not null }
-            or Component
-            or SyntaxValue || (
-            this is Many{Values.Count: > 0} many && many.Values.All(x => x.HasValue)
-        );
-
-    public virtual CXValue? CXValue => null;
-
-    public virtual GraphNode? GraphNode => null;  
-
-    public bool HasAttribute => this is AttributeValue or AttributeComponent;
-
-    public bool IsSpecified => this
-        is AttributeComponent { Attribute.IdentifierToken.IsMissing: false }
-        or AttributeValue { Attribute.IdentifierToken.IsMissing: false }
-        or Component
-        or SyntaxValue || (
-        this is Many {Values.Count: > 0} many && many.Values.All(x => x.IsSpecified)
-    );
-
-    public bool IsOptional => Property.IsOptional;
-    public bool RequiresValue => Property.RequiresValue;
-
-    public bool TryGetLiteralValue([MaybeNullWhen(false)] out string value)
-    {
-        switch (CXValue)
+        get
         {
-            case CXValue.Scalar scalar:
-                value = scalar.Value;
-                return true;
-            case CXValue.StringLiteral { HasInterpolations: false } literal:
-                value = literal.Tokens.ToValueString();
-                return true;
+            if (this is not Many many) return this;
+
+            if (many.Values.Count is not 1) return null;
+
+            return many.Values[0];
         }
-
-        value = null;
-        return false;
     }
 
-    public sealed record Missing(
-        ComponentProperty Property,
-        CXTextSpan TextSpan
-    ) : ComponentPropertyValue(Property, TextSpan);
+    public IEnumerable<ComponentPropertyValue> AsFlattened
+        => this is Many many ? [..many.Values.SelectMany(x => x.AsFlattened)] : [this];
 
-    public sealed record AttributeValue(
-        ComponentProperty Property,
-        CXAttribute Attribute
-    ) : ComponentPropertyValue(Property, Attribute.TextSpan)
+    public ComponentPropertyValueKind Kind
+        => _kind ??= this switch
+        {
+            None => ComponentPropertyValueKind.None,
+            Literal => ComponentPropertyValueKind.Literal,
+            Interpolation => ComponentPropertyValueKind.Interpolation,
+            Component => ComponentPropertyValueKind.Component,
+            Many { Values: { } values } =>
+                ComponentPropertyValueKind.Many | values
+                    .Aggregate(ComponentPropertyValueKind.None, (a, b) => a | b.Kind),
+            _ => ComponentPropertyValueKind.None
+        };
+
+    public bool IsAttributeNameOnly => IsSourcedFromAttribute && IsNone;
+
+    private ComponentPropertyValueKind? _kind;
+
+    public bool IsValidBySpec => Matches(Property.Kind);
+
+    public bool Matches(ComponentPropertyValueKind kind)
     {
-        public override CXValue? CXValue { get; } = Attribute.Value;
+        if (this is not Many many) return IsSimpleMatch(this, kind);
+
+        return
+            kind.HasFlag(ComponentPropertyValueKind.Many) &&
+            many.Values.All(x => IsSimpleMatch(x, kind));
+
+
+        static bool IsSimpleMatch(ComponentPropertyValue value, ComponentPropertyValueKind kind)
+            => (
+                value.IsNone ||
+                (value.IsLiteral && kind.HasFlag(ComponentPropertyValueKind.Literal)) ||
+                (value.IsInterpolation && kind.HasFlag(ComponentPropertyValueKind.Interpolation)) ||
+                (value.IsComponent && kind.HasFlag(ComponentPropertyValueKind.Component))
+            );
     }
 
-    public sealed record AttributeComponent(
+    public sealed record None(
+        ComponentPropertyValueSource Source,
         ComponentProperty Property,
-        CXAttribute Attribute,
+        ComponentPropertyLocationInfo Location
+    ) : ComponentPropertyValue(Source, Property, Location);
+
+    public sealed record Literal(
+        ComponentPropertyValueSource Source,
+        ComponentProperty Property,
+        ComponentPropertyLocationInfo Location,
+        string Value
+    ) : ComponentPropertyValue(Source, Property, Location);
+
+    public sealed record Interpolation(
+        ComponentPropertyValueSource Source,
+        ComponentProperty Property,
+        ComponentPropertyLocationInfo Location,
+        IInterpolationInfo Info
+    ) : ComponentPropertyValue(Source, Property, Location);
+
+    public sealed record Component(
+        ComponentPropertyValueSource Source,
+        ComponentProperty Property,
+        ComponentPropertyLocationInfo Location,
         GraphNode GraphNode
-    ) : ComponentPropertyValue(Property, Attribute.TextSpan)
+    ) : ComponentPropertyValue(Source, Property, Location)
     {
-        public override GraphNode GraphNode { get; } = GraphNode;
-    }
-
-    public sealed record SyntaxValue(
-        ComponentProperty Property,
-        CXValue CXValue
-    ) : ComponentPropertyValue(Property, CXValue.TextSpan)
-    {
-        public override CXValue CXValue { get; } = CXValue;
+        public Component(
+            ComponentPropertyValueSource Source,
+            ComponentProperty Property,
+            GraphNode GraphNode
+        ) : this(Source, Property, GraphNode.TextSpan, GraphNode)
+        {
+        }
     }
 
     public sealed record Many(
+        ComponentPropertyValueSource Source,
         ComponentProperty Property,
+        ComponentPropertyLocationInfo Location,
         IReadOnlyList<ComponentPropertyValue> Values
-    ) : ComponentPropertyValue(Property, CXTextSpan.From(Values));
-
-    public sealed record Component(
-        ComponentProperty Property,
-        CXTextSpan TextSpan,
-        GraphNode GraphNode
-    ) : ComponentPropertyValue(Property, TextSpan)
+    ) : ComponentPropertyValue(Source, Property, Location)
     {
-        public override GraphNode GraphNode { get; } = GraphNode;
-        
-        public Component(
+        public Many(
+            ComponentPropertyValueSource Source,
             ComponentProperty Property,
-            GraphNode graphNode
-        ) : this(Property, graphNode.State.TextSpan, graphNode)
+            IReadOnlyList<ComponentPropertyValue> Values
+        ) : this(
+            Source,
+            Property,
+            Values.Count is 0
+                ? default
+                : CXTextSpan.From(Values),
+            Values
+        )
         {
         }
     }

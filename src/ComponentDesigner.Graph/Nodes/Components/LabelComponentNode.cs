@@ -22,16 +22,16 @@ public sealed class LabelComponentNode : ComponentNode
             Id = ComponentProperty.Id,
             Component = new(
                 "component",
-                autoFillMode: PropertyAutoFillMode.InlineComponent
+                kind: ComponentPropertyValueKind.Component
             ),
             Value = new(
                 "value",
-                autoFillMode: PropertyAutoFillMode.String
+                kind: ComponentPropertyValueKind.SyntaxValue
             ),
             Description = new(
                 "description",
                 isOptional: true,
-                autoFillMode: PropertyAutoFillMode.String
+                kind: ComponentPropertyValueKind.SyntaxValue
             )
         ];
     }
@@ -94,7 +94,7 @@ public sealed class LabelComponentNode : ComponentNode
 
         if (childValue is not null)
         {
-            state.SetPropertyValue(Value, childValue);
+            state.SetPropertyValue(context, Value, childValue, cancellationToken);
         }
 
         return state;

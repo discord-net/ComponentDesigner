@@ -15,17 +15,6 @@ partial class Validators
         ValidateProperty(actionRow, state.GetPropertyValue(actionRow.Id), bag);
         ReportDiagnosticsForUnknownProperties(actionRow, state, bag);
 
-        var components = state.GetPropertyValue(actionRow.Components);
-
-        if (!state.HasGraphChildren && !components.HasValue)
-        {
-            bag.Add(
-                state.TextSpan.Report(Diagnostic.ComponentRequiresAtLeastOneChild(actionRow))
-            );
-
-            return;
-        }
-
         if (state.Children.Count > 0)
         {
             switch (state.Children[0].Component)

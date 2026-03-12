@@ -58,6 +58,12 @@ public readonly struct ComponentNodeInitializationContext
         return [..GraphNode.Children.Skip(start).Take(end - start)];
     }
 
+    public IReadOnlyList<GraphNode> PushAsChildren<T>(
+        CXCollection<T> syntaxNodes,
+        CancellationToken cancellationToken = default
+    ) where T : class, ICXNode
+        => PushAsChildren((IReadOnlyList<ICXNode>)syntaxNodes, cancellationToken);
+    
     public IReadOnlyList<GraphNode> PushAsChildren(
         IReadOnlyList<ICXNode> syntaxNodes,
         CancellationToken cancellationToken = default
@@ -67,6 +73,27 @@ public readonly struct ComponentNodeInitializationContext
 
         CXComponentGraph.CreateNodes(
             syntaxNodes,
+            GraphNode,
+            GraphContext,
+            cancellationToken
+        );
+
+        var end = GraphNode.Children.Count;
+
+        if (start == end) return [];
+
+        return [..GraphNode.Children.Skip(start).Take(end - start)];
+    }
+    
+    public IReadOnlyList<GraphNode> PushAsChildren(
+        ICXNode syntaxNode,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var start = GraphNode.Children.Count;
+
+        CXComponentGraph.CreateNodes(
+            syntaxNode,
             GraphNode,
             GraphContext,
             cancellationToken

@@ -20,7 +20,7 @@ public class ActionRowComponentNode : ComponentNode
             Id = ComponentProperty.Id,
             Components = new(
                 "components",
-                autoFillMode: PropertyAutoFillMode.InlineComponent
+                kind: ComponentPropertyValueKind.ManyComponents
             )
         ];
     }
