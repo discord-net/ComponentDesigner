@@ -52,6 +52,8 @@ public record ComponentState : ISourceLocatable
 
     public bool IsRootNode => GraphNode.Parent is null;
 
+    public virtual IReadOnlyList<ComponentProperty> Properties => GraphNode.Component.Properties;
+
     [field: MaybeNull]
     public ComponentPropertyValueSource ChildSource
         => field ??= new ComponentPropertyValueSource.Child(GraphNode);
@@ -64,14 +66,15 @@ public record ComponentState : ISourceLocatable
         ICXNode? cxNode,
         ComponentNodeInitializationContext context,
         CancellationToken cancellationToken,
-        CXTextSpan? textSpan = null
+        CXTextSpan? textSpan = null,
+        bool initialize = true
     )
     {
         _textSpan = textSpan;
         GraphNode = graphNode;
         CXNode = cxNode;
 
-        Initialize(context, cancellationToken);
+        if(initialize) Initialize(context, cancellationToken);
     }
 
     public ComponentState(
@@ -85,8 +88,9 @@ public record ComponentState : ISourceLocatable
     public ComponentState(
         ComponentNodeInitializationContext context,
         CancellationToken cancellationToken,
-        CXTextSpan? textSpan = null
-    ) : this(context.GraphNode, context.CXNode, context, cancellationToken, textSpan)
+        CXTextSpan? textSpan = null,
+        bool initialize = true
+    ) : this(context.GraphNode, context.CXNode, context, cancellationToken, textSpan, initialize)
     {
     }
 
@@ -98,11 +102,11 @@ public record ComponentState : ISourceLocatable
         _textSpan = other._textSpan;
     }
 
-    protected virtual bool TryGetProperty(
+    public virtual bool TryGetProperty(
         string name, [MaybeNullWhen(false)] out ComponentProperty property
     ) => GraphNode.Component.TryGetProperty(name, out property);
 
-    private void Initialize(ComponentNodeInitializationContext context, CancellationToken cancellationToken)
+    protected void Initialize(ComponentNodeInitializationContext context, CancellationToken cancellationToken)
     {
         if (CXNode is not CXElement element) return;
 

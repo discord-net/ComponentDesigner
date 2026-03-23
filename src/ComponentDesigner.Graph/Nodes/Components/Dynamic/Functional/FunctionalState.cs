@@ -7,7 +7,7 @@ namespace ComponentDesigner.Nodes;
 public sealed record FunctionalState : ComponentState
 {
     public ICSharpMethodSymbol Symbol { get; init; }
-    public IReadOnlyList<ComponentProperty> Parameters { get; init; }
+    public override IReadOnlyList<ComponentProperty> Properties { get; }
     public ComponentProperty? ChildrenParameter { get; init; }
 
     public int SymbolDependencyKey => _dependencyKey ??= MakeSymbolDependencyKey();
@@ -19,16 +19,18 @@ public sealed record FunctionalState : ComponentState
     public FunctionalState(
         CXElement element,
         ICSharpMethodSymbol symbol,
-        IReadOnlyList<ComponentProperty> parameters,
+        IReadOnlyList<ComponentProperty> properties,
         ComponentProperty? childrenParameter,
         ComponentNodeInitializationContext context,
         CancellationToken cancellationToken
-    ) : base(context, cancellationToken)
+    ) : base(context, cancellationToken, initialize: false)
     {
         CXNode = element;
         Symbol = symbol;
-        Parameters = parameters;
+        Properties = properties;
         ChildrenParameter = childrenParameter;
+        
+        Initialize(context, cancellationToken);
     }
 
     public static Result<FunctionalState> CreateFromSymbol(
@@ -174,9 +176,9 @@ public sealed record FunctionalState : ComponentState
         return state;
     }
 
-    protected override bool TryGetProperty(string name, [MaybeNullWhen(false)] out ComponentProperty property)
+    public override bool TryGetProperty(string name, [MaybeNullWhen(false)] out ComponentProperty property)
     {
-        property = Parameters
+        property = Properties
             .FirstOrDefault(x => x.MatchesName(name));
 
         return property is not null || base.TryGetProperty(name, out property);
@@ -215,10 +217,10 @@ public sealed record FunctionalState : ComponentState
     public bool Equals(FunctionalState? other)
         => other is not null &&
            SymbolDependencyKey == other.SymbolDependencyKey &&
-           Parameters.Equals(other.Parameters) &&
+           Properties.Equals(other.Properties) &&
            ChildrenParameter == other.ChildrenParameter &&
            base.Equals(other);
 
     public override int GetHashCode()
-        => Hash.Combine(SymbolDependencyKey, Parameters, ChildrenParameter, base.GetHashCode());
+        => Hash.Combine(SymbolDependencyKey, Properties, ChildrenParameter, base.GetHashCode());
 }

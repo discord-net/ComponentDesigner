@@ -128,15 +128,19 @@ public sealed class FunctionalTests(ITestOutputHelper output) : BaseComponentTes
             """
         );
         {
-            var functionalComponent = Component<FunctionalComponentNode>();
+            Component<FunctionalComponentNode>(out var node);
             {
                 Component<SeparatorComponentNode>();
                 Component<SeparatorComponentNode>();
             }
 
+            var fooProperty = node.State.Properties.FirstOrDefault(x => x.Name is "foo");
+
+            Assert.NotNull(fooProperty);
+            
             Emits(null);
             {
-                AssertDiagnostic(Diagnostic.OnlyOneChildAllowed(functionalComponent));
+                AssertDiagnostic(Diagnostic.TooManyPropertyValues(fooProperty));
             }
         }
     }

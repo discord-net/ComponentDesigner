@@ -682,6 +682,15 @@ public static class DiagnosticFactory
             $"'{propertyValue.Kind.ReadableName}' doesn't match the expected property value of '{expected}'"
         );
 
+        public static DiagnosticDescriptor TooManyPropertyValues(
+            ComponentProperty property
+        ) =>  Create(
+            DiagnosticSource.Graph,
+            DiagnosticCode.InvalidPropertyValue,
+            DiagnosticSeverity.Error,
+            $"'{property.Name}' only allows at most one value"
+        );
+
         public static DiagnosticDescriptor InvalidAccessoryComponentOfSection(
             IComponentNode componentNode
         ) => Create(

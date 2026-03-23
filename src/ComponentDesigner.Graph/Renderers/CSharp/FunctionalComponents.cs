@@ -19,26 +19,26 @@ partial class BaseCSharpRenderer
 
         using var _ = StringBuilder.Pooled(out var parameters);
 
-        for (var i = 0; i < state.Parameters.Count; i++)
+        for (var i = 0; i < state.Properties.Count; i++)
         {
-            var parameter = state.Parameters[i];
+            var parameter = state.Properties[i];
             var parameterSymbol = state.Symbol.Parameters[i];
 
             var parameterValue = state.GetPropertyValue(parameter);
 
-            if (parameterValue.IsNone)
-            {
-                if (!parameter.IsOptional)
-                {
-                    bag.Add(
-                        state.ElementIdentifierTextSpanOrBetter.Report(
-                            Diagnostic.RequiredPropertyNotSpecified(functionalComponent, parameter)
-                        )
-                    );
-                }
-
-                continue;
-            }
+            // if (parameterValue.IsNone)
+            // {
+            //     if (!parameter.IsOptional)
+            //     {
+            //         bag.Add(
+            //             state.ElementIdentifierTextSpanOrBetter.Report(
+            //                 Diagnostic.RequiredPropertyNotSpecified(functionalComponent, parameter)
+            //             )
+            //         );
+            //     }
+            //
+            //     continue;
+            // }
 
             var result = BuildPropertyValue(parameterSymbol.Type, parameterValue);
 
@@ -63,183 +63,110 @@ partial class BaseCSharpRenderer
             ComponentPropertyValue propertyValue
         )
         {
-            var property = propertyValue.Property;
+            var isCollection = false;
+            var innerSymbol = typeSymbol;
 
-            switch (propertyValue)
+            if (
+                !typeSymbol.Equals(context.CompilationProvider.String!) &&
+                typeSymbol.TryGetEnumerableType(out var inner)
+            )
             {
-                case ComponentPropertyValue.Literal
-                    or ComponentPropertyValue.Interpolation
-                    or ComponentPropertyValue.None
-                    when (property.Kind & ComponentPropertyValueKind.SyntaxValue) > 0:
-                    return GetGeneratorForSymbol(
-                            context.CompilationProvider,
-                            typeSymbol
-                        )
-                        .Render(
-                            context,
-                            propertyValue,
-                            cancellationToken
-                        );
-                case ComponentPropertyValue.Component { GraphNode: var graphNode }
-                    when property.Kind.HasFlag(ComponentPropertyValueKind.Component):
-                    return context
-                        .RenderGraphNode(
-                            graphNode,
-                            new(new(typeSymbol)),
-                            cancellationToken
-                        )
-                        .Map(x => x.Source);
-
-                case ComponentPropertyValue.Many many
-                    when property.Kind.HasFlag(ComponentPropertyValueKind.Many):
-                {
-                    if (many.AsSingle is { } single)
-                    {
-                        return BuildPropertyValue(typeSymbol, single);
-                    }
-
-                    var innerKind = many.Kind ^ ComponentPropertyValueKind.Many;
-                    var allowed = innerKind & property.Kind;
-
-                    ICSharpTypeSymbol? innerSymbol = null;
-
-                    var isEnumerable = !typeSymbol.Equals(context.CompilationProvider.String!) &&
-                                       typeSymbol.TryGetEnumerableType(out innerSymbol);
-
-                    innerSymbol ??= typeSymbol;
-
-                    if ((allowed & ComponentPropertyValueKind.SingleSyntaxValue) == allowed)
-                    {
-                        if (!isEnumerable)
-                        {
-                            return GetGeneratorForSymbol(
-                                    context.CompilationProvider,
-                                    typeSymbol
-                                )
-                                .Render(
-                                    context,
-                                    propertyValue,
-                                    cancellationToken
-                                );
-                        }
-
-                        using var resultBuilder = Result<string>.Builder;
-                        using var _ = StringBuilder.Pooled(out var sb);
-
-                        foreach (var innerValue in many.Values)
-                        {
-                            if (
-                                innerValue.Kind is ComponentPropertyValueKind.None ||
-                                (innerValue.Kind & ComponentPropertyValueKind.SingleSyntaxValue) == innerValue.Kind
-                            )
-                            {
-                                if (
-                                    GetGeneratorForSymbol(
-                                        context.CompilationProvider,
-                                        innerSymbol
-                                    )
-                                    .Render(
-                                        context,
-                                        propertyValue,
-                                        cancellationToken
-                                    )
-                                    .TryUnwrap(resultBuilder, out var source)
-                                )
-                                {
-                                    if (sb.Length > 0) sb.AppendLine(",");
-
-                                    sb.Append(source);
-                                }
-
-                                continue;
-                            }
-
-                            resultBuilder.AddDiagnostic(
-                                Diagnostic
-                                    .InvalidPropertyValue(
-                                        innerValue,
-                                        ComponentPropertyValueKind.SingleSyntaxValue
-                                    )
-                                    .At(innerValue)
-                            );
-                        }
-
-                        if (sb.Length is 0) return resultBuilder.WithValue("[]").Build();
-
-                        return resultBuilder
-                            .WithValue(
-                                $"""
-                                 [
-                                     {sb.ToString().WithNewlinePadding(4)}
-                                 ]
-                                 """
-                            )
-                            .Build();
-                    }
-
-                    if (allowed is ComponentPropertyValueKind.Component)
-                    {
-                        return BuildManyComponents(many, typeSymbol);
-                    }
-
-                    // bad configuration
-                    return Diagnostic
-                        .InvalidPropertyValue(
-                            propertyValue,
-                            allowed
-                        )
-                        .At(propertyValue);
-                }
-
-                default:
-                    return Diagnostic
-                        .InvalidPropertyValue(propertyValue)
-                        .At(propertyValue);
+                isCollection = true;
+                innerSymbol = inner;
             }
-        }
 
-        Result<string> BuildManyComponents(ComponentPropertyValue.Many many, ICSharpTypeSymbol symbol)
-        {
-            using var resultBuilder = Result<string>.Builder;
             using var _ = StringBuilder.Pooled(out var sb);
+            using var bag = PooledDiagnosticBag.Get();
+            var valueCount = 0;
+            var componentOptions = new ComponentOptions(
+                new RendererTypingContext(typeSymbol)
+            );
 
-            foreach (var innerValue in many.Values)
+            foreach (var value in propertyValue.AsFlattened)
             {
-                // should always be a component
-                if (innerValue is not ComponentPropertyValue.Component { GraphNode: var graphNode })
-                    throw new InvalidOperationException(
-                        "Parity between Many.Kind does not match its values"
-                    );
-
-                if (sb.Length > 0)
-                    sb.AppendLine(",");
-                if (
-                    context
-                    .RenderGraphNode(
-                        graphNode,
-                        new(new(symbol)),
-                        cancellationToken
-                    )
-                    .TryUnwrap(resultBuilder, out var renderedComponent)
-                )
+                switch (value)
                 {
-                    sb.Append(renderedComponent.Source);
+                    case ComponentPropertyValue.Component component:
+                        Append(context
+                            .RenderGraphNode(
+                                component.GraphNode,
+                                componentOptions,
+                                cancellationToken
+                            )
+                            .AsSource
+                            .Unwrap(bag)
+                        );
+                        break;
+                    case ComponentPropertyValue.Literal
+                        or ComponentPropertyValue.Interpolation
+                        or ComponentPropertyValue.None:
+                        Append(
+                            GetGeneratorForSymbol(context.CompilationProvider, innerSymbol)
+                                .Render(context, value, cancellationToken)
+                                .Unwrap(bag)
+                        );
+                        break;
                 }
             }
 
-            if (sb.Length is 0)
-                return resultBuilder.WithValue("[]").Build();
+            if (isCollection)
+            {
+                if (valueCount is 0)
+                {
+                    if (propertyValue.Property.IsOptional)
+                        return ($"default", bag.ToCollection());
+                    
+                    return ("[]", bag.ToCollection());
+                }
 
-            return resultBuilder
-                .WithValue(
+                return (
                     $"""
+
                      [
                          {sb.ToString().WithNewlinePadding(4)}
                      ]
-                     """
-                )
-                .Build();
+                     """,
+                    bag.ToCollection()
+                );
+            }
+
+            switch (valueCount)
+            {
+                case 0:
+                    if (propertyValue.Property.IsOptional)
+                        return ("default", bag.ToCollection());
+                
+                    return Result<string>.FromDiagnostics([
+                        Diagnostic
+                            .RequiredPropertyNotSpecified(functionalComponent, propertyValue.Property)
+                            .At(state.ElementIdentifierTextSpanOrBetter),
+                        ..bag.ToCollection()
+                    ]);
+                case 1:
+                    return (sb.ToString(), bag.ToCollection());
+                default:
+                    return Result<string>.FromDiagnostics([
+                        Diagnostic
+                            .TooManyPropertyValues(propertyValue.Property)
+                            .At(propertyValue),
+                        ..bag.ToCollection()
+                    ]);
+            }
+
+            void Append(string? value)
+            {
+                if (string.IsNullOrWhiteSpace(value))
+                    return;
+
+                valueCount++;
+
+                if (sb.Length > 0)
+                    sb.AppendLine(",");
+
+                sb.Append(value);
+            }
         }
+
 
         static void AppendParameter(StringBuilder builder, string name, string value)
         {

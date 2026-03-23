@@ -12,6 +12,9 @@ public sealed class ComponentProperty : IEquatable<ComponentProperty>
         isOptional: true
     );
 
+    public bool AllowsSyntaxOnly
+        => (ComponentPropertyValueKind.SyntaxValue & Kind) == Kind;
+
     public string Name { get; }
     public ComponentPropertyValueKind Kind { get; }
     public IImmutableSet<string> Aliases => _aliases ??= [];
@@ -21,7 +24,7 @@ public sealed class ComponentProperty : IEquatable<ComponentProperty>
     public ComponentPropertyFlags Flags { get; }
 
     public bool IsFromChildren => Flags.HasFlag(ComponentPropertyFlags.FromChildren);
-    
+
     public bool ValueCardinalityOfOne => !Kind.HasFlag(ComponentPropertyValueKind.Many);
     public bool ValueCardinalityOfMany => Kind.HasFlag(ComponentPropertyValueKind.Many);
 

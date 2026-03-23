@@ -41,15 +41,6 @@ public static partial class Validators
                 )
             );
         }
-
-        // if (!allowsChildrenInCX && !isParent && element.Children.Count > 0)
-        // {
-        //     bag.Add(
-        //         element.Children.Report(
-        //             Diagnostic.ComponentDoesntAllowChildren(component)
-        //         )
-        //     );
-        // }
     }
 
     public static void ReportDiagnosticsForUnknownProperties(
@@ -62,7 +53,7 @@ public static partial class Validators
 
         foreach (var attribute in element.Attributes)
         {
-            if (component.Properties.All(x => !x.MatchesName(attribute.Identifier)))
+            if (!state.TryGetProperty(attribute.Identifier, out _))
             {
                 bag.Add(
                     attribute.Report(
@@ -79,7 +70,7 @@ public static partial class Validators
         IDiagnosticBag bag
     )
     {
-        foreach (var property in component.Properties)
+        foreach (var property in state.Properties)
         {
             ValidateProperty(component, state.GetPropertyValue(property), bag);
         }
