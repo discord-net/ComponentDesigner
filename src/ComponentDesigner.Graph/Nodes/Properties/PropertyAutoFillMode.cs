@@ -1,9 +1,8 @@
 ﻿namespace ComponentDesigner.Nodes;
 
-public enum PropertyAutoFillMode
+[Flags]
+public enum ComponentPropertyFlags
 {
-    None,
-    String,
-    InlineComponent,
-    Interpolation
+    None = 0,
+    FromChildren = 1 << 0,
 }

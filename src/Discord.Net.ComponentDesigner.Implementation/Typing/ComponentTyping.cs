@@ -92,12 +92,12 @@ public sealed class ComponentTyping : IComponentTypingProvider
     {
         ComponentBuilderKind.SelectMenuOptionBuilder => (asCollection, target.IsCollection) switch
         {
-            (_, false) => source.Value,
-            (true, true) => $"..{source.Value}",
-            (false, true) => (
+            (true, false) => (
                 $"{source}.Single()",
                 Diagnostic.UsingRuntimeValidation("IEnumerable.Single()").At(source)
-            )
+            ),
+            (true, true) => $"..{source.Value}",
+            (false, _) => source.Value,
         },
         _ => Diagnostic
             .NoConversionForComponents(

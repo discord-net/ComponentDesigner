@@ -1,5 +1,6 @@
 ﻿using System.Text.RegularExpressions;
 using ComponentDesigner;
+using ComponentDesigner.Nodes;
 using ComponentDesigner.Parser;
 using ComponentDesigner.Util;
 
@@ -17,80 +18,100 @@ public sealed class EmojiGenerator : CSharpValueGenerator
     public static EmojiGenerator Get(bool allowNullable)
         => Memoize.Of(allowNullable, static a => new EmojiGenerator(a));
 
-    protected override Result<string> RenderScalar(
+    protected override Result<string> RenderLiteral(
         IRendererContext context,
-        CSharpValueGeneratorTarget target,
-        CXToken token,
-        CSharpValueGeneratorOptions options,
+        ComponentPropertyValue.Literal literalValue,
+        string literal,
         CancellationToken cancellationToken = default
-    ) => FromText(context, token.TextSpan, token.Value);
+    ) => FromText(context, literalValue);
 
     protected override Result<string> RenderInterpolation(
         IRendererContext context,
-        CSharpValueGeneratorTarget target,
-        CXToken token,
-        IInterpolationInfo info,
-        CSharpValueGeneratorOptions options,
+        ComponentPropertyValue.Interpolation interpolationValue,
+        IInterpolationInfo interpolationInfo,
         CancellationToken cancellationToken = default
     )
     {
-        if (info.ConstantValue.IsSpecified)
+        if (interpolationInfo.ConstantValue.IsSpecified)
         {
-            if (info.ConstantValue.Value is null)
-            {
-                if (_allowNullable) return "null";
+            if (interpolationInfo.ConstantValue.Value is { } value)
+                return FromText(context, value.ToString().SourcedAt(interpolationValue));
 
-                return Diagnostic.NullValueNotAllowed.At(token);
-            }
+            if (_allowNullable) return "null";
 
-            if (info.ConstantValue.Value is string str) return FromText(context, token.TextSpan, str);
+            return Diagnostic
+                .NullValueNotAllowed
+                .At(interpolationValue);
         }
 
-        return context.CompilationProvider
-            .IEmote(info.TextSpan, cancellationToken)
-            .Map(emoteSymbol =>
-            {
-                if (
-                    context.CompilationProvider.HasImplicitConversionBetween(
-                        info.Symbol,
-                        emoteSymbol
-                    )
-                )
-                {
-                    return Result<string>.FromValue(context.GetReferenceToDesignerValue(info, emoteSymbol));
-                }
+        var emoteSymbol = context.CompilationProvider
+            .IEmote(interpolationValue, cancellationToken)
+            .GetValueOrDefault();
 
-                return Diagnostic.TypeMismatch(emoteSymbol, info.Symbol!).At(token.TextSpan);
-            });
+        if (
+            context.CompilationProvider.HasImplicitConversionBetween(
+                interpolationInfo.Symbol,
+                emoteSymbol
+            )
+        )
+        {
+            return context.GetReferenceToDesignerValue(interpolationInfo, interpolationInfo.Symbol);
+        }
+
+        return Diagnostic
+            .TypeMismatch(
+                emoteSymbol,
+                interpolationInfo.Symbol
+            )
+            .At(interpolationValue);
     }
 
-    private static Result<string> FromText(
+    private Result<string> FromText(
         IRendererContext context,
-        CXTextSpan textSpan,
-        string text
+        SourcedValue<string> text
     )
     {
-        var stringForm = StringGenerator.ToCSharpString(text);
+        if (text.Value is "null")
+        {
+            if (_allowNullable) return "null";
 
-        if (UnicodeEmojiRegex.IsMatch(text))
-            return $"global::Discord.Emoji.Parse({stringForm})";
+            return Diagnostic
+                .NullValueNotAllowed
+                .At(text);
+        }
 
-        if (DiscordEmoteRegex.IsMatch(text))
-            return $"global::Discord.Emote.Parse({stringForm})";
+        
+        return StringGenerator
+            .ToCSharpString(context, text.Value)
+            .Map(ToSource);
 
-        var varName = context.CreateVariable("emoji");
+        Result<string> ToSource(string stringForm)
+        {
+            if (UnicodeEmojiRegex.IsMatch(text))
+                return $"global::Discord.Emoji.Parse({stringForm})";
 
-        return (
-            $"""
-             global::Discord.Emoji.TryParse({stringForm}, out var {varName})
-                ? (global::Discord.IEmote){varName}
-                : global::Discord.Emote.Parse({stringForm})
-             """,
-            Diagnostic
-                .ValueCouldNotBeValidateAndARuntimeValidationCheckWillOccur("Emoji", text, "Emoji.Parse/Emote.Parse")
-                .At(textSpan)
-        );
+            if (DiscordEmoteRegex.IsMatch(text))
+                return $"global::Discord.Emote.Parse({stringForm})";
+
+            var varName = context.CreateVariable("emoji");
+
+            return (
+                $"""
+                 global::Discord.Emoji.TryParse({stringForm}, out var {varName})
+                    ? (global::Discord.IEmote){varName}
+                    : global::Discord.Emote.Parse({stringForm})
+                 """,
+                Diagnostic
+                    .ValueCouldNotBeValidateAndARuntimeValidationCheckWillOccur(
+                        "Emoji",
+                        text,
+                        "Emoji.Parse/Emote.Parse"
+                    )
+                    .At(text)
+            );
+        }
     }
+
 
     private static readonly Regex UnicodeEmojiRegex = new(
         @"^(?>(?>[\uD800-\uDBFF][\uDC00-\uDFFF]\p{M}*){1,5}|\p{So})$",

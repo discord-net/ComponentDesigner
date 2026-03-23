@@ -10,35 +10,41 @@ partial class Validators
         IComponentContext context,
         MediaGalleryComponentNode gallery,
         ComponentState state,
-        IDiagnosticBag bag
+        IDiagnosticBag bag,
+        CancellationToken cancellationToken
     )
     {
-        ValidateElementStructure(gallery, state, bag);
-        ValidateProperty(gallery, state.GetPropertyValue(gallery.Id), bag);
-        ReportDiagnosticsForUnknownProperties(gallery, state, bag);
-        
-        if (state is { HasGraphChildren: true, Children.Count: > MEDIA_GALLERY_MAX_ITEMS })
+        ValidateGenericComponent(gallery, state, bag);
+
+        var items = state.GetPropertyValue(gallery.Items);
+
+        if (
+            !context.Implementation.TryAnalyzeNumberOfValues(
+                context,
+                gallery,
+                items,
+                cancellationToken,
+                out var numberOfItems
+            )
+        )
+        {
+            numberOfItems = items.AsFlattened.OfType<ComponentPropertyValue.Component>().Count();
+        }
+
+        if (numberOfItems.Upper > MEDIA_GALLERY_MAX_ITEMS)
         {
             bag.Add(
                 Diagnostic
                     .TooManyChildren(gallery, MEDIA_GALLERY_MAX_ITEMS)
-                    .At(
-                        CXTextSpan.FromBounds(
-                            state.Children[MEDIA_GALLERY_MAX_ITEMS].State.TextSpan.Start,
-                            state.Children[state.Children.Count - 1].State.TextSpan.End
-                        )
-                    )
+                    .At(state.ElementIdentifierTextSpanOrBetter)
             );
-
-            return;
         }
-
-        foreach (var child in state.Children)
+        foreach (var child in items.AsFlattened.OfType<ComponentPropertyValue.Component>())
         {
-            if (!IsValidChild(child.Component))
+            if (!IsValidChild(child.GraphNode.Component))
             {
                 bag.Add(
-                    Diagnostic.InvalidChildOfComponent(gallery, child.Component).At(child.State.TextSpan)
+                    Diagnostic.InvalidChildOfComponent(gallery, child.GraphNode.Component).At(child)
                 );
             }
         }
@@ -54,5 +60,6 @@ partial class Validators
         IDiagnosticBag bag
     )
     {
+        ValidateGenericComponent(item, state, bag);
     }
 }

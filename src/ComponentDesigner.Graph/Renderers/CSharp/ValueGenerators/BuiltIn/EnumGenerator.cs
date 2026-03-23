@@ -28,7 +28,7 @@ public sealed class EnumGenerator : CSharpValueGenerator
                 x.Type.Equals(enumSymbol) &&
                 x is { IsStatic: true, IsReadOnly: true, IsPublic: true }
             )
-            .ToDictionary(x => x.Name);
+            .ToDictionary(x => x.Name.ToLowerInvariant());
     }
 
     public static EnumGenerator Get(
@@ -100,7 +100,7 @@ public sealed class EnumGenerator : CSharpValueGenerator
 
     private Result<string> FromText(SourcedValue<string> text)
     {
-        if (_fields.TryGetValue(text.Value, out var field))
+        if (_fields.TryGetValue(text.Value.ToLowerInvariant(), out var field))
             return RenderField(field);
 
         return Diagnostic

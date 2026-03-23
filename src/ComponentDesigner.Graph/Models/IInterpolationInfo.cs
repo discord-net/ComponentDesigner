@@ -1,9 +1,8 @@
 ﻿namespace ComponentDesigner;
 
-public interface IInterpolationInfo : IEquatable<IInterpolationInfo>
+public interface IInterpolationInfo : IEquatable<IInterpolationInfo>, ISourceLocatable
 {
     int Id { get; }
-    CXTextSpan TextSpan { get; }
     ICSharpTypeSymbol? Symbol { get; }
     Optional<object?> ConstantValue { get; }
 }

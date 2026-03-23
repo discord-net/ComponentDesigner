@@ -1,25 +1,38 @@
-﻿using ComponentDesigner.Parser;
+﻿using System.Diagnostics.CodeAnalysis;
+using ComponentDesigner.Parser;
 using ComponentDesigner.Util;
 
 namespace ComponentDesigner.Nodes;
 
-public sealed record FunctionalState(
-    GraphNode GraphNode,
-    CXElement CXNode,
-    ICSharpMethodSymbol Symbol,
-    EquatableArray<ComponentProperty> Parameters,
-    ComponentProperty? ChildrenParameter
-) : ComponentState(GraphNode, CXNode)
+public sealed record FunctionalState : ComponentState
 {
+    public ICSharpMethodSymbol Symbol { get; init; }
+    public IReadOnlyList<ComponentProperty> Parameters { get; init; }
+    public ComponentProperty? ChildrenParameter { get; init; }
+
     public int SymbolDependencyKey => _dependencyKey ??= MakeSymbolDependencyKey();
 
-    public new CXElement CXNode { get; init; } = CXNode;
+    public new CXElement CXNode { get; init; }
 
     private int? _dependencyKey;
 
-    public static Result<FunctionalState> FromSymbol(
-        ComponentNodeInitializationContext? initializationContext,
-        IComponentContext context,
+    public FunctionalState(
+        CXElement element,
+        ICSharpMethodSymbol symbol,
+        IReadOnlyList<ComponentProperty> parameters,
+        ComponentProperty? childrenParameter,
+        ComponentNodeInitializationContext context,
+        CancellationToken cancellationToken
+    ) : base(context, cancellationToken)
+    {
+        CXNode = element;
+        Symbol = symbol;
+        Parameters = parameters;
+        ChildrenParameter = childrenParameter;
+    }
+
+    public static Result<FunctionalState> CreateFromSymbol(
+        ComponentNodeInitializationContext initializationContext,
         ICSharpMethodSymbol symbol,
         GraphNode graphNode,
         CXElement element,
@@ -27,15 +40,23 @@ public sealed record FunctionalState(
         CancellationToken cancellationToken
     )
     {
-        if (context.ComponentTypingProvider is null)
+        if (initializationContext.ComponentTypingProvider is null)
             return Diagnostic
-                .TypedComponentsAreNotSupported(context.Implementation)
+                .TypedComponentsAreNotSupported(initializationContext.GraphContext.Implementation)
                 .At(element);
 
-        if (!context.ComponentTypingProvider.IsValidComponentType(context, symbol.ReturnType, cancellationToken))
+        if (
+            !initializationContext.ComponentTypingProvider.IsValidComponentType(
+                initializationContext.GraphContext,
+                symbol.ReturnType,
+                cancellationToken
+            )
+        )
+        {
             return element.IdentifierTextSpanOrElementTextSpan.Report(
                 Diagnostic.FunctionalComponentDoesntReturnAComponentType(symbol)
             );
+        }
 
         using var _ = ObjectPool<List<ComponentProperty>>.GetScoped(out var properties);
         properties.Clear();
@@ -53,7 +74,7 @@ public sealed record FunctionalState(
             var parameterProperty = new ComponentProperty(
                 parameter.Name,
                 isOptional: parameter.HasDefaultValue,
-                requiresValue: !parameter.Type.Equals(context.CompilationProvider.Boolean!),
+                requiresValue: !parameter.Type.Equals(initializationContext.CompilationProvider.Boolean!),
                 kind: ComponentPropertyValueKind.Any
             );
 
@@ -79,24 +100,25 @@ public sealed record FunctionalState(
         }
 
         var state = new FunctionalState(
-            graphNode,
             element,
             symbol,
             [..properties],
-            childrenParameter
+            childrenParameter,
+            initializationContext,
+            cancellationToken
         );
 
         if (childrenParameter is not null && childrenParameterSymbol is not null)
         {
             if (
-                context.ComponentTypingProvider.IsValidComponentType(
-                    context,
+                initializationContext.ComponentTypingProvider.IsValidComponentType(
+                    initializationContext.GraphContext,
                     childrenParameterSymbol.Type,
                     cancellationToken
                 )
             )
             {
-                initializationContext?.PushAsChildren(element.Children, cancellationToken);
+                initializationContext.PushAsChildren(element.Children, cancellationToken);
 
                 state.SetPropertyValueToChildren(childrenParameter);
             }
@@ -118,18 +140,26 @@ public sealed record FunctionalState(
                         continue;
                     }
 
-                    values.Add(cxValue);
+                    values.Add(
+                        state.BuildPropertyValueFromSyntax(
+                            initializationContext,
+                            childrenParameter,
+                            state.ChildSource,
+                            cxValue,
+                            cxValue.TextSpan,
+                            cancellationToken
+                        )
+                    );
                 }
 
-                if (values.Count is 1)
-                    state.SetPropertyValue(childrenParameter, values[0]);
-                else if (values.Count > 1)
+                if (values.Count > 0)
                 {
                     state.SetPropertyValue(
                         childrenParameter,
                         new ComponentPropertyValue.Many(
+                            state.ChildSource,
                             childrenParameter,
-                            [..values.Select(x => new ComponentPropertyValue.SyntaxValue(childrenParameter, x))]
+                            [..values]
                         )
                     );
                 }
@@ -138,10 +168,18 @@ public sealed record FunctionalState(
         else
         {
             // push children anyway, let the validator handle diagnostics
-            initializationContext?.PushAsChildren(element.Children, cancellationToken);
+            initializationContext.PushAsChildren(element.Children, cancellationToken);
         }
 
         return state;
+    }
+
+    protected override bool TryGetProperty(string name, [MaybeNullWhen(false)] out ComponentProperty property)
+    {
+        property = Parameters
+            .FirstOrDefault(x => x.MatchesName(name));
+
+        return property is not null || base.TryGetProperty(name, out property);
     }
 
     private static bool IsChildParameter(ICSharpParameterSymbol symbol)

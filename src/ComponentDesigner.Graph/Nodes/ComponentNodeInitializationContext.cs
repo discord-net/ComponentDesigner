@@ -6,6 +6,7 @@ public readonly struct ComponentNodeInitializationContext
 {
     public ICXModel CX => GraphContext.CX;
     public ICompilationProvider CompilationProvider => GraphContext.CompilationProvider;
+    public IComponentTypingProvider? ComponentTypingProvider => GraphContext.ComponentTypingProvider;
 
     public readonly GraphNode GraphNode;
     public readonly ICXNode? CXNode;

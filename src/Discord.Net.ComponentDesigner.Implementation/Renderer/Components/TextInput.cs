@@ -16,7 +16,7 @@ partial class DiscordNetRenderer
         .Combine(
             RenderPropertiesAsParameters(
                 context, state, cancellationToken,
-                ("id", textInput.Id, CSharpValueGenerator.NullableInteger),
+                ("id", textInput.Id, CSharpValueGenerator.NullableInt32),
                 ("customId", textInput.CustomId, CSharpValueGenerator.String),
                 ("style", textInput.Style,
                     CSharpValueGenerator.TextInputStyle(
@@ -25,8 +25,8 @@ partial class DiscordNetRenderer
                         cancellationToken
                     )
                 ),
-                ("minLength", textInput.MinLength, CSharpValueGenerator.NullableInteger),
-                ("maxLength", textInput.MaxLength, CSharpValueGenerator.NullableInteger),
+                ("minLength", textInput.MinLength, CSharpValueGenerator.NullableInt32),
+                ("maxLength", textInput.MaxLength, CSharpValueGenerator.NullableInt32),
                 ("required", textInput.Required, CSharpValueGenerator.NullableBoolean),
                 ("value", textInput.Value, CSharpValueGenerator.NullableString),
                 ("placeholder", textInput.Placeholder, CSharpValueGenerator.NullableString)
@@ -34,5 +34,6 @@ partial class DiscordNetRenderer
             (symbol, parameters) => new RenderedComponent(
                 $"new {symbol.ToQualifiedName()}({parameters})"
             )
-        );
+        )
+        .Map(GetConverterFromOptions(context, state, typingContext, cancellationToken));
 }

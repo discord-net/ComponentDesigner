@@ -56,7 +56,7 @@ public abstract class ComponentNode<TState> :
 
         return _propertyLookupMap.TryGetValue(name, out property);
     }
-    
+
     public abstract TState? Initialize(
         ComponentNodeInitializationContext context,
         IDiagnosticBag diagnostics,
@@ -67,7 +67,8 @@ public abstract class ComponentNode<TState> :
         TState state,
         IComponentContext context,
         IDiagnosticBag diagnostics,
-        CancellationToken cancellationToken = default) => state;
+        CancellationToken cancellationToken = default
+    ) => state;
 
     public virtual void RegisterGraphNode(
         ComponentGraphInitializationContext context,
@@ -136,7 +137,7 @@ public abstract class ComponentNode<TState> :
         CancellationToken cancellationToken
     )
     {
-        if(state is TState typedState) Validate(context, typedState, bag, cancellationToken);
+        if (state is TState typedState) Validate(context, typedState, bag, cancellationToken);
     }
 
     Result<RenderedComponent> IComponentNode.Render(

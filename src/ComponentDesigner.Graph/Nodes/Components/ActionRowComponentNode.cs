@@ -20,7 +20,8 @@ public class ActionRowComponentNode : ComponentNode
             Id = ComponentProperty.Id,
             Components = new(
                 "components",
-                kind: ComponentPropertyValueKind.ManyComponents
+                kind: ComponentPropertyValueKind.ManyComponents,
+                flags: ComponentPropertyFlags.FromChildren
             )
         ];
     }

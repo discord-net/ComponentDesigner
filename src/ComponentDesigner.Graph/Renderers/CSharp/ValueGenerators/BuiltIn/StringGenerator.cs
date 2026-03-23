@@ -49,46 +49,63 @@ public sealed class StringGenerator : CSharpValueGenerator
 
     private readonly ref struct PartsBuilder : IDisposable
     {
+        public bool HasInterpolations => Interpolations.Count > 0;
         public int Count => Sequence.Count;
-        public IReadOnlyList<ContainsTrivia<string>> Literals => _literals;
-        public IReadOnlyList<ContainsTrivia<IInterpolationInfo>> Interpolations => _interpolations;
-        public IReadOnlyList<bool> Sequence => _sequence;
 
-        private readonly List<ContainsTrivia<string>> _literals;
-        private readonly List<ContainsTrivia<IInterpolationInfo>> _interpolations;
-        private readonly List<bool> _sequence;
+        public List<ContainsTrivia<string>> Literals { get; }
+        public List<ContainsTrivia<IInterpolationInfo>> Interpolations { get; }
+        public List<bool> Sequence { get; }
 
         public PartsBuilder()
         {
-            _literals = ObjectPool<List<ContainsTrivia<string>>>.Get();
-            _interpolations = ObjectPool<List<ContainsTrivia<IInterpolationInfo>>>.Get();
-            _sequence = ObjectPool<List<bool>>.Get();
+            Literals = ObjectPool<List<ContainsTrivia<string>>>.Get();
+            Interpolations = ObjectPool<List<ContainsTrivia<IInterpolationInfo>>>.Get();
+            Sequence = ObjectPool<List<bool>>.Get();
 
-            _literals.Clear();
-            _interpolations.Clear();
-            _sequence.Clear();
+            Literals.Clear();
+            Interpolations.Clear();
+            Sequence.Clear();
         }
 
         public bool IsInterpolationAt(int index)
-            => _sequence[index];
+            => Sequence[index];
 
         public void Add(ContainsTrivia<string> part)
         {
-            _literals.Add(part);
-            _sequence.Add(false);
+            Literals.Add(part);
+            Sequence.Add(false);
         }
 
         public void Add(ContainsTrivia<IInterpolationInfo> part)
         {
-            _interpolations.Add(part);
-            _sequence.Add(true);
+            Interpolations.Add(part);
+            Sequence.Add(true);
         }
 
         public void Dispose()
         {
-            ObjectPool<List<ContainsTrivia<string>>>.Return(_literals);
-            ObjectPool<List<ContainsTrivia<IInterpolationInfo>>>.Return(_interpolations);
-            ObjectPool<List<bool>>.Return(_sequence);
+            ObjectPool<List<ContainsTrivia<string>>>.Return(Literals);
+            ObjectPool<List<ContainsTrivia<IInterpolationInfo>>>.Return(Interpolations);
+            ObjectPool<List<bool>>.Return(Sequence);
+        }
+    }
+
+    public static Result<string> ToCSharpString(IComponentContext context, string text)
+    {
+        return ToCSharpString(
+            context,
+            text,
+            ExtractParts
+        );
+
+        static void ExtractParts(
+            IComponentContext context,
+            string value,
+            ref readonly PartsBuilder parts,
+            IDiagnosticBag bag
+        )
+        {
+            parts.Add(value.WithNoTrivia);
         }
     }
 
@@ -233,6 +250,8 @@ public sealed class StringGenerator : CSharpValueGenerator
     {
         if (parts.Count is 0) return "string.Empty";
 
+        TrimLeadingAndTrailingTrivia(in parts);
+        
         GetStringParameters(
             in parts,
             out var quoteCount,
@@ -264,35 +283,7 @@ public sealed class StringGenerator : CSharpValueGenerator
                 trailingTrivia = literal.TrailingTrivia.WhitespaceOnly();
                 part = literal.Value;
             }
-
-            if (i is 0)
-            {
-                // try to remove trivia leading up to the first newline
-                for (var j = 0; j < leadingTrivia.Count; j++)
-                {
-                    var trivia = leadingTrivia[j];
-
-                    if (trivia is not CXTrivia.Token { Kind: CXTriviaTokenKind.Newline }) continue;
-
-                    // remove all trivia leading up to the newline
-                    leadingTrivia = leadingTrivia.RemoveRange(0, j + 1);
-                    break;
-                }
-            }
-            else if (i == parts.Count - 1)
-            {
-                // try to remove trivia after the last newline
-                for (var j = trailingTrivia.Count - 1; j >= 0; j--)
-                {
-                    var trivia = trailingTrivia[j];
-                    if (trivia is not CXTrivia.Token { Kind: CXTriviaTokenKind.Newline }) continue;
-
-                    // remove all trivia after the newline
-                    trailingTrivia = trailingTrivia.RemoveRange(j, trailingTrivia.Count - 1);
-                    break;
-                }
-            }
-
+            
             sb.Append(leadingTrivia);
 
             switch (part)
@@ -320,21 +311,102 @@ public sealed class StringGenerator : CSharpValueGenerator
 
         sb.Clear();
 
-        if (parts.Interpolations.Count > 0 && isMultiline)
+        if (parts.HasInterpolations && isMultiline)
             innerStringValue = innerStringValue.Indent(dollarCount);
 
-        sb.Append('$', dollarCount);
+        if (parts.HasInterpolations)
+            sb.Append('$', dollarCount);
+
         sb.Append('"', quoteCount);
 
         if (isMultiline) sb.AppendLine();
 
         sb.Append(innerStringValue);
 
-        if (isMultiline) sb.AppendLine();
+        if (isMultiline)
+        {
+            sb.AppendLine();
+            
+            if (parts.HasInterpolations)
+                sb.Append(' ', dollarCount);
+        }
 
-        sb.Append(' ', dollarCount).Append('"', quoteCount);
+        sb.Append('"', quoteCount);
 
         return sb.ToString();
+
+        
+        static void TrimLeadingAndTrailingTrivia(
+            scoped ref readonly PartsBuilder parts
+        )
+        {
+            if (parts.Count is 0) return;
+
+            if (parts.IsInterpolationAt(0))
+            {
+                var leading = parts.Interpolations[0];
+                TrimLeading(ref leading);
+                parts.Interpolations[0] = leading;
+            }
+            else
+            {
+                var leading = parts.Literals[0];
+                TrimLeading(ref leading);
+                parts.Literals[0] = leading;
+            }
+            
+            if (parts.IsInterpolationAt(parts.Count - 1))
+            {
+                var trailing = parts.Interpolations[parts.Interpolations.Count - 1];
+                TrimTrailing(ref trailing);
+                parts.Interpolations[parts.Interpolations.Count - 1] = trailing;
+            }
+            else
+            {
+                var trailing = parts.Literals[parts.Literals.Count - 1];
+                TrimTrailing(ref trailing);
+                parts.Literals[parts.Literals.Count - 1] = trailing;
+            }
+
+            static void TrimLeading<T>(ref ContainsTrivia<T> containsTrivia)
+            {
+                // try to remove trivia leading up to the first newline
+                for (var j = 0; j < containsTrivia.LeadingTrivia.Count; j++)
+                {
+                    var trivia = containsTrivia.LeadingTrivia[j];
+
+                    if (trivia is not CXTrivia.Token { Kind: CXTriviaTokenKind.Newline }) continue;
+
+                    // remove all trivia leading up to the newline
+
+                    containsTrivia = containsTrivia with
+                    {
+                        LeadingTrivia = containsTrivia.LeadingTrivia.RemoveRange(0, j + 1)
+                    };
+
+                    break;
+                }
+            }
+            
+            static void TrimTrailing<T>(ref ContainsTrivia<T> containsTrivia)
+            {
+                // try to remove trivia after the last newline
+                for (var j = containsTrivia.TrailingTrivia.Count - 1; j >= 0; j--)
+                {
+                    var trivia = containsTrivia.TrailingTrivia[j];
+                    if (trivia is not CXTrivia.Token { Kind: CXTriviaTokenKind.Newline }) continue;
+
+                    // remove all trivia after the newline
+                    containsTrivia = containsTrivia with
+                    {
+                        TrailingTrivia = containsTrivia
+                            .TrailingTrivia
+                            .RemoveRange(j, containsTrivia.TrailingTrivia.Count - j)
+                    };
+                    break;
+                }
+            }
+        }
 
         static void GetStringParameters(
             scoped ref readonly PartsBuilder parts,
@@ -417,7 +489,7 @@ public sealed class StringGenerator : CSharpValueGenerator
             // multi-line string literals must have at least 3 quotes
             if (isMultiline)
                 quoteCount = Math.Max(3, quoteCount);
-            
+
             // can't have only 2 quotes for a string 
             else if (quoteCount is 2)
                 quoteCount = 3;

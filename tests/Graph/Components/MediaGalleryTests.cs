@@ -94,10 +94,14 @@ public sealed class MediaGalleryTests(ITestOutputHelper output) : BaseComponentT
                     items: 
                     [
                         new global::Discord.MediaGalleryItemProperties(
-                            media: new global::Discord.UnfurledMediaItemProperties("1")
+                            media: new global::Discord.UnfurledMediaItemProperties(
+                                "1"
+                            )
                         ),
                         new global::Discord.MediaGalleryItemProperties(
-                            media: new global::Discord.UnfurledMediaItemProperties("2")
+                            media: new global::Discord.UnfurledMediaItemProperties(
+                                "2"
+                            )
                         )
                     ]
                 )
@@ -128,6 +132,10 @@ public sealed class MediaGalleryTests(ITestOutputHelper output) : BaseComponentT
                 AssertDiagnostic(
                     Diagnostic.InvalidChildOfComponent(gallery, container)
                 );
+
+                AssertDiagnostic(
+                    Diagnostic.ComponentRequiresAtLeastOneChild(container)
+                );
             }
         }
     }
@@ -156,7 +164,11 @@ public sealed class MediaGalleryTests(ITestOutputHelper output) : BaseComponentT
                 new global::Discord.MediaGalleryBuilder(
                     items: 
                     [
-                        new global::Discord.MediaGalleryItemProperties(designer.GetValue<global::System.Uri>(0).ToString()),
+                        new global::Discord.MediaGalleryItemProperties(
+                            media: new global::Discord.UnfurledMediaItemProperties(
+                                designer.GetValue<global::System.Uri>(0).ToString()
+                            )
+                        ),
                         designer.GetValue<global::Discord.MediaGalleryItemProperties>(1)
                     ]
                 )
@@ -196,13 +208,25 @@ public sealed class MediaGalleryTests(ITestOutputHelper output) : BaseComponentT
                     items: 
                     [
                         new global::Discord.MediaGalleryItemProperties(
-                            media: new global::Discord.UnfurledMediaItemProperties("https://example.com/image1.png")
+                            media: new global::Discord.UnfurledMediaItemProperties(
+                                "https://example.com/image1.png"
+                            )
                         ),
-                        new global::Discord.MediaGalleryItemProperties(designer.GetValue<global::System.Uri>(0).ToString()),
                         new global::Discord.MediaGalleryItemProperties(
-                            media: new global::Discord.UnfurledMediaItemProperties("https://example.com/image3.png")
+                            media: new global::Discord.UnfurledMediaItemProperties(
+                                designer.GetValue<global::System.Uri>(0).ToString()
+                            )
                         ),
-                        new global::Discord.MediaGalleryItemProperties(designer.GetValue<global::System.Uri>(1).ToString())
+                        new global::Discord.MediaGalleryItemProperties(
+                            media: new global::Discord.UnfurledMediaItemProperties(
+                                "https://example.com/image3.png"
+                            )
+                        ),
+                        new global::Discord.MediaGalleryItemProperties(
+                            media: new global::Discord.UnfurledMediaItemProperties(
+                                designer.GetValue<global::System.Uri>(1).ToString()
+                            )
+                        )
                     ]
                 )
                 """
@@ -248,7 +272,7 @@ public sealed class MediaGalleryTests(ITestOutputHelper output) : BaseComponentT
                 Component<MediaGalleryItemComponentNode>();
                 Component<MediaGalleryItemComponentNode>();
             }
-            
+
             Emits(null);
             {
                 AssertDiagnostic(

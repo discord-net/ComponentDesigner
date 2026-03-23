@@ -13,7 +13,6 @@ public abstract class TestWithDiagnostics(ITestOutputHelper output) : IDisposabl
     {
         _diagnostics.Clear();
         _expectedDiagnostics.Clear();
-        
     }
 
     protected void AssertEmptyDiagnostics()
@@ -27,17 +26,19 @@ public abstract class TestWithDiagnostics(ITestOutputHelper output) : IDisposabl
         {
             if (!_expectedDiagnostics.Contains(diagnostic))
             {
-                output.WriteLine($"{diagnostic.TextSpan}: [{diagnostic.Descriptor.Severity}]: {diagnostic.Descriptor.Title} - {diagnostic.Descriptor.Description}");
+                output.WriteLine(
+                    $"{diagnostic.ToString()}\n{diagnostic.StackTrace}"
+                );
                 _diagnostics.Enqueue(diagnostic);
             }
         }
     }
-    
+
     protected Diagnostic AssertDiagnostic(
         DiagnosticDescriptor descriptor,
         ICXNode node
     ) => AssertDiagnostic(descriptor, node.TextSpan);
-    
+
     protected Diagnostic AssertDiagnostic(
         DiagnosticDescriptor descriptor,
         CXTextSpan? textSpan = null
@@ -62,18 +63,18 @@ public abstract class TestWithDiagnostics(ITestOutputHelper output) : IDisposabl
         var diagnostic = _diagnostics.Dequeue();
 
         AssertDiagnostic(diagnostic, id, title, message, severity, textSpan);
-        
+
         _expectedDiagnostics.Add(diagnostic);
 
         return diagnostic;
     }
-    
+
     protected static Diagnostic AssertDiagnostic(
         Diagnostic diagnostic,
         DiagnosticDescriptor descriptor,
         ICXNode node
     ) => AssertDiagnostic(diagnostic, descriptor, node.TextSpan);
-    
+
     protected static Diagnostic AssertDiagnostic(
         Diagnostic diagnostic,
         DiagnosticDescriptor descriptor,
@@ -86,7 +87,7 @@ public abstract class TestWithDiagnostics(ITestOutputHelper output) : IDisposabl
         descriptor.Severity,
         span
     );
-    
+
     protected static Diagnostic AssertDiagnostic(
         Diagnostic diagnostic,
         string id,
@@ -97,7 +98,7 @@ public abstract class TestWithDiagnostics(ITestOutputHelper output) : IDisposabl
     )
     {
         Assert.Equal(id, diagnostic.Id);
-        
+
         if (title is not null) Assert.Equal(title, diagnostic.Title);
         if (message is not null) Assert.Equal(message, diagnostic.Description);
         if (severity is not null) Assert.Equal(severity, diagnostic.Severity);
@@ -105,7 +106,7 @@ public abstract class TestWithDiagnostics(ITestOutputHelper output) : IDisposabl
 
         return diagnostic;
     }
-    
+
     protected virtual void EOF()
     {
         Assert.Empty(_diagnostics);

@@ -1,9 +1,10 @@
 ﻿using ComponentDesigner;
+using ComponentDesigner.Nodes;
 using ComponentDesigner.Nodes.TextControls;
 
 namespace Discord;
 
-public sealed class DiscordNetComponentDesignerImplementation :
+public sealed partial class DiscordNetComponentDesignerImplementation :
     IComponentImplementation
 {
     public string Name => "Discord.Net";
@@ -14,5 +15,11 @@ public sealed class DiscordNetComponentDesignerImplementation :
 
     public IComponentTypingProvider ComponentTypingProvider { get; } = new ComponentTyping();
 
-
+    public ComponentPropertyValueKind? GetPropertyKindOverload(
+        IComponentNode component,
+        ComponentProperty property
+    )
+    {
+        return null;
+    }
 }

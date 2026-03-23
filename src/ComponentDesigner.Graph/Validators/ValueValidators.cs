@@ -87,14 +87,18 @@ public static class ValueValidators
             switch (value)
             {
                 case ComponentPropertyValue.Literal { Value: var str }:
+                    sum ??= 0;
                     sum += str.Length;
                     return;
                 case ComponentPropertyValue.Interpolation
                 {
                     Info.ConstantValue: { IsSpecified: true, Value: string str }
                 }:
+                {
+                    sum ??= 0;
                     sum += str.Length;
                     return;
+                }
             }
         }
 
@@ -109,6 +113,7 @@ public static class ValueValidators
                         Info.ConstantValue: { IsSpecified: true, Value: { } constant }
                     }
                     when int.TryParse(constant.ToString(), out part):
+                    sum ??= 0;
                     sum += part;
                     return;
             }

@@ -52,7 +52,9 @@ public sealed class SectionTests(ITestOutputHelper output) : BaseComponentTest(o
                 """
                 new global::Discord.SectionBuilder(
                     accessory: new global::Discord.ThumbnailBuilder(
-                        media: new global::Discord.UnfurledMediaItemProperties("foo")
+                        media: new global::Discord.UnfurledMediaItemProperties(
+                            "foo"
+                        )
                     ),
                     components: 
                     [
@@ -92,6 +94,10 @@ public sealed class SectionTests(ITestOutputHelper output) : BaseComponentTest(o
                 AssertDiagnostic(
                     Diagnostic.InvalidAccessoryComponentOfSection(container)
                 );
+
+                AssertDiagnostic(
+                    Diagnostic.ComponentRequiresAtLeastOneChild(container)
+                );
             }
         }
     }
@@ -125,7 +131,9 @@ public sealed class SectionTests(ITestOutputHelper output) : BaseComponentTest(o
                 """
                 new global::Discord.SectionBuilder(
                     accessory: new global::Discord.ThumbnailBuilder(
-                        media: new global::Discord.UnfurledMediaItemProperties("foo")
+                        media: new global::Discord.UnfurledMediaItemProperties(
+                            "foo"
+                        )
                     ),
                     components: 
                     [

@@ -1,4 +1,6 @@
-﻿using ComponentDesigner;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Text;
+using ComponentDesigner;
 using ComponentDesigner.Nodes;
 using ComponentDesigner.Parser;
 using ComponentDesigner.Util;
@@ -26,7 +28,8 @@ partial class DiscordNetRenderer
                 $"new {symbol.ToQualifiedName()}({properties})",
                 symbol
             )
-        );
+        )
+        .Map(GetConverterFromOptions(context, state, typingContext, cancellationToken));
 
     public override Result<RenderedComponent> RenderMediaGallery(
         IRendererContext context,
@@ -34,175 +37,176 @@ partial class DiscordNetRenderer
         ComponentState state,
         RendererTypingContext? typingContext = null,
         CancellationToken cancellationToken = default
+    ) => context.CompilationProvider
+        .MediaGalleryBuilder(state.TextSpan, cancellationToken)
+        .Combine(
+            RenderPropertiesAsParameters(
+                context, state, cancellationToken,
+                ("id", mediaGallery.Id, CSharpValueGenerator.NullableInt32),
+                ("items", mediaGallery.Items, new(RenderMediaGalleryItemsProperty))
+            ),
+            (symbol, properties) => new RenderedComponent(
+                $"new {symbol.ToQualifiedName()}({properties})",
+                symbol
+            )
+        )
+        .Map(GetConverterFromOptions(context, state, typingContext, cancellationToken));
+
+    private delegate string MediaGalleryItemMapper(string source);
+
+    private static Result<string> RenderMediaGalleryItemsProperty(
+        IRendererContext context,
+        ComponentPropertyValue value,
+        CancellationToken cancellationToken
     )
     {
-        return context.CompilationProvider
-            .MediaGalleryBuilder(state.TextSpan, cancellationToken)
-            .Combine(
-                RenderPropertiesAsParameters(
-                    context, state, cancellationToken,
-                    ("id", mediaGallery.Id, CSharpValueGenerator.NullableInteger),
-                    ("items", mediaGallery.Items, new(RenderMediaGalleryItemsProperty))
-                ),
-                (symbol, properties) => new RenderedComponent(
-                    $"new {symbol.ToQualifiedName()}({properties})",
-                    symbol
-                )
-            );
+        using var bag = PooledDiagnosticBag.Get();
+        using var _ = StringBuilder.Pooled(out var sb);
 
-        Result<string> RenderMediaGalleryItemsProperty(
+        foreach (var itemValue in value.AsFlattened)
+        {
+            var result = RenderSingleItem(context, itemValue, cancellationToken).Unwrap(bag);
+
+            if (result is null) continue;
+
+            if (sb.Length > 0) sb.AppendLine(",");
+
+            sb.Append(result);
+        }
+
+        if (sb.Length is 0) return "[]";
+
+        return
+            $"""
+
+             [
+                 {sb.ToString().WithNewlinePadding(4)}
+             ]
+             """;
+
+
+        static Result<string> RenderSingleItem(
             IRendererContext context,
-            ComponentPropertyValue value,
+            ComponentPropertyValue itemValue,
             CancellationToken cancellationToken
         )
         {
-            var results = new List<Result<string>>();
-            var itemsCount = 0;
-
-            if (value is ComponentPropertyValue.Many many)
+            switch (itemValue)
             {
-                foreach (var subValue in many.Values)
+                case ComponentPropertyValue.Component component:
+                    return context
+                        .RenderGraphNode(
+                            component.GraphNode,
+                            cancellationToken: cancellationToken
+                        )
+                        .AsSource;
+
+                case ComponentPropertyValue.Interpolation interpolation:
                 {
-                    RenderFlattenedValue(results, subValue);
+                    var targetSymbol = interpolation.Info.Symbol;
+                    var isCollection = false;
+
+                    if (targetSymbol is null)
+                        return Diagnostic
+                            .TypeMismatch(
+                                "unknown",
+                                "MediaGalleryItemProperties"
+                            )
+                            .At(itemValue);
+
+                    if (
+                        !targetSymbol.Equals(context.CompilationProvider.String!) &&
+                        targetSymbol.TryGetEnumerableType(out var inner)
+                    )
+                    {
+                        isCollection = true;
+                        targetSymbol = inner;
+                    }
+
+                    if (!TryGetMapperForSymbol(context.CompilationProvider, targetSymbol, out var mapper,
+                            cancellationToken))
+                    {
+                        return Diagnostic
+                            .TypeMismatch(
+                                "MediaGalleryItemProperties",
+                                interpolation.Info.Symbol
+                            )
+                            .At(itemValue);
+                    }
+
+                    var finalMapper = isCollection
+                        ? x => $"{x}.Select(x => {mapper("x")})"
+                        : mapper;
+
+                    return finalMapper(
+                        context.GetReferenceToDesignerValue(interpolation.Info, interpolation.Info.Symbol)
+                    );
                 }
-            }
-            else
-            {
-                RenderFlattenedValue(results, value);
-            }
-
-            if (itemsCount > Validators.MEDIA_GALLERY_MAX_ITEMS)
-                return Diagnostic.TooManyChildren(
-                    mediaGallery,
-                    Validators.MEDIA_GALLERY_MAX_ITEMS
-                ).At(value.TextSpan);
-
-            switch (results.Count)
-            {
-                case 0:
-                    return Diagnostic
-                        .RequiredPropertyNotSpecified(mediaGallery, mediaGallery.Items)
-                        .At(state.ElementIdentifierTextSpanOrBetter);
-
-                case 1: return results[0];
 
                 default:
-                    return results
-                        .FlattenAll()
-                        .Map(x =>
-                            $"""
-
-                             [
-                                 {
-                                     string.Join(
-                                         $",{Environment.NewLine}".Postfix(4),
-                                         x.Select(x => x
-                                             .Map(x => x.WithNewlinePadding(4))
-                                         )
-                                     )
-                                 }
-                             ]
-                             """
-                        );
+                    return Diagnostic
+                        .InvalidPropertyValue(
+                            itemValue,
+                            ComponentPropertyValueKind.Component | ComponentPropertyValueKind.Interpolation
+                        )
+                        .At(itemValue);
             }
+        }
 
-            void RenderFlattenedValue(
-                List<Result<string>> results,
-                ComponentPropertyValue value
-            )
+        static bool TryGetMapperForSymbol(
+            ICompilationProvider provider,
+            ICSharpTypeSymbol symbol,
+            [MaybeNullWhen(false)] out MediaGalleryItemMapper mapper,
+            CancellationToken cancellationToken
+        )
+        {
+            if (Is(provider.MediaGalleryItemProperties))
             {
-                switch (value)
-                {
-                    case ComponentPropertyValue.SyntaxValue syntax:
-                        switch (syntax.CXValue)
-                        {
-                            case CXValue.Multipart multipart:
-                                results.AddRange(multipart.Tokens.Select(FromFlattenedSyntax));
-                                break;
-                            case CXValue.Interpolation interpolation:
-                                results.Add(FromFlattenedSyntax(interpolation.Token));
-                                break;
-                            default:
-                                results.Add(
-                                    Diagnostic
-                                        .InvalidChildOfComponent(mediaGallery, syntax.CXValue)
-                                        .At(syntax.CXValue)
-                                );
-                                break;
-                        }
-
-                        break;
-
-                    case ComponentPropertyValue.Component children:
-                        results.Add(
-                            context.CompilationProvider
-                                .IEnumerableOfMediaGalleryItemProperties(children, cancellationToken)
-                                .Map(symbol => RenderAsChildComponents(
-                                    context,
-                                    children,
-                                    symbol,
-                                    cancellationToken,
-                                    withinCollectionExpression: false
-                                ))
-                        );
-
-                        if (children.GraphNode.Component is MediaGalleryItemComponentNode)
-                            itemsCount++;
-
-                        break;
-
-                    default:
-                        results.Add(
-                            Diagnostic
-                                .ValueVariantCannotBeGenerated(value)
-                                .At(value.TextSpan)
-                        );
-                        break;
-                }
+                mapper = Identity;
+                return true;
             }
 
-            Result<string> FromFlattenedSyntax(CXToken token)
+            if (provider.String?.Equals(symbol) is true)
             {
-                if (token.Kind is not CXTokenKind.Interpolation)
-                    return Diagnostic.InvalidChildOfComponent(mediaGallery, token).At(token);
-
-                var info = context.GetInterpolationInfo(token);
-
-                var uri = context
-                    .CompilationProvider
-                    .SystemUri(CXTextSpan.Empty, cancellationToken)
-                    .GetValueOrDefault();
-
-                var mediaGalleryItemProperties = context
-                    .CompilationProvider
-                    .MediaGalleryItemProperties(CXTextSpan.Empty, cancellationToken)
-                    .GetValueOrDefault();
-
-                if (
-                    uri is not null &&
-                    uri.Equals(info.Symbol)
-                )
-                {
-                    itemsCount++;
-                    return $"new global::Discord.MediaGalleryItemProperties({
-                        context.GetReferenceToDesignerValue(info, uri)
-                    }.ToString())";
-                }
-
-                if (
-                    mediaGalleryItemProperties is not null &&
-                    mediaGalleryItemProperties.Equals(info.Symbol)
-                )
-                {
-                    itemsCount++;
-                    return context.GetReferenceToDesignerValue(info, mediaGalleryItemProperties);
-                }
-
-                return Diagnostic.TypeMismatch(
-                    mediaGalleryItemProperties!,
-                    info.Symbol!
-                ).At(token);
+                mapper = Literal;
+                return true;
             }
+
+            if (Is(provider.SystemUri))
+            {
+                mapper = Uri;
+                return true;
+            }
+
+            mapper = null;
+            return false;
+
+            bool Is(Func<CXTextSpan, CancellationToken, Result<ICSharpTypeSymbol>> mapper)
+            {
+                var expected = mapper(default, cancellationToken).GetValueOrDefault();
+
+                return expected is not null && expected.Equals(symbol);
+            }
+
+            static string Uri(string x)
+                => $"""
+                    new global::Discord.MediaGalleryItemProperties(
+                        media: new global::Discord.UnfurledMediaItemProperties(
+                            {x}.ToString()
+                        )
+                    )
+                    """;
+
+            static string Literal(string x)
+                => $"""
+                    new global::Discord.MediaGalleryItemProperties(
+                        media: new global::Discord.UnfurledMediaItemProperties(
+                            {x}
+                        )
+                    )
+                    """;
+
+            static string Identity(string x) => x;
         }
     }
 }

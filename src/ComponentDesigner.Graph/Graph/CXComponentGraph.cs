@@ -233,8 +233,7 @@ public sealed class CXComponentGraph : IEquatable<CXComponentGraph>
                     );
 
                     autoTextDisplayGraphNode.State = new TextDisplayState(
-                        autoTextDisplayGraphNode,
-                        null
+                        autoTextDisplayGraphNode
                     );
 
                     var textControlGraphNode = context.Tree.Push(
@@ -243,9 +242,8 @@ public sealed class CXComponentGraph : IEquatable<CXComponentGraph>
                     );
 
                     textControlGraphNode.State = new TextControlState(
-                        textControlGraphNode,
-                        null,
-                        result
+                        result,
+                        textControlGraphNode
                     );
 
                     // set the contents property to the 'textControlGraphNode'
@@ -351,14 +349,18 @@ public sealed class CXComponentGraph : IEquatable<CXComponentGraph>
             parent: parent
         );
 
+        var numDiagnostics = context.Diagnostics.Count;
+        
         var state = graphNode.Component.Initialize(
             new(cxNode, graphNode, context),
             context.Diagnostics,
             cancellationToken
         );
 
+        graphNode.ComponentInitializationProducedDiagnostics = numDiagnostics != context.Diagnostics.Count;
+        
         if (state is null) return;
-
+        
         graphNode.State = state;
     }
 
@@ -454,15 +456,15 @@ public sealed class CXComponentGraph : IEquatable<CXComponentGraph>
             context
         );
 
+        var numDiagnostics = context.Diagnostics.Count;
         var state = node.Component.Initialize(initContext, context.Diagnostics, cancellationToken);
+        node.ComponentInitializationProducedDiagnostics = numDiagnostics != context.Diagnostics.Count;
 
         if (state is null)
         {
             context.Tree.DereferenceFromTree(node);
             return null;
         }
-
-        state.Initialize(initContext, cancellationToken);
 
         node.State = state;
 
@@ -490,41 +492,44 @@ public sealed class CXComponentGraph : IEquatable<CXComponentGraph>
         var updatedStates = ArrayPool<ComponentState?>.Shared.Rent(_tree.Count);
         var hasUpdatedState = false;
 
-        for (var i = 0; i < _tree.NodesWithExternalDependencies.Count; i++)
+        try
         {
-            var node = _tree.NodesWithExternalDependencies[i];
+            for (var i = 0; i < _tree.NodesWithExternalDependencies.Count; i++)
+            {
+                var node = _tree.NodesWithExternalDependencies[i];
 
-            var updatedState = node.Component.UpdateState(
-                node.State,
-                context,
-                diagnostics,
-                cancellationToken
+                var updatedState = node.Component.UpdateState(
+                    node.State,
+                    context,
+                    diagnostics,
+                    cancellationToken
+                );
+
+                updatedStates[node.Id] = updatedState;
+                hasUpdatedState |= !updatedState.Equals(node.State);
+            }
+
+            if (!hasUpdatedState) return this;
+
+            var newTree = new CXComponentTree();
+
+            for (var i = 0; i < _tree.Count; i++)
+                newTree.Reuse(_tree[i], updatedStates[i]);
+
+            return new CXComponentGraph(
+                Document,
+                newTree,
+                _diagnostics,
+                CX,
+                Options,
+                Implementation,
+                diagnostics.ToCollection()
             );
-
-            updatedStates[node.Id] = updatedState;
-            hasUpdatedState |= !updatedState.Equals(node.State);
         }
-
-        if (!hasUpdatedState)
+        finally
         {
             ArrayPool<ComponentState?>.Shared.Return(updatedStates);
-            return this;
         }
-
-        var newTree = new CXComponentTree();
-
-        for (var i = 0; i < _tree.Count; i++)
-            newTree.Reuse(_tree[i], updatedStates[i]);
-
-        return new CXComponentGraph(
-            Document,
-            newTree,
-            _diagnostics,
-            CX,
-            Options,
-            Implementation,
-            diagnostics.ToCollection()
-        );
     }
 
     private IReadOnlyList<Diagnostic>? _validationDiagnostics;
@@ -547,14 +552,15 @@ public sealed class CXComponentGraph : IEquatable<CXComponentGraph>
             return _validationDiagnostics;
         }
 
-        using var bag = PooledDiagnosticBag.Get();
+        using var bag = PooledDiagnosticBag.Get(Diagnostics);
         var context = new ComponentValidationContext(this, compilationProvider);
 
         for (var i = 0; i < _tree.Count; i++)
         {
             var node = _tree[i];
 
-            node.Component.Validate(context, node.State, bag, cancellationToken);
+            if(!node.ComponentInitializationProducedDiagnostics)
+                node.Component.Validate(context, node.State, bag, cancellationToken);
         }
 
         hasErrors = _validationHasErrors = bag.HasErrors;
@@ -576,4 +582,12 @@ public sealed class CXComponentGraph : IEquatable<CXComponentGraph>
             )
             .PrefaceDiagnostics(validation);
     }
+    /*
+     * var component = "";
+     *
+     * <container>
+     *      {component}
+     * </container>
+     * 
+     */
 }

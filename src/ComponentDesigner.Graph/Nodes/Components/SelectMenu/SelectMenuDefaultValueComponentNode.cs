@@ -9,13 +9,21 @@ public enum DefaultValueKind
     Channel
 }
 
-public sealed record DefaultValueState(
-    GraphNode GraphNode,
-    CXElement CXNode,
-    DefaultValueKind Kind
-) : ComponentState(GraphNode, CXNode)
+public sealed record DefaultValueState : ComponentState
 {
-    public new CXElement CXNode { get; init; } = CXNode;
+    public new CXElement CXNode { get; init; }
+    public DefaultValueKind Kind { get; init; }
+
+    public DefaultValueState(
+        DefaultValueKind kind,
+        CXElement element,
+        ComponentNodeInitializationContext context,
+        CancellationToken cancellationToken
+    ) : base(context, cancellationToken)
+    {
+        CXNode = element;
+        Kind = kind;
+    }
 }
 
 public sealed class SelectMenuDefaultValueComponentNode : ComponentNode<DefaultValueState>
@@ -45,7 +53,7 @@ public sealed class SelectMenuDefaultValueComponentNode : ComponentNode<DefaultV
         if (context.CXNode is not CXElement element) return null;
 
         return InferKind(element)
-            .Map(kind => new DefaultValueState(context.GraphNode, element, kind))
+            .Map(kind => new DefaultValueState(kind, element, context, cancellationToken))
             .Unwrap(diagnostics);
     }
 

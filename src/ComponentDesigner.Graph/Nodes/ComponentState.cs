@@ -1,13 +1,15 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using ComponentDesigner.Parser;
 
 namespace ComponentDesigner.Nodes;
 
-public record ComponentState(
-    GraphNode GraphNode,
-    ICXNode? CXNode
-) : ISourceLocatable
+public record ComponentState : ISourceLocatable
 {
+    public GraphNode GraphNode { get; init; }
+
+    public ICXNode? CXNode { get; init; }
+
     public virtual CXTextSpan TextSpan
     {
         get
@@ -57,11 +59,50 @@ public record ComponentState(
     private CXTextSpan? _textSpan;
     private Dictionary<ComponentProperty, ComponentPropertyValue>? _propertyValues;
 
-    public ComponentState(ComponentNodeInitializationContext context) : this(context.GraphNode, context.CXNode)
+    public ComponentState(
+        GraphNode graphNode,
+        ICXNode? cxNode,
+        ComponentNodeInitializationContext context,
+        CancellationToken cancellationToken,
+        CXTextSpan? textSpan = null
+    )
+    {
+        _textSpan = textSpan;
+        GraphNode = graphNode;
+        CXNode = cxNode;
+
+        Initialize(context, cancellationToken);
+    }
+
+    public ComponentState(
+        GraphNode graphNode
+    )
+    {
+        GraphNode = graphNode;
+        CXNode = null;
+    }
+
+    public ComponentState(
+        ComponentNodeInitializationContext context,
+        CancellationToken cancellationToken,
+        CXTextSpan? textSpan = null
+    ) : this(context.GraphNode, context.CXNode, context, cancellationToken, textSpan)
     {
     }
 
-    public void Initialize(ComponentNodeInitializationContext context, CancellationToken cancellationToken)
+    protected ComponentState(ComponentState other)
+    {
+        GraphNode = other.GraphNode;
+        CXNode = other.CXNode;
+        _propertyValues = other._propertyValues;
+        _textSpan = other._textSpan;
+    }
+
+    protected virtual bool TryGetProperty(
+        string name, [MaybeNullWhen(false)] out ComponentProperty property
+    ) => GraphNode.Component.TryGetProperty(name, out property);
+
+    private void Initialize(ComponentNodeInitializationContext context, CancellationToken cancellationToken)
     {
         if (CXNode is not CXElement element) return;
 
@@ -69,7 +110,7 @@ public record ComponentState(
 
         foreach (var attribute in element.Attributes)
         {
-            if (!GraphNode.Component.TryGetProperty(attribute.Identifier, out var property)) continue;
+            if (!TryGetProperty(attribute.Identifier, out var property)) continue;
 
             var source = new ComponentPropertyValueSource.Attribute(
                 attribute
@@ -95,34 +136,9 @@ public record ComponentState(
         CXTextSpan textSpan,
         CancellationToken cancellationToken
     )
-    { 
+    {
         switch (cxValue)
         {
-            case CXValue.Scalar scalar:
-                return new ComponentPropertyValue.Literal(
-                    source,
-                    property,
-                    textSpan,
-                    scalar.Value
-                );
-
-            case CXValue.Interpolation interpolation:
-            {
-                if (context.GraphContext.IsInterpolatedComponent(interpolation, cancellationToken))
-                {
-                    return FromGraphNodes(
-                        context.PushAsChildren(interpolation, cancellationToken)
-                    );
-                }
-
-                return new ComponentPropertyValue.Interpolation(
-                    source,
-                    property,
-                    textSpan,
-                    context.GraphContext.GetInterpolationInfo(interpolation)
-                );
-            }
-
             case CXValue.Element:
             {
                 var graphNodes = GraphNode
@@ -134,6 +150,84 @@ public record ComponentState(
                     .ToArray();
 
                 return FromGraphNodes(graphNodes);
+            }
+            case CXValue.Interpolation interpolation
+                when context.GraphContext.IsInterpolatedComponent(interpolation, cancellationToken):
+                return FromGraphNodes(
+                    context.PushAsChildren(interpolation, cancellationToken)
+                );
+            default:
+                if (
+                    BuildPropertyValueFromSimpleSyntax(
+                        context.GraphContext,
+                        property,
+                        source,
+                        cxValue,
+                        textSpan,
+                        cancellationToken
+                    ) is not { } value
+                )
+                {
+                    // TODO: this means the syntax node was a component, but we didn't handle it in this function
+                    Debug.Fail("Didn't handle case for component");
+                    return new ComponentPropertyValue.None(
+                        source,
+                        property,
+                        ComponentPropertyLocationInfo.From(textSpan, cxValue)
+                    );
+                }
+
+                return value;
+        }
+
+        ComponentPropertyValue FromGraphNodes(IReadOnlyList<GraphNode> graphNodes)
+        {
+            return graphNodes.Count switch
+            {
+                0 => new ComponentPropertyValue.None(source, property, textSpan),
+                1 when property.ValueCardinalityOfOne => new ComponentPropertyValue.Component(source, property, graphNodes[0]),
+                _ => new ComponentPropertyValue.Many(
+                    source,
+                    property,
+                    textSpan,
+                    [.. graphNodes.Select(x => new ComponentPropertyValue.Component(source, property, x))]
+                )
+            };
+        }
+    }
+
+    internal static ComponentPropertyValue? BuildPropertyValueFromSimpleSyntax(
+        IComponentContext context,
+        ComponentProperty property,
+        ComponentPropertyValueSource source,
+        CXValue? cxValue,
+        CXTextSpan textSpan,
+        CancellationToken cancellationToken
+    )
+    {
+        switch (cxValue)
+        {
+            case CXValue.Scalar scalar:
+                return new ComponentPropertyValue.Literal(
+                    source,
+                    property,
+                    ComponentPropertyLocationInfo.From(textSpan, cxValue),
+                    scalar.Value
+                );
+
+            case CXValue.Interpolation interpolation:
+            {
+                if (context.IsInterpolatedComponent(interpolation, cancellationToken))
+                {
+                    return null;
+                }
+
+                return new ComponentPropertyValue.Interpolation(
+                    source,
+                    property,
+                    ComponentPropertyLocationInfo.From(textSpan, cxValue),
+                    context.GetInterpolationInfo(interpolation)
+                );
             }
 
             case CXValue.Multipart multipart:
@@ -147,7 +241,12 @@ public record ComponentState(
                     {
                         case CXTokenKind.Text:
                             parts.Add(
-                                new ComponentPropertyValue.Literal(source, property, token.TextSpan, token.Value)
+                                new ComponentPropertyValue.Literal(
+                                    source,
+                                    property,
+                                    ComponentPropertyLocationInfo.From(textSpan, token),
+                                    token.Value
+                                )
                             );
                             continue;
                         case CXTokenKind.Interpolation when token.InterpolationIndex is { } index:
@@ -155,8 +254,8 @@ public record ComponentState(
                                 new ComponentPropertyValue.Interpolation(
                                     source,
                                     property,
-                                    token.TextSpan,
-                                    context.GraphContext.GetInterpolationInfo(index)
+                                    ComponentPropertyLocationInfo.From(textSpan, token),
+                                    context.GetInterpolationInfo(index)
                                 )
                             );
                             continue;
@@ -165,12 +264,16 @@ public record ComponentState(
 
                 return parts.Count switch
                 {
-                    0 => new ComponentPropertyValue.None(source, property, multipart.TextSpan),
-                    1 when !property.Kind.HasFlag(ComponentPropertyValueKind.Many) => parts[0],
+                    0 => new ComponentPropertyValue.None(
+                        source,
+                        property,
+                        ComponentPropertyLocationInfo.From(textSpan, cxValue)
+                    ),
+                    1 when property.ValueCardinalityOfOne => parts[0],
                     _ => new ComponentPropertyValue.Many(
                         source,
                         property,
-                        textSpan,
+                        ComponentPropertyLocationInfo.From(textSpan, cxValue),
                         [..parts]
                     )
                 };
@@ -180,50 +283,8 @@ public record ComponentState(
                 return new ComponentPropertyValue.None(
                     source,
                     property,
-                    textSpan
+                    ComponentPropertyLocationInfo.From(textSpan, cxValue)
                 );
-        }
-
-        ComponentPropertyValue FromGraphNodes(IReadOnlyList<GraphNode> graphNodes)
-        {
-            switch (graphNodes.Count)
-            {
-                case 0: return new ComponentPropertyValue.None(source, property, textSpan);
-
-                case 1:
-                    ComponentPropertyValue value = new ComponentPropertyValue.Component(
-                        source,
-                        property,
-                        graphNodes[0]
-                    );
-
-                    if (property.Kind.HasFlag(ComponentPropertyValueKind.Many))
-                        value = new ComponentPropertyValue.Many(
-                            source,
-                            property,
-                            textSpan,
-                            [value]
-                        );
-
-                    return value;
-
-                default:
-                    return new ComponentPropertyValue.Many(
-                        source,
-                        property,
-                        textSpan,
-                        [
-                            .. graphNodes
-                                .Select(x => new ComponentPropertyValue
-                                    .Component(
-                                        source,
-                                        property,
-                                        x
-                                    )
-                                )
-                        ]
-                    );
-            }
         }
     }
 

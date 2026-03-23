@@ -105,6 +105,11 @@ public abstract class BaseComponentTest(ITestOutputHelper output) : TestWithDiag
 
         PushDiagnostics(result.Diagnostics);
 
+        if (result.HasValue)
+        {
+            output.WriteLine($"Emitted code:\n{result.Value}");
+        }
+
         if (expected is not null)
         {
             Assert.True(result.HasValue, "emit result should have a value");

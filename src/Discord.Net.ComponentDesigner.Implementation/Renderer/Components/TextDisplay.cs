@@ -16,14 +16,15 @@ partial class DiscordNetRenderer
         .Combine(
             RenderPropertiesAsParameters(
                 context, state, cancellationToken,
-                ("id", textDisplay.Id, CSharpValueGenerator.NullableInteger),
+                ("id", textDisplay.Id, CSharpValueGenerator.NullableInt32),
                 ("content", textDisplay.Content, new(RenderTextDisplayContent))
             ),
             (symbol, parameters) => new RenderedComponent(
                 $"new {symbol.ToQualifiedName()}({parameters})",
                 symbol
             )
-        );
+        )
+        .Map(GetConverterFromOptions(context, state, typingContext, cancellationToken));
 
     private static Result<string> RenderTextDisplayContent(
         IRendererContext context,
@@ -31,34 +32,29 @@ partial class DiscordNetRenderer
         CancellationToken cancellationToken
     )
     {
-        if (value is ComponentPropertyValue.AttributeValue attributeValue)
+        if (value is ComponentPropertyValue.Component { GraphNode: var graphNode })
         {
-            return CSharpValueGenerator
-                .String
-                .Render(
-                    context,
-                    attributeValue,
+            if (graphNode.Component is not TextControlNode)
+            {
+                return Diagnostic
+                    .InvalidPropertyValue(value, "<text control>")
+                    .At(value);
+            }
+
+            return context
+                .RenderGraphNode(
+                    graphNode,
                     cancellationToken: cancellationToken
-                );
+                )
+                .AsSource;
         }
         
-        if (value.GraphNode is null)
-            return Diagnostic
-                .InvalidPropertyValue(value, ComponentPropertyValueKind.Component)
-                .At(value);
-
-        // should always expect text control
-        if (value.GraphNode.Component is not TextControlNode)
-            return Diagnostic
-                .InvalidPropertyValue(value, "<text control>")
-                .At(value);
-
-        // our renderer renders text controls as C# strings, so we just need to call its render function
-        return context
-            .RenderGraphNode(
-                value.GraphNode,
-                cancellationToken: cancellationToken
-            )
-            .Map(x => x.Source);
+        return CSharpValueGenerator
+            .String
+            .Render(
+                context,
+                value,
+                cancellationToken
+            );
     }
 }

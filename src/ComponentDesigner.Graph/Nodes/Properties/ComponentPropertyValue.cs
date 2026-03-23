@@ -21,7 +21,10 @@ public readonly record struct ComponentPropertyLocationInfo(
 {
     public static ComponentPropertyLocationInfo From(ICXNode node)
         => new(node.TextSpan, node.LeadingTrivia, node.TrailingTrivia);
-
+    
+    public static ComponentPropertyLocationInfo From(CXTextSpan textSpan, ICXNode? node)
+        => new(textSpan, node?.LeadingTrivia ?? LexedCXTrivia.Empty, node?.TrailingTrivia ?? LexedCXTrivia.Empty);
+    
     public static implicit operator ComponentPropertyLocationInfo(CXTextSpan textSpan)
         => new(textSpan, LexedCXTrivia.Empty, LexedCXTrivia.Empty);
 
@@ -120,7 +123,10 @@ public abstract record ComponentPropertyValue(
         ComponentProperty Property,
         ComponentPropertyLocationInfo Location,
         string Value
-    ) : ComponentPropertyValue(Source, Property, Location);
+    ) : ComponentPropertyValue(Source, Property, Location)
+    {
+        public static implicit operator SourcedValue<string>(Literal self) => self.Value.SourcedAt(self);
+    }
 
     public sealed record Interpolation(
         ComponentPropertyValueSource Source,

@@ -16,7 +16,7 @@ partial class DiscordNetRenderer
         .Combine(
             RenderPropertiesAsParameters(
                 context, state, cancellationToken,
-                ("id", container.Id, CSharpValueGenerator.NullableInteger),
+                ("id", container.Id, CSharpValueGenerator.NullableInt32),
                 ("accentColor", container.AccentColor, CSharpValueGenerator.NullableColor),
                 ("isSpoiler", container.IsSpoiler, CSharpValueGenerator.NullableBoolean),
                 ("components", container.Components, new(RenderContainerComponents))
@@ -24,7 +24,8 @@ partial class DiscordNetRenderer
             (symbol, parameters) => new RenderedComponent(
                 $"new {symbol.ToQualifiedName()}({parameters})"
             )
-        );
+        )
+        .Map(GetConverterFromOptions(context, state, typingContext, cancellationToken));
     
     private static Result<string> RenderContainerComponents(
         IRendererContext context,

@@ -27,6 +27,7 @@ public static class DiagnosticFactory
         ChildSuppliedExclusivePropertyDuplicated,
         UnknownPropertyOfComponent,
         ComponentRequiresAtLeastOneChild,
+        ComponentRequiresOneChild,
         OutOfRange,
         PropertyNotAllowed,
         InvalidFunctionalComponent,
@@ -183,6 +184,15 @@ public static class DiagnosticFactory
             $"'{propertyName}' requires a value"
         );
 
+        public static DiagnosticDescriptor RequiredPropertyValueNotSpecified(
+            ComponentProperty property
+        ) => RequiredPropertyValueNotSpecified(property.Name);
+
+        public static DiagnosticDescriptor RequiredPropertyValueNotSpecified(
+            ComponentPropertyValue property
+        ) => RequiredPropertyValueNotSpecified(property.Name);
+
+
         public static DiagnosticDescriptor MissingOneOfProperties(
             IComponentNode component,
             params ReadOnlySpan<ComponentProperty> properties
@@ -260,7 +270,7 @@ public static class DiagnosticFactory
             DiagnosticSeverity.Error,
             $"'{name}' is not a valid value"
         );
-        
+
         public static DiagnosticDescriptor ValueVariantCannotBeGenerated(
             ComponentPropertyValue value,
             CSharpValueGenerator generator
@@ -283,28 +293,28 @@ public static class DiagnosticFactory
         );
 
         public static DiagnosticDescriptor TypeMismatch(
-            ICSharpTypeSymbol expected,
+            ICSharpTypeSymbol? expected,
             string actual
-        ) => Diagnostic.TypeMismatch(expected.ToString(), actual);
+        ) => Diagnostic.TypeMismatch(expected?.ToString(), actual);
 
         public static DiagnosticDescriptor TypeMismatch(
             string expected,
-            ICSharpTypeSymbol actual
-        ) => Diagnostic.TypeMismatch(expected, actual.ToString());
+            ICSharpTypeSymbol? actual
+        ) => Diagnostic.TypeMismatch(expected, actual?.ToString());
 
         public static DiagnosticDescriptor TypeMismatch(
-            ICSharpTypeSymbol expected,
-            ICSharpTypeSymbol actual
-        ) => Diagnostic.TypeMismatch(expected.ToString(), actual.ToString());
+            ICSharpTypeSymbol? expected,
+            ICSharpTypeSymbol? actual
+        ) => Diagnostic.TypeMismatch(expected?.ToString(), actual?.ToString());
 
         public static DiagnosticDescriptor TypeMismatch(
-            string expected,
-            string actual
+            string? expected,
+            string? actual
         ) => Create(
             DiagnosticSource.Graph,
             DiagnosticCode.TypeMismatch,
             DiagnosticSeverity.Error,
-            $"Expected type '{expected}' but got '{actual}'"
+            $"Expected type '{expected ?? "unknown"}' but got '{actual ?? "unknown"}'"
         );
 
         public static DiagnosticDescriptor NullValueNotAllowed => Create(
@@ -397,6 +407,13 @@ public static class DiagnosticFactory
             $"'{component.Name}' requires at least one child component"
         );
 
+        public static DiagnosticDescriptor ComponentRequiresOneChild(IComponentNode component) => Create(
+            DiagnosticSource.Graph,
+            DiagnosticCode.ComponentRequiresOneChild,
+            DiagnosticSeverity.Error,
+            $"'{component.Name}' requires a child component"
+        );
+
         public static DiagnosticDescriptor ComponentRequiresAtLeastOneChild(CXElement element) => Create(
             DiagnosticSource.Graph,
             DiagnosticCode.ComponentRequiresAtLeastOneChild,
@@ -414,6 +431,19 @@ public static class DiagnosticFactory
             DiagnosticCode.OutOfRange,
             DiagnosticSeverity.Error,
             $"'{lower.Name}' must be less than or equal to '{upper.Name}' ({lowerValue} <= {upperValue} != true)"
+        );
+
+        public static DiagnosticDescriptor OutOfRange(
+            ComponentProperty property,
+            StaticRange bounds,
+            StaticRange value
+        ) => Create(
+            DiagnosticSource.Graph,
+            DiagnosticCode.OutOfRange,
+            DiagnosticSeverity.Error,
+            $"'{property.Name}' must contain {(
+                bounds.IsEmpty ? "no" : bounds.ToString()
+            )} values ('{value.ToRangeString()}' is not contained within '{bounds.ToRangeString()}')"
         );
 
         public static DiagnosticDescriptor IntegerOutOfRange(
@@ -456,7 +486,7 @@ public static class DiagnosticFactory
                 DiagnosticSeverity.Error,
                 $"'{property.Name}' is not allowed for {kind} buttons"
             );
-        
+
         public static DiagnosticDescriptor SelectMenuPropertyNotAllowed(SelectMenuKind kind, ComponentProperty property)
             => Create(
                 DiagnosticSource.Graph,
@@ -636,15 +666,20 @@ public static class DiagnosticFactory
         public static DiagnosticDescriptor InvalidPropertyValue(
             ComponentPropertyValue propertyValue
         ) => InvalidPropertyValue(propertyValue, propertyValue.Property.Kind);
-        
+
         public static DiagnosticDescriptor InvalidPropertyValue(
             ComponentPropertyValue propertyValue,
             ComponentPropertyValueKind expected
+        ) => InvalidPropertyValue(propertyValue, expected.ReadableName);
+
+        public static DiagnosticDescriptor InvalidPropertyValue(
+            ComponentPropertyValue propertyValue,
+            string expected
         ) => Create(
             DiagnosticSource.Graph,
             DiagnosticCode.InvalidPropertyValue,
             DiagnosticSeverity.Error,
-            $"'{propertyValue.Kind.ReadableName}' doesn't match the expected property value of '{expected.ReadableName}'"
+            $"'{propertyValue.Kind.ReadableName}' doesn't match the expected property value of '{expected}'"
         );
 
         public static DiagnosticDescriptor InvalidAccessoryComponentOfSection(
@@ -702,7 +737,7 @@ public static class DiagnosticFactory
             DiagnosticSeverity.Error,
             $"'{implementation.Name}' does not support custom components (interpolations, functional, etc)"
         );
-        
+
         public static DiagnosticDescriptor InvalidSyntaxValue(
             ICXNode syntax
         ) => Create(

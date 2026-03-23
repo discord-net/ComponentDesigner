@@ -16,7 +16,7 @@ partial class DiscordNetRenderer
         .Combine(
             RenderPropertiesAsParameters(
                 context, state, cancellationToken,
-                ("id", label.Id, CSharpValueGenerator.NullableInteger),
+                ("id", label.Id, CSharpValueGenerator.NullableInt32),
                 ("label", label.Value, CSharpValueGenerator.String),
                 ("description", label.Description, CSharpValueGenerator.NullableString),
                 ("component", label.Component, new(RenderAsSingleChildComponent))
@@ -25,5 +25,6 @@ partial class DiscordNetRenderer
                 $"new {symbol.ToQualifiedName()}({parameters})",
                 symbol
             )
-        );
+        )
+        .Map(GetConverterFromOptions(context, state, typingContext, cancellationToken));
 }

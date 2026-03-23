@@ -24,7 +24,7 @@ partial class DiscordNetRenderer
                 .Map(spacingSizeGenerator =>
                     RenderPropertiesAsParameters(
                         context, state, cancellationToken,
-                        ("id", separator.Id, CSharpValueGenerator.NullableInteger),
+                        ("id", separator.Id, CSharpValueGenerator.NullableInt32),
                         ("spacing", separator.Spacing, spacingSizeGenerator),
                         ("isDivider", separator.Divider, CSharpValueGenerator.Boolean)
                     )
@@ -33,5 +33,6 @@ partial class DiscordNetRenderer
                 $"new {symbol.ToQualifiedName()}({parameters})",
                 symbol
             )
-        );
+        )
+        .Map(GetConverterFromOptions(context, state, typingContext, cancellationToken));
 }

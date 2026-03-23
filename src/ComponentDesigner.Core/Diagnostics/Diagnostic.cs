@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Text;
 using ComponentDesigner.Util;
 
 namespace ComponentDesigner;
@@ -23,7 +24,7 @@ public readonly struct Diagnostic : IEquatable<Diagnostic>
         TextSpan = textSpan;
         Descriptor = descriptor;
 
-        StackTrace = new();
+        StackTrace = new(skipFrames: 1);
     }
 
     public bool Equals(Diagnostic other)
@@ -32,4 +33,20 @@ public readonly struct Diagnostic : IEquatable<Diagnostic>
 
     public override int GetHashCode()
         => Hash.Combine(TextSpan, Descriptor);
+
+    public override string ToString()
+    {
+        using (StringBuilder.Pooled(out var sb))
+        {
+            sb.Append(TextSpan).Append(' ');
+            
+            sb.Append('[').Append(Id).Append(" | ").Append(Severity).Append("] ");
+            sb.Append(Title);
+
+            if (Description is not null)
+                sb.Append(": ").Append(Description);
+
+            return sb.ToString();
+        }
+    }
 }

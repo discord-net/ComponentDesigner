@@ -22,7 +22,8 @@ public sealed class MediaGalleryComponentNode : ComponentNode
             Id = ComponentProperty.Id,
             Items = new(
                 "items",
-                kind: ComponentPropertyValueKind.ManyComponents
+                kind: ComponentPropertyValueKind.ManyComponents | ComponentPropertyValueKind.Interpolation,
+                flags: ComponentPropertyFlags.FromChildren
             )
         ];
     }
@@ -101,7 +102,7 @@ public sealed class MediaGalleryComponentNode : ComponentNode
     public override void Validate(
         IComponentContext context, ComponentState state, IDiagnosticBag bag,
         CancellationToken cancellationToken = default
-    ) => Validators.ValidateMediaGallery(context, this, state, bag);
+    ) => Validators.ValidateMediaGallery(context, this, state, bag, cancellationToken);
 
     public override Result<RenderedComponent> Render(
         ComponentEmitContext context,

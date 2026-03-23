@@ -27,6 +27,9 @@ public abstract class CSharpValueGenerator
     public static CSharpValueGenerator Boolean => BooleanGenerator.Get(allowNullable: false);
     public static CSharpValueGenerator NullableBoolean => BooleanGenerator.Get(allowNullable: true);
 
+    public static CSharpValueGenerator String => StringGenerator.Get(stringMode: StringNullMode.DisallowNull);
+    public static CSharpValueGenerator NullableString => StringGenerator.Get(stringMode: StringNullMode.AllowNull);
+
     public static CSharpValueGenerator FromSymbol(
         ICompilationProvider compilationProvider,
         ICSharpTypeSymbol symbol

@@ -16,15 +16,16 @@ partial class DiscordNetRenderer
         .Combine(
             RenderPropertiesAsParameters(
                 context, state, cancellationToken,
-                ("id", fileUpload.Id, CSharpValueGenerator.NullableInteger),
+                ("id", fileUpload.Id, CSharpValueGenerator.NullableInt32),
                 ("customId", fileUpload.CustomId, CSharpValueGenerator.String),
-                ("minValues", fileUpload.MinValues, CSharpValueGenerator.NullableInteger),
-                ("maxValues", fileUpload.MaxValues, CSharpValueGenerator.NullableInteger),
+                ("minValues", fileUpload.MinValues, CSharpValueGenerator.NullableInt32),
+                ("maxValues", fileUpload.MaxValues, CSharpValueGenerator.NullableInt32),
                 ("required", fileUpload.Required, CSharpValueGenerator.Boolean)
             ),
             (symbol, parameters) => new RenderedComponent(
                 $"new {symbol.ToQualifiedName()}({parameters})",
                 symbol
             )
-        );
+        )
+        .Map(GetConverterFromOptions(context, state, typingContext, cancellationToken));
 }

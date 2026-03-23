@@ -22,7 +22,8 @@ public sealed class LabelComponentNode : ComponentNode
             Id = ComponentProperty.Id,
             Component = new(
                 "component",
-                kind: ComponentPropertyValueKind.Component
+                kind: ComponentPropertyValueKind.Component,
+                flags: ComponentPropertyFlags.FromChildren
             ),
             Value = new(
                 "value",

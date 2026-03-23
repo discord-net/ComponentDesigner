@@ -3,10 +3,18 @@ using ComponentDesigner.Parser;
 
 namespace ComponentDesigner.Nodes;
 
-public sealed record TextDisplayState(
-    GraphNode GraphNode,
-    ICXNode? CXNode
-) : ComponentState(GraphNode, CXNode);
+public sealed record TextDisplayState : ComponentState
+{
+    public TextDisplayState(ComponentNodeInitializationContext context, CancellationToken cancellationToken)
+        : base(context, cancellationToken)
+    {
+    }
+
+    public TextDisplayState(GraphNode graphNode) : base(graphNode)
+    {
+        
+    }
+}
 
 public class TextDisplayComponentNode : ComponentNode<TextDisplayState>
 {
@@ -49,7 +57,7 @@ public class TextDisplayComponentNode : ComponentNode<TextDisplayState>
     {
         if (context.CXNode is not CXElement element) return null;
 
-        var state = new TextDisplayState(context.GraphNode, element);
+        var state = new TextDisplayState(context, cancellationToken);
 
         if (element.Children.Count > 0)
         {
@@ -72,7 +80,7 @@ public class TextDisplayComponentNode : ComponentNode<TextDisplayState>
             else if (context.GraphNode.Children.Count is 1)
             {
                 state.SetPropertyValueToChild(Content, context.GraphNode.Children[0]);
-            } 
+            }
         }
 
         return state;

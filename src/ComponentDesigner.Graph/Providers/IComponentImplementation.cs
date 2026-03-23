@@ -1,4 +1,7 @@
-﻿namespace ComponentDesigner;
+﻿using ComponentDesigner.Nodes;
+using ComponentDesigner.Util;
+
+namespace ComponentDesigner;
 
 public interface IComponentImplementation
 {
@@ -9,4 +12,17 @@ public interface IComponentImplementation
     ITextControlProvider TextControlProvider { get; }
     
     IComponentTypingProvider? ComponentTypingProvider { get; }
+
+    ComponentPropertyValueKind? GetPropertyKindOverload(
+        IComponentNode component,
+        ComponentProperty property
+    );
+
+    bool TryAnalyzeNumberOfValues(
+        IComponentContext context,
+        IComponentNode component,
+        ComponentPropertyValue propertyValue,
+        CancellationToken cancellationToken,
+        out StaticRange range
+    );
 }

@@ -18,20 +18,49 @@ public abstract partial class BaseCSharpRenderer : IComponentRenderer
         ICSharpTypeSymbol symbol
     ) => GetCustomGeneratorForSymbol(compilationProvider, symbol) ??
          CSharpValueGenerator.FromSymbol(compilationProvider, symbol);
-    
+
+    protected static Func<RenderedComponent, Result<RenderedComponent>> GetConverterFromOptions<T>(
+        IRendererContext context,
+        T source,
+        RendererTypingContext? typingContext,
+        CancellationToken cancellationToken
+    ) where T : ISourceLocatable
+    {
+        if (context.ComponentTypingProvider is null || typingContext is null)
+            return static x => x;
+
+        var targetSymbol = typingContext.Value.ConformingType;
+
+        return render =>
+        {
+            if (render.Type is null) return render;
+
+            return context.ComponentTypingProvider
+                .Convert(
+                    context,
+                    render.Source.SourcedAt(source),
+                    render.Type,
+                    targetSymbol,
+                    cancellationToken
+                )
+                .Map(x => new RenderedComponent(
+                    x,
+                    targetSymbol
+                ));
+        };
+    }
 
     public virtual Result<RenderedComponent> RenderInterpolation(
         IRendererContext context,
         IInterpolationInfo info,
         RendererTypingContext? typingContext = null,
         CancellationToken cancellationToken = default
-    )
-    {
-        return new RenderedComponent(
+    ) => GetConverterFromOptions(context, info, typingContext, cancellationToken)(
+        new RenderedComponent(
             context.GetReferenceToDesignerValue(info, info.Symbol),
             info.Symbol
-        );
-    }
+        )
+    );
 
     public virtual Result<RenderedComponent> RenderTextControls(
         IRendererContext context,
@@ -138,17 +167,17 @@ public abstract partial class BaseCSharpRenderer : IComponentRenderer
                     count++;
                     continue;
                 }
-                
+
                 if (count > 0)
                 {
                     result = Math.Max(result, count);
                     count = 0;
                 }
             }
-            
+
             return Math.Max(result, count);
         }
-        
+
         static TextControl Join(EquatableArray<TextControl> elements)
         {
             if (elements.Count is 0) return TextControl.Empty;

@@ -177,7 +177,9 @@ public sealed class ContainerTests(ITestOutputHelper output) : BaseComponentTest
                         ),
                         new global::Discord.SectionBuilder(
                             accessory: new global::Discord.ThumbnailBuilder(
-                                media: new global::Discord.UnfurledMediaItemProperties("abc")
+                                media: new global::Discord.UnfurledMediaItemProperties(
+                                    "abc"
+                                )
                             ),
                             components: 
                             [
@@ -187,13 +189,20 @@ public sealed class ContainerTests(ITestOutputHelper output) : BaseComponentTest
                             ]
                         ),
                         new global::Discord.MediaGalleryBuilder(
-                            items: new global::Discord.MediaGalleryItemProperties(
-                                media: new global::Discord.UnfurledMediaItemProperties("media1")
-                            )
+                            items: 
+                            [
+                                new global::Discord.MediaGalleryItemProperties(
+                                    media: new global::Discord.UnfurledMediaItemProperties(
+                                        "media1"
+                                    )
+                                )
+                            ]
                         ),
                         new global::Discord.SeparatorBuilder(),
                         new global::Discord.FileComponentBuilder(
-                            media: new global::Discord.UnfurledMediaItemProperties("file-url")
+                            media: new global::Discord.UnfurledMediaItemProperties(
+                                "file-url"
+                            )
                         )
                     ]
                 )
@@ -214,6 +223,7 @@ public sealed class ContainerTests(ITestOutputHelper output) : BaseComponentTest
         );
         {
             ContainerComponentNode child;
+            
             var parent = Component<ContainerComponentNode>();
             {
                 child = Component<ContainerComponentNode>();
@@ -224,6 +234,10 @@ public sealed class ContainerTests(ITestOutputHelper output) : BaseComponentTest
                 AssertDiagnostic(
                     Diagnostic
                         .InvalidChildOfComponent(parent, child)
+                );
+                
+                AssertDiagnostic(
+                    Diagnostic.ComponentRequiresAtLeastOneChild(child)
                 );
             }
         }

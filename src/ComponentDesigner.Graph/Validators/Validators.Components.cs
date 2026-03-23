@@ -96,16 +96,42 @@ public static partial class Validators
         var isOptional = isOptionalOverload ?? propertyValue.Property.IsOptional;
         var requiresValue = requiresValueOverload ?? propertyValue.Property.RequiresValue;
 
-        if (isOptional && propertyValue.IsNone) return;
-
-        if (requiresValue && propertyValue.IsNone)
+        if (propertyValue.IsNone)
         {
-            bag.Add(
-                Diagnostic
-                    .RequiredPropertyValueNotSpecified(propertyValue.Property.Name)
-                    .At(propertyValue)
-            );
+            // optional property doesn't have a value, OK
+            if (isOptional) return;
 
+            if (propertyValue.IsAttributeNameOnly)
+            {
+                // non-optional property specified by name only and it doesn't require a value, OK
+                if (!requiresValue) return;
+
+                // missing required value
+                bag.Add(
+                    Diagnostic
+                        .RequiredPropertyValueNotSpecified(propertyValue)
+                        .At(propertyValue)
+                );
+                return;
+            }
+            
+            // property is not specified at all, and its not optional
+            DiagnosticDescriptor diagnostic;
+
+            if (propertyValue.Property.IsFromChildren)
+            {
+                diagnostic = propertyValue.Property.ValueCardinalityOfMany
+                    ? Diagnostic.ComponentRequiresAtLeastOneChild(component)
+                    : Diagnostic.ComponentRequiresOneChild(component);
+            }
+            else
+            {
+                diagnostic = Diagnostic.RequiredPropertyNotSpecified(component, propertyValue.Property);
+            }
+
+            bag.Add(
+                diagnostic.At(propertyValue)
+            );
             return;
         }
 

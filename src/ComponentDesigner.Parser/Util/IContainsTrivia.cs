@@ -28,6 +28,9 @@ public static class ContainsTriviaExtensions
 {
     extension<T>(T value)
     {
+        public ContainsTrivia<T> WithNoTrivia
+            => new ContainsTrivia<T>(value, LexedCXTrivia.Empty, LexedCXTrivia.Empty);
+        
         public ContainsTrivia<T> WithTriviaFrom<U>(U trivia) where U : IContainsTrivia
             => new ContainsTrivia<T>(value, trivia.LeadingTrivia, trivia.TrailingTrivia);
         

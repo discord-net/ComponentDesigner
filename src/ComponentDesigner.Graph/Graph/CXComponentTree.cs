@@ -3,7 +3,8 @@ using ComponentDesigner.Util;
 
 namespace ComponentDesigner;
 
-public sealed class CXComponentTree : IEquatable<CXComponentTree>
+public sealed class CXComponentTree : 
+    IEquatable<CXComponentTree>
 {
     public static CXComponentTree Empty => new();
 
@@ -19,15 +20,10 @@ public sealed class CXComponentTree : IEquatable<CXComponentTree>
 
     public IReadOnlyList<GraphNode> RootNodes => _rootNodes ?? [];
 
-    private readonly List<GraphNode> _nodes;
+    private readonly List<GraphNode> _nodes = [];
 
     private List<GraphNode>? _nodesWithExternalDependencies;
     private List<GraphNode>? _rootNodes;
-
-    public CXComponentTree()
-    {
-        _nodes = [];
-    }
 
     public GraphNode Reuse(
         GraphNode graphNode,

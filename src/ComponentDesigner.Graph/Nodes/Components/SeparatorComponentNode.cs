@@ -39,5 +39,6 @@ public sealed class SeparatorComponentNode : ComponentNode
         ComponentState state,
         ComponentOptions options,
         CancellationToken cancellationToken = default
-    ) => context.Renderer.RenderSeparator(context, this, state, options.TypingContext, cancellationToken);
+    ) => context.Renderer
+        .RenderSeparator(context, this, state, options.TypingContext, cancellationToken);
 }

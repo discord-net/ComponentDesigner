@@ -5,6 +5,14 @@ using ComponentDesigner.Util;
 
 namespace ComponentDesigner;
 
+[Flags]
+public enum GraphNodeFlags
+{
+    None,
+    ComponentDidntCreateState = 1 << 0,
+    InitializeProducedDiagnostics = 1 << 1
+}
+
 public sealed class GraphNode : IEquatable<GraphNode>, ISourceLocatable
 {
     public int Id { get; }
@@ -21,7 +29,23 @@ public sealed class GraphNode : IEquatable<GraphNode>, ISourceLocatable
     public bool HasChildren => _children?.Count > 0;
 
     public IReadOnlyList<GraphNode> Children => _children ?? (IReadOnlyList<GraphNode>)[];
+    
+    public int Depth { get; }
 
+    public GraphNodeFlags Flags { get; internal set; }
+
+    public bool ComponentDidntCreateState
+    {
+        get => Flags.HasFlag(GraphNodeFlags.ComponentDidntCreateState);
+        internal set => Flags |= (value ? GraphNodeFlags.ComponentDidntCreateState : GraphNodeFlags.None);
+    }
+    
+    public bool ComponentInitializationProducedDiagnostics
+    {
+        get => Flags.HasFlag(GraphNodeFlags.InitializeProducedDiagnostics);
+        internal set => Flags |= (value ? GraphNodeFlags.InitializeProducedDiagnostics : GraphNodeFlags.None);
+    }
+    
     internal readonly CXComponentTree Tree;
 
     private Result<RenderedComponent>? _result;
@@ -35,7 +59,8 @@ public sealed class GraphNode : IEquatable<GraphNode>, ISourceLocatable
         IComponentNode component,
         ComponentState? state = null,
         NodeList? children = null,
-        int? parentId = null
+        int? parentId = null,
+        GraphNodeFlags flags = GraphNodeFlags.None
     )
     {
         Id = id;
@@ -43,12 +68,18 @@ public sealed class GraphNode : IEquatable<GraphNode>, ISourceLocatable
         Component = component;
         _children = children;
         _parentId = parentId;
-        State = state ?? new(this, null);
+        
+        State = state ?? new(this);
+        Flags = flags;
 
+        ComponentDidntCreateState = state is null;
+        
         if (Parent is { } parent)
         {
             parent._children ??= new(tree);
             parent._children.Add(this);
+
+            Depth = parent.Depth + 1;
         }
     }
 
@@ -64,7 +95,8 @@ public sealed class GraphNode : IEquatable<GraphNode>, ISourceLocatable
         Component,
         state ?? State,
         _children?.WithTree(tree),
-        _parentId
+        _parentId,
+        Flags
     );
 
     public Result<RenderedComponent> Render(

@@ -63,6 +63,22 @@ public sealed class BooleanGenerator : CSharpValueGenerator
         CancellationToken cancellationToken = default
     ) => FromText(literal.SourcedAt(literalValue));
 
+    protected override Result<string> RenderNone(
+        IRendererContext context,
+        ComponentPropertyValue.None noneValue,
+        CancellationToken cancellationToken = default
+    )
+    {
+        if (
+            noneValue is { IsAttributeNameOnly: true, Property.RequiresValue: false }
+        )
+        {
+            return "true";
+        }
+        
+        return base.RenderNone(context, noneValue, cancellationToken);
+    }
+
     private static Result<string> FromText(
         SourcedValue<string> text
     )

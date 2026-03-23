@@ -45,5 +45,6 @@ public sealed class ThumbnailComponentNode : ComponentNode
         ComponentState state,
         ComponentOptions options,
         CancellationToken cancellationToken = default
-    ) => context.Renderer.RenderThumbnail(context, this, state, options.TypingContext, cancellationToken);
+    ) => context.Renderer
+        .RenderThumbnail(context, this, state, options.TypingContext, cancellationToken);
 }

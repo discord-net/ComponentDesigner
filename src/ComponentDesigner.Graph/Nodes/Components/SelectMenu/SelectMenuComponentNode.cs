@@ -13,13 +13,21 @@ public enum SelectMenuKind
     Mentionable
 }
 
-public sealed record SelectMenuState(
-    GraphNode GraphNode,
-    CXElement CXNode,
-    SelectMenuKind Kind
-) : ComponentState(GraphNode, CXNode)
+public sealed record SelectMenuState : ComponentState
 {
-    public new CXElement CXNode { get; init; } = CXNode;
+    public SelectMenuKind Kind { get; init; }
+    public new CXElement CXNode { get; init; }
+
+    public SelectMenuState(
+        SelectMenuKind kind,
+        CXElement element,
+        ComponentNodeInitializationContext context,
+        CancellationToken cancellationToken
+    ) : base(context, cancellationToken)
+    {
+        CXNode = element;
+        Kind = kind;
+    }
 }
 
 public sealed class SelectMenuComponentNode : ComponentNode<SelectMenuState>
@@ -141,9 +149,10 @@ public sealed class SelectMenuComponentNode : ComponentNode<SelectMenuState>
         InferKind(context.GraphContext, element).TryUnwrap(diagnostics, out var kind);
 
         var state = new SelectMenuState(
-            context.GraphNode,
+            kind,
             element,
-            kind
+            context,
+            cancellationToken
         );
 
         if (kind is SelectMenuKind.Unknown) return state;
@@ -269,7 +278,7 @@ public sealed class SelectMenuComponentNode : ComponentNode<SelectMenuState>
     public override void Validate(
         IComponentContext context, SelectMenuState state, IDiagnosticBag bag,
         CancellationToken cancellationToken = default
-    ) => Validators.ValidateSelectMenu(context, this, state, bag);
+    ) => Validators.ValidateSelectMenu(context, this, state, bag, cancellationToken);
 
     public override Result<RenderedComponent> Render(
         ComponentEmitContext context,

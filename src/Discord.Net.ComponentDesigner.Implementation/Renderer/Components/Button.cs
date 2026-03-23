@@ -26,12 +26,12 @@ partial class DiscordNetRenderer
                     .Map(styleRenderer =>
                         RenderPropertiesAsParameters(
                             context, state, cancellationToken,
-                            ("id", button.Id, CSharpValueGenerator.NullableInteger),
+                            ("id", button.Id, CSharpValueGenerator.NullableInt32),
                             ("style", button.Style, styleRenderer),
                             ("label", button.Label, CSharpValueGenerator.NullableString),
                             ("emoji", button.Emoji, CSharpValueGenerator.NullableEmoji),
                             ("customId", button.CustomId, CSharpValueGenerator.String),
-                            ("skuId", button.SkuId, CSharpValueGenerator.NullableSnowflake),
+                            ("skuId", button.SkuId, CSharpValueGenerator.NullableUInt64),
                             ("url", button.Url, CSharpValueGenerator.NullableString),
                             ("isDisabled", button.Disabled, CSharpValueGenerator.Boolean)
                         )
@@ -40,6 +40,7 @@ partial class DiscordNetRenderer
                     $"new {symbol.ToQualifiedName()}({parameters})",
                     symbol
                 )
-            );
+            )
+            .Map(GetConverterFromOptions(context, state, typingContext, cancellationToken));
     }
 }

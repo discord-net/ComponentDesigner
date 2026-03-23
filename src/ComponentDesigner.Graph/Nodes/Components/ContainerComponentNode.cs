@@ -34,7 +34,8 @@ public sealed class ContainerComponentNode : ComponentNode
             ),
             Components = new(
                 "components",
-                kind: ComponentPropertyValueKind.ManyComponents
+                kind: ComponentPropertyValueKind.ManyComponents,
+                flags: ComponentPropertyFlags.FromChildren
             )
         ];
     }

@@ -3,13 +3,26 @@ using ComponentDesigner.Parser;
 
 namespace ComponentDesigner.Nodes;
 
-public sealed record TextControlState(
-    GraphNode GraphNode,
-    ICXNode? CXNode,
-    TextControlGraph TextControlGraph
-) : ComponentState(GraphNode, CXNode)
+public sealed record TextControlState : ComponentState
 {
+    public TextControlGraph TextControlGraph { get; init; }
+
     public override CXTextSpan TextSpan => TextControlGraph.TextSpan;
+
+    public TextControlState(
+        TextControlGraph graph,
+        ComponentNodeInitializationContext context,
+        CancellationToken cancellationToken
+    ) : base(context, cancellationToken, graph.TextSpan)
+    {
+        TextControlGraph = graph;
+    }
+
+    public TextControlState(TextControlGraph graph, GraphNode graphNode)
+        : base(graphNode)
+    {
+        TextControlGraph = graph;
+    }
 }
 
 public sealed class TextControlNode : ComponentNode<TextControlState>
@@ -49,7 +62,11 @@ public sealed class TextControlNode : ComponentNode<TextControlState>
 
         // TODO: check remaining children
 
-        return new TextControlState(context.GraphNode, cxNodes, graph);
+        return new TextControlState(
+            graph,
+            context,
+            cancellationToken
+        );
     }
 
     public override void Validate(

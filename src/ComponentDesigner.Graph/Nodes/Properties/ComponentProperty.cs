@@ -18,7 +18,10 @@ public sealed class ComponentProperty : IEquatable<ComponentProperty>
     public bool IsOptional { get; }
     public bool RequiresValue { get; }
     public bool IsSynthetic { get; }
+    public ComponentPropertyFlags Flags { get; }
 
+    public bool IsFromChildren => Flags.HasFlag(ComponentPropertyFlags.FromChildren);
+    
     public bool ValueCardinalityOfOne => !Kind.HasFlag(ComponentPropertyValueKind.Many);
     public bool ValueCardinalityOfMany => Kind.HasFlag(ComponentPropertyValueKind.Many);
 
@@ -30,7 +33,8 @@ public sealed class ComponentProperty : IEquatable<ComponentProperty>
         IImmutableSet<string>? aliases = null,
         bool isOptional = false,
         bool requiresValue = true,
-        bool isSynthetic = false
+        bool isSynthetic = false,
+        ComponentPropertyFlags flags = ComponentPropertyFlags.None
     )
     {
         Name = name;
@@ -39,23 +43,29 @@ public sealed class ComponentProperty : IEquatable<ComponentProperty>
         IsOptional = isOptional;
         RequiresValue = requiresValue;
         IsSynthetic = isSynthetic;
+        Flags = flags;
     }
 
     public bool MatchesName(string name)
         => Name == name || (_aliases is not null && _aliases.Contains(name));
 
     public bool Equals(ComponentProperty? other)
-        => other is not null &&
-           Name == other.Name &&
-           IsOptional == other.IsOptional &&
-           IsSynthetic == other.IsSynthetic &&
-           RequiresValue == other.RequiresValue &&
-           (_aliases, other._aliases) switch
-           {
-               (not null, not null) => _aliases.SetEquals(other._aliases),
-               (null, null) => true,
-               _ => false
-           };
+        => other is not null && (
+            ReferenceEquals(this, other)
+            ||
+            (
+                Name == other.Name &&
+                IsOptional == other.IsOptional &&
+                IsSynthetic == other.IsSynthetic &&
+                RequiresValue == other.RequiresValue &&
+                (_aliases, other._aliases) switch
+                {
+                    (not null, not null) => _aliases.SetEquals(other._aliases),
+                    (null, null) => true,
+                    _ => false
+                }
+            )
+        );
 
     public override bool Equals(object? obj)
         => obj is ComponentProperty other && Equals(other);

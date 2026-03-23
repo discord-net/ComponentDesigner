@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using ComponentDesigner;
+using ComponentDesigner.Nodes;
 using ComponentDesigner.Parser;
 using ComponentDesigner.Util;
 
@@ -20,165 +21,154 @@ public sealed class ColorGenerator : CSharpValueGenerator
     public static ColorGenerator Get(bool allowNullable)
         => WeakMemoize.Of(allowNullable, static a => new ColorGenerator(a));
 
+    protected override Result<string> RenderLiteral(
+        IRendererContext context,
+        ComponentPropertyValue.Literal literalValue,
+        string literal,
+        CancellationToken cancellationToken = default
+    ) => FromText(context, literalValue, cancellationToken);
+
     protected override Result<string> RenderInterpolation(
         IRendererContext context,
-        CSharpValueGeneratorTarget target,
-        CXToken token,
-        IInterpolationInfo info,
-        CSharpValueGeneratorOptions options,
+        ComponentPropertyValue.Interpolation interpolationValue,
+        IInterpolationInfo interpolationInfo,
         CancellationToken cancellationToken = default
     )
     {
-        if (info.ConstantValue.IsSpecified)
+        if (interpolationInfo.ConstantValue.IsSpecified)
         {
-            if (info.ConstantValue.Value is string str) return FromText(context, token.TextSpan, str);
+            if (interpolationInfo.ConstantValue.Value is { } value)
+                return FromText(context, value.ToString().SourcedAt(interpolationValue), cancellationToken);
 
-            if (
-                info.ConstantValue.Value?.GetType().IsNumeric is true &&
-                uint.TryParse(info.ConstantValue.Value?.ToString(), out var hex)
-            )
-            {
-                return $"new global::{DiscordColorTypeName}({hex})";
-            }
+            if (_allowNullable) return "null";
+
+            return Diagnostic
+                .NullValueNotAllowed
+                .At(interpolationValue);
         }
 
-        var colorSymbol = context.CompilationProvider.GetTypeFromQualifiedName(DiscordColorTypeName);
+        var colorSymbol = context.CompilationProvider.GetTypeFromQualifiedName(DiscordColorTypeName, cancellationToken);
 
         if (
-            colorSymbol is not null && (
+            colorSymbol is not null &&
+            (
                 context.CompilationProvider.HasImplicitConversionBetween(
-                    info.Symbol,
+                    interpolationInfo.Symbol,
                     colorSymbol
                 )
                 ||
                 (
                     _allowNullable &&
-                    info.Symbol.IsNullableTypeOf(colorSymbol)
+                    interpolationInfo.Symbol.IsNullableTypeOf(colorSymbol)
                 )
             )
         )
         {
-            return context.GetReferenceToDesignerValue(info, info.Symbol);
+            return context.GetReferenceToDesignerValue(interpolationInfo, interpolationInfo.Symbol);
         }
 
-        return UseLibraryParseFunction(
-            context,
-            token.TextSpan,
-            context.GetReferenceToDesignerValue(info),
-            valueIsNullable: info.Symbol.CanNullPatternMatch
-        );
-    }
-
-    protected override Result<string> RenderScalar(
-        IRendererContext context,
-        CSharpValueGeneratorTarget target,
-        CXToken token,
-        CSharpValueGeneratorOptions options,
-        CancellationToken cancellationToken = default
-    ) => FromText(context, token.TextSpan, token.Value);
-
-    protected override Result<string> RenderMultipart(
-        IRendererContext context,
-        CSharpValueGeneratorTarget target,
-        CXValue.Multipart multipart,
-        CSharpValueGeneratorOptions options,
-        CancellationToken cancellationToken = default
-    ) => UseLibraryParseFunction(
-        context,
-        multipart.TextSpan,
-        StringGenerator.ToCSharpString(multipart),
-        valueIsNullable: false
-    );
-
-    private Result<string> FromText(IRendererContext context, CXTextSpan textSpan, string text)
-    {
-        if (TryGetColorPreset(context, text, out var preset)) 
-            return preset;
-
-        var hex = text;
-
-        if (hex.StartsWith("#")) hex = hex.Substring(1);
-
-        if (
-            uint.TryParse(
-                hex,
-                NumberStyles.HexNumber,
-                null,
-                out var hexCode
+        return Diagnostic
+            .TypeMismatch(
+                DiscordColorTypeName,
+                interpolationInfo.Symbol!
             )
-        )
-        {
-            return $"new global::{DiscordColorTypeName}({hexCode})";
-        }
-
-        return UseLibraryParseFunction(context, textSpan, text, valueIsNullable: false);
+            .At(interpolationValue);
     }
 
-    private Result<string> UseLibraryParseFunction(
+    private Result<string> FromText(
         IRendererContext context,
-        CXTextSpan textSpan,
-        string value,
-        bool valueIsNullable
+        SourcedValue<string> text,
+        CancellationToken cancellationToken
     )
     {
-        if (!_allowNullable && valueIsNullable)
-            return textSpan.Report(Diagnostic.NullValueNotAllowed);
+        if (TryGetColorPreset(context, text, out var preset, cancellationToken)) return preset;
 
-        if (string.IsNullOrWhiteSpace(value))
-            return textSpan.Report(Diagnostic.EmptyValueNotAllowed);
+        if (TryGetHexColor(text, out var hex)) return hex;
 
-        string code;
+        return UseLibraryParseFunc(context, text);
+    }
 
-        if (valueIsNullable)
+    private Result<string> UseLibraryParseFunc(
+        IRendererContext context,
+        SourcedValue<string> text
+    )
+    {
+        if (string.IsNullOrWhiteSpace(text))
         {
-            var varName = context.CreateVariable();
-            code =
-                $$"""
-                  {{value}} is {} {{varName}}
-                      ? global::{{DiscordColorTypeName}}.Parse({{varName}}.ToString())
-                      : null
-                  """;
+            return Diagnostic
+                .EmptyValueNotAllowed
+                .At(text);
         }
-        else
+
+        if (text.Value is "null")
         {
-            code = $"global::{DiscordColorTypeName}.Parse({value})";
+            if (_allowNullable) return "null";
+
+            return Diagnostic
+                .NullValueNotAllowed
+                .At(text);
         }
 
         return (
-            code,
-            textSpan.Report(Diagnostic.UsingRuntimeValidation($"{DiscordColorTypeName}.Parse"))
+            $"global::{DiscordColorTypeName}.Parse({StringGenerator.ToCSharpString(context, text)})",
+            Diagnostic
+                .UsingRuntimeValidation($"{DiscordColorTypeName}.Parse")
+                .At(text)
         );
+    }
+
+    private static bool TryGetHexColor(
+        string text,
+        [MaybeNullWhen(false)] out string result
+    )
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            result = null;
+            return false;
+        }
+
+        if (text.StartsWith("#"))
+            text = text.Substring(1);
+
+        if (uint.TryParse(text, NumberStyles.HexNumber, null, out var hexCode))
+        {
+            result = $"new global::{DiscordColorTypeName}({hexCode})";
+            return true;
+        }
+
+        result = null;
+
+        return false;
     }
 
     private static bool TryGetColorPreset(
         IRendererContext context,
-        string name,
-        [MaybeNullWhen(false)] out string preset
+        string presetName,
+        [MaybeNullWhen(false)] out string preset,
+        CancellationToken cancellationToken
     )
     {
-        var symbol = context.CompilationProvider.GetTypeFromQualifiedName(DiscordColorTypeName);
-
-        if (symbol is null)
+        if (string.IsNullOrWhiteSpace(presetName))
         {
             preset = null;
             return false;
         }
 
-        var field = symbol
-            .Fields
+        var symbol = context.CompilationProvider.GetTypeFromQualifiedName(DiscordColorTypeName, cancellationToken);
+
+        preset = symbol
+            ?.Fields
             .FirstOrDefault(x =>
-                x is { IsPublic: true, IsStatic: true, IsReadOnly: true } &&
-                x.Name.Equals(name, StringComparison.InvariantCultureIgnoreCase) &&
-                x.Type.Equals(symbol)
-            );
+                IsColorPresetField(x) &&
+                x.Name.Equals(presetName, StringComparison.InvariantCultureIgnoreCase)
+            )
+            ?.ToQualifiedName();
 
-        if (field is not null)
-        {
-            preset = field.ToQualifiedName();
-            return true;
-        }
+        return preset is not null;
 
-        preset = null;
-        return false;
+        static bool IsColorPresetField(ICSharpFieldSymbol symbol)
+            => symbol is { IsPublic: true, IsStatic: true, IsReadOnly: true } &&
+               symbol.Type.Equals(symbol.ContainingType);
     }
 }

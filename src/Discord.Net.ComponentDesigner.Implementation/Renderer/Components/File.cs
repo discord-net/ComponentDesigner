@@ -16,7 +16,7 @@ partial class DiscordNetRenderer
         .Combine(
             RenderPropertiesAsParameters(
                 context, state, cancellationToken,
-                ("id", file.Id, CSharpValueGenerator.NullableInteger),
+                ("id", file.Id, CSharpValueGenerator.NullableInt32),
                 ("media", file.Media, CSharpValueGenerator.UnfurledMediaItemProperties),
                 ("isSpoiler", file.IsSpoiler, CSharpValueGenerator.Boolean)
             ),
@@ -24,5 +24,6 @@ partial class DiscordNetRenderer
                 $"new {symbol.ToQualifiedName()}({parameters})",
                 symbol
             )
-        );
+        )
+        .Map(GetConverterFromOptions(context, state, typingContext, cancellationToken));
 }

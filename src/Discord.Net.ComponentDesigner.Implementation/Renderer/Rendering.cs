@@ -69,13 +69,92 @@ partial class DiscordNetRenderer
         ) => new(callback);
     }
 
+    private delegate Result<string> GenericRenderer<T>(
+        IRendererContext context,
+        T value,
+        CancellationToken cancellationToken
+    ) where T : ComponentPropertyValue;
+
+    private static Result<string> RenderGenericArrayOfValue(
+        IRendererContext context,
+        ComponentPropertyValue value,
+        CancellationToken cancellationToken,
+        GenericRenderer<ComponentPropertyValue.Literal>? literalHandler = null,
+        GenericRenderer<ComponentPropertyValue.Component>? componentHandler = null,
+        GenericRenderer<ComponentPropertyValue.Interpolation>? interpolationHandler = null,
+        GenericRenderer<ComponentPropertyValue.None>? noneHandler = null
+    )
+    {
+        var kind = ComponentPropertyValueKind.None;
+
+        if (literalHandler is not null)
+            kind |= ComponentPropertyValueKind.Literal;
+
+        if (componentHandler is not null)
+            kind |= ComponentPropertyValueKind.Component;
+
+        if (interpolationHandler is not null)
+            kind |= ComponentPropertyValueKind.Interpolation;
+
+        using var bag = PooledDiagnosticBag.Get();
+        using var _ = StringBuilder.Pooled(out var sb);
+
+        foreach (var flattenedValue in value.AsFlattened)
+        {
+            var maybeResult = flattenedValue switch
+            {
+                ComponentPropertyValue.Literal literal when literalHandler is not null
+                    => literalHandler(context, literal, cancellationToken),
+                ComponentPropertyValue.Component component when componentHandler is not null
+                    => componentHandler(context, component, cancellationToken),
+                ComponentPropertyValue.Interpolation interpolation when interpolationHandler is not null
+                    => interpolationHandler(context, interpolation, cancellationToken),
+                ComponentPropertyValue.None none when noneHandler is not null
+                    => noneHandler(context, none, cancellationToken),
+                _ => (Result<string>?)null
+            };
+
+            if (!maybeResult.HasValue)
+            {
+                bag.Add(
+                    Diagnostic
+                        .InvalidPropertyValue(
+                            flattenedValue,
+                            kind
+                        )
+                        .At(flattenedValue)
+                );
+                
+                continue;
+            }
+
+            var result = maybeResult.Value.Unwrap(bag);
+            
+            if(result is null) continue;
+
+            if (sb.Length > 0) sb.AppendLine(",");
+
+            sb.Append(result);
+        }
+
+        if (sb.Length is 0) return "[]";
+
+        return
+            $"""
+             
+             [
+                 {sb.ToString().WithNewlinePadding(4)}
+             ]
+             """;
+    }
+
     private static Result<string> RenderAsSingleChildComponent(
         IRendererContext context,
         ComponentPropertyValue value,
         CancellationToken cancellationToken
     )
     {
-        if (value.GraphNode is not { } graphNode)
+        if (value.AsSingle is not ComponentPropertyValue.Component { GraphNode: var graphNode })
         {
             return Diagnostic
                 .InvalidPropertyValue(
@@ -108,19 +187,7 @@ partial class DiscordNetRenderer
         bool withinCollectionExpression
     )
     {
-        var children = value switch
-        {
-            ComponentPropertyValue.Many many => many.Values
-                .OfType<ComponentPropertyValue.Component>()
-                .Select(x => x.GraphNode)
-                .ToArray(),
-            ComponentPropertyValue.Component component => [component.GraphNode],
-            _ => []
-        };
-
-        //if (value is not ComponentPropertyValue.Component { GraphNodes: { } children }) return default;
-
-        if (children.Length is 0) return withinCollectionExpression ? "[]" : string.Empty;
+        if (value.IsNone) return withinCollectionExpression ? "[]" : string.Empty;
 
         var sb = new StringBuilder();
         using var bag = PooledDiagnosticBag.Get();
@@ -128,9 +195,23 @@ partial class DiscordNetRenderer
         var options = new ComponentOptions(
             new RendererTypingContext(targetType)
         );
-        
-        foreach (var child in children)
+
+        foreach (var childValue in value.AsFlattened)
         {
+            if (childValue is not ComponentPropertyValue.Component { GraphNode: var child })
+            {
+                bag.Add(
+                    Diagnostic
+                        .InvalidPropertyValue(
+                            childValue,
+                            ComponentPropertyValueKind.Component
+                        )
+                        .At(childValue)
+                );
+
+                continue;
+            }
+
             var result = context.RenderGraphNode(
                 child,
                 options,
@@ -224,5 +305,5 @@ partial class DiscordNetRenderer
 
 
     private static bool ShouldOmit(ComponentPropertyValue propertyValue)
-        => propertyValue.Property.IsSynthetic || propertyValue is { IsOptional: true, IsSpecified: false };
+        => propertyValue.Property.IsSynthetic || propertyValue is { Property.IsOptional: true, IsNone: true, IsAttributeNameOnly: false };
 }

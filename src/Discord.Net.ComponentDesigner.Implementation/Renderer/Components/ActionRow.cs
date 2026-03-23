@@ -16,14 +16,15 @@ partial class DiscordNetRenderer
         .Combine(
             RenderPropertiesAsParameters(
                 context, state, cancellationToken,
-                ("id", actionRow.Id, CSharpValueGenerator.NullableInteger),
+                ("id", actionRow.Id, CSharpValueGenerator.NullableInt32),
                 ("components", actionRow.Components, new(RenderActionRowComponents))
             ),
             (symbol, parameters) => new RenderedComponent(
                 $"new {symbol.ToQualifiedName()}({parameters})",
                 symbol
             )
-        );
+        )
+        .Map(GetConverterFromOptions(context, state, typingContext, cancellationToken));
 
     private static Result<string> RenderActionRowComponents(
         IRendererContext context,

@@ -41,7 +41,9 @@ public sealed class FileTests(ITestOutputHelper output) : BaseComponentTest(outp
                 """
                 new global::Discord.FileComponentBuilder(
                     id: 123,
-                    media: new global::Discord.UnfurledMediaItemProperties("attachment://file.png"),
+                    media: new global::Discord.UnfurledMediaItemProperties(
+                        "attachment://file.png"
+                    ),
                     isSpoiler: false
                 )
                 """

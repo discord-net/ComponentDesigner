@@ -10,7 +10,7 @@ public abstract class ComponentNode : ComponentNode<ComponentState>
         ComponentNodeInitializationContext context,
         IDiagnosticBag diagnostics,
         CancellationToken cancellationToken = default
-    ) => new(context);
+    ) => new(context, cancellationToken);
 
     static ComponentNode()
     {

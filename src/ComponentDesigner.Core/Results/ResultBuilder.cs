@@ -67,5 +67,6 @@ public sealed class ResultBuilder<T> : IDisposable, IDiagnosticBag
     bool IDiagnosticBag.HasErrors => _hasErrors;
 
     IReadOnlyList<Diagnostic> IDiagnosticBag.ToCollection() => _diagnostics?.ToArray() ?? [];
+    int IDiagnosticBag.Count => _diagnostics?.Count ?? 0;
 
 }

@@ -25,9 +25,8 @@ public sealed class FunctionalComponentNode : ComponentNode<FunctionalState>, ID
 
         return SearchForTargetMethod(element, context.GraphContext, cancellationToken)
             .Map(symbol => FunctionalState
-                .FromSymbol(
+                .CreateFromSymbol(
                     context,
-                    context.GraphContext,
                     symbol,
                     context.GraphNode,
                     element,
@@ -43,19 +42,25 @@ public sealed class FunctionalComponentNode : ComponentNode<FunctionalState>, ID
         IComponentContext context,
         IDiagnosticBag diagnostics,
         CancellationToken cancellationToken = default
-    ) => SearchForTargetMethod(state.CXNode, context, cancellationToken)
-        .Map(symbol => FunctionalState
-            .FromSymbol(
-                initializationContext: null,
-                context,
-                symbol,
-                state.GraphNode,
-                state.CXNode,
-                diagnostics,
-                cancellationToken
-            )
-        )
-        .Unwrap(diagnostics, state);
+    )
+    {
+        // todo
+
+        return state;
+        // SearchForTargetMethod(state.CXNode, context, cancellationToken)
+        //     .Map(symbol => FunctionalState
+        //         .CreateFromSymbol(
+        //             initializationContext: null,
+        //             context,
+        //             symbol,
+        //             state.GraphNode,
+        //             state.CXNode,
+        //             diagnostics,
+        //             cancellationToken
+        //         )
+        //     )
+        //     .Unwrap(diagnostics, state);
+    }
 
     #region Search
 
@@ -135,7 +140,7 @@ public sealed class FunctionalComponentNode : ComponentNode<FunctionalState>, ID
             if (symbol is not ICSharpMethodSymbol methodSymbol)
                 return new(symbol, SearchResultKind.NotAMethod);
 
-            if (!context.ComponentTypingProvider.IsValidComponentType(context, methodSymbol.ReturnType, cancellationToken))
+            if (!context.ComponentTypingProvider!.IsValidComponentType(context, methodSymbol.ReturnType, cancellationToken))
                 return new(symbol, SearchResultKind.DoesntReturnAComponent);
 
             if (methodSymbol.IsStatic != inStaticContext)

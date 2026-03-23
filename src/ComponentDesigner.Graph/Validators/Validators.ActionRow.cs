@@ -11,9 +11,7 @@ partial class Validators
         IDiagnosticBag bag
     )
     {
-        ValidateElementStructure(actionRow, state, bag);
-        ValidateProperty(actionRow, state.GetPropertyValue(actionRow.Id), bag);
-        ReportDiagnosticsForUnknownProperties(actionRow, state, bag);
+        ValidateGenericComponent(actionRow, state, bag);
 
         if (state.Children.Count > 0)
         {

@@ -2,6 +2,7 @@
 
 public interface IDiagnosticBag
 {
+    int Count { get; }
     bool HasAny { get; }
     
     bool HasErrors { get; }
@@ -14,6 +15,7 @@ public interface IDiagnosticBag
 
 public sealed class PooledDiagnosticBag : IDiagnosticBag, IDisposable
 {
+    public int Count => _diagnostics?.Count ?? 0;
     public bool HasAny => _diagnostics?.Count > 0;
     public bool HasErrors { get; private set; }
     
@@ -23,13 +25,13 @@ public sealed class PooledDiagnosticBag : IDiagnosticBag, IDisposable
     {
     }
 
-    public static PooledDiagnosticBag Get(params ICollection<Diagnostic> initial)
+    public static PooledDiagnosticBag Get(params IEnumerable<Diagnostic> initial)
     {
         var pooled = ObjectPool<PooledDiagnosticBag>.Get(static () => new());
         pooled._diagnostics?.Clear();
         pooled.HasErrors = false;
 
-        if (initial.Count > 0) pooled.Add(initial);
+        pooled.Add(initial);
         
         return pooled;
     }

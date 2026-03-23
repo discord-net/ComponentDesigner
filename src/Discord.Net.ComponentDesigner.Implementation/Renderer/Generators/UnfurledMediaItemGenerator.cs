@@ -1,4 +1,5 @@
 ﻿using ComponentDesigner;
+using ComponentDesigner.Nodes;
 
 namespace Discord;
 
@@ -8,13 +9,17 @@ public sealed class UnfurledMediaItemGenerator : CSharpValueGenerator
 
     public override Result<string> Render(
         IRendererContext context,
-        CSharpValueGeneratorTarget target,
-        CSharpValueGeneratorOptions options = default,
+        ComponentPropertyValue value,
         CancellationToken cancellationToken = default
     ) => String
-        .Render(context, target, options, cancellationToken)
+        .Render(context, value, cancellationToken)
         .Combine(
-            context.CompilationProvider.UnfurledMediaItemProperties(target.TextSpan, cancellationToken),
-            (url, symbol) => $"new {symbol.ToQualifiedName()}({url})"
+            context.CompilationProvider.UnfurledMediaItemProperties(value, cancellationToken),
+            (url, symbol) => 
+                $"""
+                new {symbol.ToQualifiedName()}(
+                    {url}
+                )
+                """
         );
 }

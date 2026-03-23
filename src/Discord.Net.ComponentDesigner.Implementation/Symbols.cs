@@ -4,14 +4,22 @@ namespace Discord;
 
 internal static class Symbols
 {
+    extension(ICSharpTypeSymbol symbol)
+    {
+        public bool Equals(
+            Func<CXTextSpan, CancellationToken, Result<ICSharpTypeSymbol>> func,
+            CancellationToken cancellationToken
+        ) => func(default, cancellationToken).GetValueOrDefault()?.Equals(symbol) is true;
+    }
+
     extension(ICompilationProvider compilation)
     {
         public Result<ICSharpTypeSymbol> IEnumerableOfIMessageComponentBuilder<T>(
             T source,
             CancellationToken cancellationToken = default
         ) where T : ISourceLocatable
-            => compilation.IEnumerableOf(compilation.IMessageComponentBuilder, source, cancellationToken); 
-        
+            => compilation.IEnumerableOf(compilation.IMessageComponentBuilder, source, cancellationToken);
+
         public Result<ICSharpTypeSymbol> IEnumerableOfMediaGalleryItemProperties<T>(
             T source,
             CancellationToken cancellationToken = default
@@ -210,20 +218,13 @@ internal static class Symbols
             CancellationToken cancellationToken = default
         ) => compilation.GetSymbol<ICSharpTypeSymbol>(name, reference, cancellationToken);
 
-        // public Result<ICSharpTypeSymbol> IEnumerableOfIMessageComponentBuilder<T>(
-        //     T source,
-        //     CancellationToken cancellationToken = default
-        // ) where T : ISourceLocatable => compilation
-        //     .IMessageComponentBuilder(source, cancellationToken)
-        //     .Map(builder =>
-        //     {
-        //         if (compilation.IEnumerableOfT is not { } enumerableOfT)
-        //             return Diagnostic
-        //                 .TypeNotFound("IEnumerable`1")
-        //                 .At(source);
-        //
-        //         return new Result<ICSharpTypeSymbol>(enumerableOfT.ConstructGeneric(builder));
-        //     });
+        public Func<CXTextSpan, CancellationToken, Result<ICSharpTypeSymbol>> IEnumerableOf(
+            Func<CXTextSpan, CancellationToken, Result<ICSharpTypeSymbol>> symbol
+        ) => (source, cancellationToken) => compilation.IEnumerableOf(
+            symbol,
+            source,
+            cancellationToken
+        );
 
         public Result<ICSharpTypeSymbol> IEnumerableOf<T>(
             Func<T, CancellationToken, Result<ICSharpTypeSymbol>> symbol,

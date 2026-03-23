@@ -19,11 +19,11 @@ partial class DiscordNetRenderer
             RenderPropertiesAsParameters(
                 context, state, cancellationToken,
                 explicitParameters: [("type", ToDiscordNetComponentTypeEnum(state.Kind))],
-                ("id", selectMenu.Id, CSharpValueGenerator.NullableInteger),
+                ("id", selectMenu.Id, CSharpValueGenerator.NullableInt32),
                 ("customId", selectMenu.CustomId, CSharpValueGenerator.String),
                 ("placeholder", selectMenu.Placeholder, CSharpValueGenerator.NullableString),
-                ("minValues", selectMenu.MinValues, CSharpValueGenerator.NullableInteger),
-                ("maxValues", selectMenu.MaxValues, CSharpValueGenerator.NullableInteger),
+                ("minValues", selectMenu.MinValues, CSharpValueGenerator.NullableInt32),
+                ("maxValues", selectMenu.MaxValues, CSharpValueGenerator.NullableInt32),
                 ("isRequired", selectMenu.Required, CSharpValueGenerator.Boolean),
                 ("isDisabled", selectMenu.Disabled, CSharpValueGenerator.Boolean),
                 ("options", selectMenu.Options, new(RenderSelectMenuOptionProperty)),
@@ -33,7 +33,8 @@ partial class DiscordNetRenderer
                 $"new {symbol.ToQualifiedName()}({parameters})",
                 symbol
             )
-        );
+        )
+        .Map(GetConverterFromOptions(context, state, typingContext, cancellationToken));
 
     private static Result<string> RenderSelectMenuDefaultValuesProperty(
         IRendererContext context,
@@ -41,66 +42,64 @@ partial class DiscordNetRenderer
         CancellationToken cancellationToken
     )
     {
-        return context
-            .CompilationProvider
-            .SelectMenuDefaultValue(propertyValue, cancellationToken)
-            .Map(Render);
+        return RenderGenericArrayOfValue(
+            context,
+            propertyValue,
+            cancellationToken,
+            componentHandler: RenderComponentValue,
+            interpolationHandler: RenderInterpolation
+        );
 
-        Result<string> Render(ICSharpTypeSymbol symbol)
-            => (propertyValue switch
-            {
-                ComponentPropertyValue.Many many =>
-                    many
-                        .Values
-                        .Select(x => RenderSingle(symbol, x))
-                        .FlattenAll()
-                        .Map(x => string.Join($",{Environment.NewLine}", x)),
-                _ => RenderSingle(symbol, propertyValue)
-            }).Map(x =>
-                $"""
+        static Result<string> RenderComponentValue(
+            IRendererContext context,
+            ComponentPropertyValue.Component component,
+            CancellationToken cancellationToken
+        ) => context
+            .RenderGraphNode(
+                component.GraphNode,
+                cancellationToken: cancellationToken
+            )
+            .AsSource;
 
-                 [
-                     {x.WithNewlinePadding(4)}
-                 ]
-                 """
-            );
-
-        Result<string> RenderSingle(
-            ICSharpTypeSymbol symbol,
-            ComponentPropertyValue value
+        static Result<string> RenderInterpolation(
+            IRendererContext context,
+            ComponentPropertyValue.Interpolation interpolation,
+            CancellationToken cancellationToken
         )
         {
-            switch (value)
+            if (interpolation.Info.Symbol is null)
+                return Diagnostic
+                    .TypeMismatch(
+                        "unknown",
+                        "SelectMenuDefaultValue"
+                    )
+                    .At(interpolation);
+
+            if (interpolation.Info.Symbol.Equals(context.CompilationProvider.SelectMenuDefaultValue, cancellationToken))
+                return context.GetReferenceToDesignerValue(
+                    interpolation.Info,
+                    interpolation.Info.Symbol
+                );
+
+            if (
+                interpolation.Info.Symbol.Equals(
+                    context.CompilationProvider.IEnumerableOf(context.CompilationProvider.SelectMenuDefaultValue),
+                    cancellationToken
+                )
+            )
             {
-                case {GraphNode: {} graphNode}:
-                    return context
-                        .RenderGraphNode(
-                            graphNode,
-                            new(new(symbol)),
-                            cancellationToken
-                        )
-                        .Map(static x => x.Source);
-
-                case { CXValue: CXValue.Interpolation interpolation }:
-                    var info = context.GetInterpolationInfo(interpolation);
-
-                    if (symbol.Equals(info.Symbol!))
-                        return context.GetReferenceToDesignerValue(info, info.Symbol);
-
-                    if (info.Symbol.TryGetEnumerableType(out var inner) && inner.Equals(symbol))
-                        return $"..{context.GetReferenceToDesignerValue(info, info.Symbol)}";
-
-                    return Diagnostic.TypeMismatch(symbol, info.Symbol!).At(value);
-
-                default:
-                    return Diagnostic
-                        .InvalidPropertyValue(
-                            value,
-                            ComponentPropertyValueKind.SyntaxValue,
-                            ComponentPropertyValueKind.Component
-                        )
-                        .At(value);
+                return $"..{context.GetReferenceToDesignerValue(
+                    interpolation.Info,
+                    interpolation.Info.Symbol
+                )}";
             }
+
+            return Diagnostic
+                .TypeMismatch(
+                    interpolation.Info.Symbol,
+                    "SelectMenuDefaultValue"
+                )
+                .At(interpolation);
         }
     }
 
@@ -110,66 +109,70 @@ partial class DiscordNetRenderer
         CancellationToken cancellationToken
     )
     {
-        return context
+        return RenderGenericArrayOfValue(
+            context,
+            propertyValue,
+            cancellationToken,
+            componentHandler: RenderComponentValue,
+            interpolationHandler: RenderInterpolation
+        );
+
+        static Result<string> RenderComponentValue(
+            IRendererContext context,
+            ComponentPropertyValue.Component component,
+            CancellationToken cancellationToken
+        ) => context
             .CompilationProvider
-            .SelectMenuOptionBuilder(propertyValue, cancellationToken)
-            .Map(Render);
-
-        Result<string> Render(ICSharpTypeSymbol symbol)
-            => (propertyValue switch
-            {
-                ComponentPropertyValue.Many many =>
-                    many
-                        .Values
-                        .Select(x => RenderSingle(symbol, x))
-                        .FlattenAll()
-                        .Map(x => string.Join($",{Environment.NewLine}", x)),
-                _ => RenderSingle(symbol, propertyValue)
-            }).Map(x =>
-                $"""
-
-                 [
-                     {x.WithNewlinePadding(4)}
-                 ]
-                 """
+            .IEnumerableOf(context.CompilationProvider.SelectMenuOptionBuilder, component, cancellationToken)
+            .Map(symbol => context
+                .RenderGraphNode(
+                    component.GraphNode,
+                    options: new(new(symbol)),
+                    cancellationToken: cancellationToken
+                )
+                .AsSource
             );
 
-        Result<string> RenderSingle(
-            ICSharpTypeSymbol symbol,
-            ComponentPropertyValue value
+        static Result<string> RenderInterpolation(
+            IRendererContext context,
+            ComponentPropertyValue.Interpolation interpolation,
+            CancellationToken cancellationToken
         )
         {
-            switch (value)
+            if (interpolation.Info.Symbol is null)
+                return Diagnostic
+                    .TypeMismatch(
+                        "unknown",
+                        "SelectMenuOption"
+                    )
+                    .At(interpolation);
+
+            if (interpolation.Info.Symbol.Equals(context.CompilationProvider.SelectMenuOptionBuilder,
+                    cancellationToken))
+                return context.GetReferenceToDesignerValue(
+                    interpolation.Info,
+                    interpolation.Info.Symbol
+                );
+
+            if (
+                interpolation.Info.Symbol.Equals(
+                    context.CompilationProvider.IEnumerableOf(context.CompilationProvider.SelectMenuOptionBuilder),
+                    cancellationToken
+                )
+            )
             {
-                case {GraphNode: {} graphNode}:
-                    return context
-                        .RenderGraphNode(
-                            graphNode,
-                            new(new(symbol)),
-                            cancellationToken
-                        )
-                        .Map(static x => x.Source);
-
-                case { CXValue: CXValue.Interpolation interpolation }:
-                    var info = context.GetInterpolationInfo(interpolation);
-
-                    if (symbol.Equals(info.Symbol!))
-                        return context.GetReferenceToDesignerValue(info, info.Symbol);
-
-                    if (info.Symbol.TryGetEnumerableType(out var inner) && inner.Equals(symbol))
-                        return $"..{context.GetReferenceToDesignerValue(info, info.Symbol)}";
-
-                    return Diagnostic.TypeMismatch(symbol, info.Symbol!).At(value);
-
-                default:
-                    return Diagnostic
-                        .InvalidPropertyValue(
-                            value,
-                            ComponentPropertyValueKind.SyntaxValue,
-                            ComponentPropertyValueKind.Component
-                        )
-                        .At(value);
+                return $"..{context.GetReferenceToDesignerValue(
+                    interpolation.Info,
+                    interpolation.Info.Symbol
+                )}";
             }
+
+            return Diagnostic
+                .TypeMismatch(
+                    interpolation.Info.Symbol,
+                    "SelectMenuOption"
+                )
+                .At(interpolation);
         }
     }
 
@@ -204,7 +207,8 @@ partial class DiscordNetRenderer
                 $"new {symbol.ToQualifiedName()}({parameters})",
                 symbol
             )
-        );
+        )
+        .Map(GetConverterFromOptions(context, state, typingContext, cancellationToken));
 
     public override Result<RenderedComponent> RenderSelectMenuDefaultValue(
         IRendererContext context,
@@ -229,7 +233,8 @@ partial class DiscordNetRenderer
                  )
                  """
             )
-        );
+        )
+        .Map(GetConverterFromOptions(context, state, typingContext, cancellationToken));
 
     private static Result<string> RenderSelectMenuDefaultValueIdParameter(
         IRendererContext context,
@@ -239,7 +244,7 @@ partial class DiscordNetRenderer
     )
     {
         // TODO: allow interpolation of entities
-        return CSharpValueGenerator.Snowflake.Render(
+        return CSharpValueGenerator.UInt64.Render(
             context,
             state.GetPropertyValue(option.Id),
             cancellationToken: cancellationToken

@@ -10,13 +10,20 @@ public enum ButtonKind
     Premium
 }
 
-public sealed record ButtonState(
-    GraphNode GraphNode,
-    CXElement CXNode,
-    ButtonKind? InferredKind = null
-) : ComponentState(GraphNode, CXNode)
+public sealed record ButtonState : ComponentState
 {
-    public new CXElement CXNode { get; init; } = CXNode;
+    public new CXElement CXNode { get; init; }
+    
+    public ButtonKind? InferredKind { get; init; }
+
+    public ButtonState(
+        CXElement element,
+        ComponentNodeInitializationContext context,
+        CancellationToken cancellationToken
+    ) : base(context.GraphNode, element, context, cancellationToken)
+    {
+        CXNode = element;
+    }
 }
 
 public sealed class ButtonComponentNode : ComponentNode<ButtonState>
@@ -119,7 +126,7 @@ public sealed class ButtonComponentNode : ComponentNode<ButtonState>
     {
         if (context.CXNode is not CXElement element) return null;
 
-        var state = new ButtonState(context.GraphNode, element);
+        var state = new ButtonState(element, context, cancellationToken);
 
         // label can be ingested from children
         foreach (var childSyntax in element.Children)
@@ -196,7 +203,7 @@ public sealed class ButtonComponentNode : ComponentNode<ButtonState>
 
                 break;
 
-            case ComponentPropertyValue.Interpolation{Info: var info}:
+            case ComponentPropertyValue.Interpolation { Info: var info }:
                 return FromInterpolation(info);
         }
 

@@ -21,11 +21,13 @@ public sealed class SectionComponentNode : ComponentNode
             Id = ComponentProperty.Id,
             Accessory = new(
                 "accessory",
-                kind: ComponentPropertyValueKind.Component
+                kind: ComponentPropertyValueKind.Component,
+                flags: ComponentPropertyFlags.FromChildren
             ),
             Components = new(
                 "components",
-                kind: ComponentPropertyValueKind.ManyComponents
+                kind: ComponentPropertyValueKind.ManyComponents,
+                flags: ComponentPropertyFlags.FromChildren
             )
         ];
     }

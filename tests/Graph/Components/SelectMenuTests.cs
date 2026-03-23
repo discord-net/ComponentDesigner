@@ -11,7 +11,7 @@ public sealed class SelectMenuTests(ITestOutputHelper output) : BaseComponentTes
     {
         Graph("<select-menu />");
         {
-            Component<SelectMenuComponentNode>();
+            var selectMenu = Component<SelectMenuComponentNode>();
             {
                 AssertDiagnostic(Diagnostic.TypelessSelectMenu);
             }
@@ -169,6 +169,7 @@ public sealed class SelectMenuTests(ITestOutputHelper output) : BaseComponentTes
             Component<SelectMenuComponentNode>();
             {
                 Component<SelectMenuOptionComponentNode>();
+                Component<InterpolationComponentNode>();
                 Component<SelectMenuOptionComponentNode>();
             }
 

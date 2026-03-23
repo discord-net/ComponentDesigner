@@ -26,7 +26,7 @@ partial class BaseCSharpRenderer
 
             var parameterValue = state.GetPropertyValue(parameter);
 
-            if (parameterValue is { HasValue: false, RequiresValue: true })
+            if (parameterValue.IsNone)
             {
                 if (!parameter.IsOptional)
                 {
@@ -40,11 +40,11 @@ partial class BaseCSharpRenderer
                 continue;
             }
 
-            var result = BuildPropertyValue(parameterSymbol, parameterSymbol.Type, parameterValue);
-            
+            var result = BuildPropertyValue(parameterSymbol.Type, parameterValue);
+
             bag.Add(result.Diagnostics);
-            
-            if(result.HasValue) AppendParameter(parameters, parameter.Name, result.Value);
+
+            if (result.HasValue) AppendParameter(parameters, parameter.Name, result.Value);
         }
 
         if (bag.HasErrors) return new(bag.ToCollection());
@@ -59,7 +59,6 @@ partial class BaseCSharpRenderer
         );
 
         Result<string> BuildPropertyValue(
-            ICSharpParameterSymbol parameterSymbol,
             ICSharpTypeSymbol typeSymbol,
             ComponentPropertyValue propertyValue
         )
@@ -68,83 +67,178 @@ partial class BaseCSharpRenderer
 
             switch (propertyValue)
             {
-                case ComponentPropertyValue.AttributeComponent attributeElement:
+                case ComponentPropertyValue.Literal
+                    or ComponentPropertyValue.Interpolation
+                    or ComponentPropertyValue.None
+                    when (property.Kind & ComponentPropertyValueKind.SyntaxValue) > 0:
+                    return GetGeneratorForSymbol(
+                            context.CompilationProvider,
+                            typeSymbol
+                        )
+                        .Render(
+                            context,
+                            propertyValue,
+                            cancellationToken
+                        );
+                case ComponentPropertyValue.Component { GraphNode: var graphNode }
+                    when property.Kind.HasFlag(ComponentPropertyValueKind.Component):
                     return context
                         .RenderGraphNode(
-                            attributeElement.GraphNode,
+                            graphNode,
                             new(new(typeSymbol)),
                             cancellationToken
                         )
                         .Map(x => x.Source);
-                case ComponentPropertyValue.SyntaxValue:
-                case ComponentPropertyValue.Missing:
-                case ComponentPropertyValue.AttributeValue:
-                    return GetGeneratorForSymbol(
-                        context.CompilationProvider,
-                        typeSymbol
-                    ).Render(context, propertyValue, cancellationToken: cancellationToken);
 
-                case ComponentPropertyValue.Component child:
-                    return context.RenderGraphNode(
-                        child.GraphNode,
-                        new(
-                            TypingContext: new(typeSymbol)
-                        ),
-                        cancellationToken
-                    ).Map(x => x.Source);
-
-                case ComponentPropertyValue.Many many:
+                case ComponentPropertyValue.Many many
+                    when property.Kind.HasFlag(ComponentPropertyValueKind.Many):
                 {
-                    if (
-                        typeSymbol.Equals(context.CompilationProvider.String) ||
-                        !typeSymbol.TryGetEnumerableType(out var inner)
-                    )
+                    if (many.AsSingle is { } single)
                     {
-                        if (many.Values.Count <= 1)
+                        return BuildPropertyValue(typeSymbol, single);
+                    }
+
+                    var innerKind = many.Kind ^ ComponentPropertyValueKind.Many;
+                    var allowed = innerKind & property.Kind;
+
+                    ICSharpTypeSymbol? innerSymbol = null;
+
+                    var isEnumerable = !typeSymbol.Equals(context.CompilationProvider.String!) &&
+                                       typeSymbol.TryGetEnumerableType(out innerSymbol);
+
+                    innerSymbol ??= typeSymbol;
+
+                    if ((allowed & ComponentPropertyValueKind.SingleSyntaxValue) == allowed)
+                    {
+                        if (!isEnumerable)
                         {
-                            return BuildPropertyValue(
-                                parameterSymbol,
-                                typeSymbol,
-                                many.Values.FirstOrDefault() ??
-                                new ComponentPropertyValue.Missing(property, many.TextSpan)
+                            return GetGeneratorForSymbol(
+                                    context.CompilationProvider,
+                                    typeSymbol
+                                )
+                                .Render(
+                                    context,
+                                    propertyValue,
+                                    cancellationToken
+                                );
+                        }
+
+                        using var resultBuilder = Result<string>.Builder;
+                        using var _ = StringBuilder.Pooled(out var sb);
+
+                        foreach (var innerValue in many.Values)
+                        {
+                            if (
+                                innerValue.Kind is ComponentPropertyValueKind.None ||
+                                (innerValue.Kind & ComponentPropertyValueKind.SingleSyntaxValue) == innerValue.Kind
+                            )
+                            {
+                                if (
+                                    GetGeneratorForSymbol(
+                                        context.CompilationProvider,
+                                        innerSymbol
+                                    )
+                                    .Render(
+                                        context,
+                                        propertyValue,
+                                        cancellationToken
+                                    )
+                                    .TryUnwrap(resultBuilder, out var source)
+                                )
+                                {
+                                    if (sb.Length > 0) sb.AppendLine(",");
+
+                                    sb.Append(source);
+                                }
+
+                                continue;
+                            }
+
+                            resultBuilder.AddDiagnostic(
+                                Diagnostic
+                                    .InvalidPropertyValue(
+                                        innerValue,
+                                        ComponentPropertyValueKind.SingleSyntaxValue
+                                    )
+                                    .At(innerValue)
                             );
                         }
 
-                        // more than one value, cardinality doesn't match
-                        return Diagnostic
-                            .OnlyOneChildAllowed(functionalComponent)
-                            .At(many);
+                        if (sb.Length is 0) return resultBuilder.WithValue("[]").Build();
+
+                        return resultBuilder
+                            .WithValue(
+                                $"""
+                                 [
+                                     {sb.ToString().WithNewlinePadding(4)}
+                                 ]
+                                 """
+                            )
+                            .Build();
                     }
 
-                    return many
-                        .Values
-                        .Select(x => BuildPropertyValue(parameterSymbol, inner, x))
-                        .FlattenAll()
-                        .Map(x =>
-                        {
-                            using var _ = StringBuilder.Pooled(out var sb);
+                    if (allowed is ComponentPropertyValueKind.Component)
+                    {
+                        return BuildManyComponents(many, typeSymbol);
+                    }
 
-                            // start on a new line
-                            sb.AppendLine();
-                            sb.AppendLine("[");
-
-                            for (var i = 0; i < x.Count; i++)
-                            {
-                                if (i > 0) sb.AppendLine(",");
-
-                                sb.Append("    ").Append(x[i].WithNewlinePadding(4));
-                            }
-
-                            if (x.Count > 0) sb.AppendLine();
-                            sb.Append(']');
-
-                            return sb.ToString();
-                        });
+                    // bad configuration
+                    return Diagnostic
+                        .InvalidPropertyValue(
+                            propertyValue,
+                            allowed
+                        )
+                        .At(propertyValue);
                 }
 
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(propertyValue));
+                    return Diagnostic
+                        .InvalidPropertyValue(propertyValue)
+                        .At(propertyValue);
             }
+        }
+
+        Result<string> BuildManyComponents(ComponentPropertyValue.Many many, ICSharpTypeSymbol symbol)
+        {
+            using var resultBuilder = Result<string>.Builder;
+            using var _ = StringBuilder.Pooled(out var sb);
+
+            foreach (var innerValue in many.Values)
+            {
+                // should always be a component
+                if (innerValue is not ComponentPropertyValue.Component { GraphNode: var graphNode })
+                    throw new InvalidOperationException(
+                        "Parity between Many.Kind does not match its values"
+                    );
+
+                if (sb.Length > 0)
+                    sb.AppendLine(",");
+                if (
+                    context
+                    .RenderGraphNode(
+                        graphNode,
+                        new(new(symbol)),
+                        cancellationToken
+                    )
+                    .TryUnwrap(resultBuilder, out var renderedComponent)
+                )
+                {
+                    sb.Append(renderedComponent.Source);
+                }
+            }
+
+            if (sb.Length is 0)
+                return resultBuilder.WithValue("[]").Build();
+
+            return resultBuilder
+                .WithValue(
+                    $"""
+                     [
+                         {sb.ToString().WithNewlinePadding(4)}
+                     ]
+                     """
+                )
+                .Build();
         }
 
         static void AppendParameter(StringBuilder builder, string name, string value)

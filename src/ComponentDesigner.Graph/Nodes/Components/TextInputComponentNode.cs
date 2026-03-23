@@ -71,5 +71,6 @@ public sealed class TextInputComponentNode : ComponentNode
         ComponentState state,
         ComponentOptions options,
         CancellationToken cancellationToken = default
-    ) => context.Renderer.RenderTextInput(context, this, state, options.TypingContext, cancellationToken);
+    ) => context.Renderer
+        .RenderTextInput(context, this, state, options.TypingContext, cancellationToken);
 }
