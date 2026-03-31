@@ -28,7 +28,7 @@ public sealed record ButtonState : ComponentState
 
 public sealed class ButtonComponentNode : ComponentNode<ButtonState>
 {
-    public static readonly ImmutableArray<string> ValidButtonStyles =
+    public static readonly IReadOnlyList<string> ValidButtonStyles =
     [
         "primary",
         "secondary",

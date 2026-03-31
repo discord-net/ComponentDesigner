@@ -3,7 +3,7 @@ using ComponentDesigner.Util;
 
 namespace ComponentDesigner;
 
-public sealed class CXComponentTree : 
+public sealed class CXComponentTree :
     IEquatable<CXComponentTree>
 {
     public static CXComponentTree Empty => new();
@@ -20,10 +20,30 @@ public sealed class CXComponentTree :
 
     public IReadOnlyList<GraphNode> RootNodes => _rootNodes ?? [];
 
-    private readonly List<GraphNode> _nodes = [];
+    private readonly List<GraphNode> _nodes;
 
     private List<GraphNode>? _nodesWithExternalDependencies;
     private List<GraphNode>? _rootNodes;
+
+    public CXComponentTree()
+    {
+        _nodes = [];
+    }
+
+    private CXComponentTree(
+        int nodesCapacity,
+        int? nodesWithExternalDependenciesCapacity,
+        int? rootNodesCapacity
+    )
+    {
+        _nodes = new(nodesCapacity);
+
+        if (nodesWithExternalDependenciesCapacity.HasValue)
+            _nodesWithExternalDependencies = new(nodesWithExternalDependenciesCapacity.Value);
+
+        if (rootNodesCapacity.HasValue)
+            _rootNodes = new(rootNodesCapacity.Value);
+    }
 
     public GraphNode Reuse(
         GraphNode graphNode,
@@ -41,6 +61,43 @@ public sealed class CXComponentTree :
         }
 
         return newNode;
+    }
+
+    public CXComponentTree Clone()
+    {
+        var newTree = new CXComponentTree(
+            _nodes.Capacity,
+            _nodesWithExternalDependencies?.Capacity,
+            _rootNodes?.Capacity
+        );
+
+        foreach (var oldNode in _nodes)
+        {
+            var newNode = oldNode.Reuse(newTree);
+            Set(newTree._nodes, newNode);
+
+            if (newNode.ParentId is null)
+            {
+                newTree._rootNodes ??= [];
+                newTree._rootNodes.Add(newNode);
+            }
+
+            if (newNode.Component.HasExternalDependencies)
+            {
+                newTree._nodesWithExternalDependencies ??= [];
+                newTree._nodesWithExternalDependencies.Add(newNode);
+            }
+        }
+
+        return newTree;
+
+        static void Set(List<GraphNode> list, GraphNode node)
+        {
+            while(list.Count <= node.Id)
+                list.Add(null!);
+
+            list[node.Id] = node;
+        }
     }
 
     public void DereferenceFromTree(GraphNode graphNode)
@@ -93,5 +150,5 @@ public sealed class CXComponentTree :
         => obj is CXComponentTree other && Equals(other);
 
     public override int GetHashCode()
-        => _nodes.Aggregate(0, Hash.Combine);
+        => RootNodes.Aggregate(0, Hash.Combine);
 }

@@ -234,10 +234,10 @@ public sealed partial class CXLexer
         get
         {
             // there's no next interpolation
-            if (Reader.Interpolations.Length <= _interpolationIndex) return null;
+            if (Reader.Interpolations.Count <= _interpolationIndex) return null;
 
 
-            for (; _interpolationIndex < Reader.Interpolations.Length; _interpolationIndex++)
+            for (; _interpolationIndex < Reader.Interpolations.Count; _interpolationIndex++)
             {
                 CancellationToken.ThrowIfCancellationRequested();
 
@@ -264,14 +264,14 @@ public sealed partial class CXLexer
         get
         {
             // there's no next interpolation
-            if (Reader.Interpolations.Length <= _nextInterpolationIndex) return null;
+            if (Reader.Interpolations.Count <= _nextInterpolationIndex) return null;
 
             // check if it's ahead of us
             var interpolationSpan = Reader.Interpolations[_nextInterpolationIndex];
 
             if (interpolationSpan.End > Reader.Position) return interpolationSpan;
 
-            for (; _nextInterpolationIndex < Reader.Interpolations.Length; _nextInterpolationIndex++)
+            for (; _nextInterpolationIndex < Reader.Interpolations.Count; _nextInterpolationIndex++)
             {
                 CancellationToken.ThrowIfCancellationRequested();
 
@@ -337,7 +337,7 @@ public sealed partial class CXLexer
         CancellationToken = cancellationToken;
         Reader = reader;
         Mode = LexMode.Default;
-        InterpolationMap = new CXToken[Reader.Interpolations.Length];
+        InterpolationMap = new CXToken[Reader.Interpolations.Count];
     }
 
     /// <summary>
@@ -356,7 +356,7 @@ public sealed partial class CXLexer
     /// </summary>
     public void Reset()
     {
-        InterpolationMap = new CXToken[Reader.Interpolations.Length];
+        InterpolationMap = new CXToken[Reader.Interpolations.Count];
         _interpolationIndex = 0;
         _nextInterpolationIndex = 0;
     }

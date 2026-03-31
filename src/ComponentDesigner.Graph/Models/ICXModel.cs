@@ -1,9 +1,9 @@
 ﻿namespace ComponentDesigner;
 
-public interface ICXModel : IEquatable<ICXModel>
+public interface ICXModel 
 {
-    string Syntax { get; }
     LocationInfo Location { get; }
+    string Syntax { get; }
     int QuoteCount { get; }
     bool UsesDesignerParameter { get; }
     string? DesignerParameterName { get; }

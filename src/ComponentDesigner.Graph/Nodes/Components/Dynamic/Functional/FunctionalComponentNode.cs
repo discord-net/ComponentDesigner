@@ -81,7 +81,7 @@ public sealed class FunctionalComponentNode : ComponentNode<FunctionalState>, ID
             : null;
 
         var candidates = context.CompilationProvider.LookupSymbols(
-            context.CX.Location,
+            context.CX,
             element.Identifier,
             container: containingType
         );

@@ -12,23 +12,22 @@ public readonly record struct GraphNodeInitializationRequest(
 public readonly struct ComponentGraphInitializationContext(
     GraphNode? parentGraphNode,
     ICXNode? cxNode,
-    GraphInitializationContext graphInitializationContext
+    IGraphContext graphContext
 )
 {
-    public IDiagnosticBag Diagnostics => GraphInitializationContext.Diagnostics;
-
     public readonly GraphNode? ParentGraphNode = parentGraphNode;
     public readonly ICXNode? CXNode = cxNode;
-    public readonly GraphInitializationContext GraphInitializationContext = graphInitializationContext;
+    public readonly IGraphContext GraphContext = graphContext;
 
-    public void Push(GraphNodeInitializationRequest request)
-        => CXComponentGraph.CreateFromInitializationRequest(request, GraphInitializationContext);
+    public void Push(GraphNodeInitializationRequest request, CancellationToken cancellationToken = default)
+        => GraphContext.Push(request, cancellationToken);
 
     public void Push<T>(
         T component,
         ICXNode? cxNode = null,
         IReadOnlyList<ICXNode>? children = null,
-        GraphNode? parent = null
+        GraphNode? parent = null,
+        CancellationToken cancellationToken = default
     ) where T : IComponentNode
-        => Push(new(component, cxNode, parent, children));
+        => Push(new(component, cxNode, parent, children), cancellationToken);
 }

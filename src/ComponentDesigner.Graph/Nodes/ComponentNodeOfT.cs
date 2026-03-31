@@ -63,7 +63,7 @@ public abstract class ComponentNode<TState> :
         CancellationToken cancellationToken = default
     );
 
-    public virtual TState UpdateState(
+    public virtual TState? UpdateState(
         TState state,
         IComponentContext context,
         IDiagnosticBag diagnostics,
@@ -127,10 +127,12 @@ public abstract class ComponentNode<TState> :
         CancellationToken cancellationToken
     ) => Initialize(context, diagnostics, cancellationToken);
 
-    ComponentState IComponentNode.UpdateState(ComponentState state,
+    ComponentState? IComponentNode.UpdateState(
+        ComponentState state,
         IComponentContext context,
         IDiagnosticBag diagnostics,
-        CancellationToken cancellationToken) => UpdateState((TState)state, context, diagnostics, cancellationToken);
+        CancellationToken cancellationToken
+    ) => UpdateState((TState)state, context, diagnostics, cancellationToken);
 
     void IComponentNode.Validate(
         IComponentContext context, ComponentState state, IDiagnosticBag bag,

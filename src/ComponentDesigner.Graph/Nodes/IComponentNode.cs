@@ -20,7 +20,7 @@ public interface IComponentNode : IEquatable<IComponentNode>
         CancellationToken cancellationToken = default
     );
 
-    ComponentState UpdateState(
+    ComponentState? UpdateState(
         ComponentState state,
         IComponentContext context,
         IDiagnosticBag diagnostics,

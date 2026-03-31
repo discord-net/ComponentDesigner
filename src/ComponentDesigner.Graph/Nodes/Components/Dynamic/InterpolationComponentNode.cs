@@ -6,12 +6,16 @@ public sealed record InterpolationState : ComponentState
 {
     public int InterpolationId { get; init; }
 
+    public ICSharpTypeSymbol Symbol { get; init; }
+
     public InterpolationState(
+        ICSharpTypeSymbol symbol,
         int interpolationId,
         ComponentNodeInitializationContext context,
         CancellationToken cancellationToken
     ) : base(context, cancellationToken)
     {
+        Symbol = symbol;
         InterpolationId = interpolationId;
     }
 }
@@ -41,7 +45,65 @@ public sealed class InterpolationComponentNode : ComponentNode<InterpolationStat
 
         if (id is null) return null;
 
-        return new(id.Value, context, cancellationToken);
+        if (context.ComponentTypingProvider is null)
+        {
+            diagnostics.Add(
+                Diagnostic
+                    .TypedComponentsAreNotSupported(context.GraphContext.Implementation)
+                    .At(context.CXNode!)
+            );
+
+            return null;
+        }
+
+        var info = context.GraphContext.GetInterpolationInfo(id.Value);
+
+        if (!context.ComponentTypingProvider.IsValidComponentType(context.GraphContext, info.Symbol, cancellationToken))
+        {
+            diagnostics.Add(
+                Diagnostic
+                    .NotAComponentType(info.Symbol!)
+                    .At(context.CXNode!)
+            );
+
+            return null;
+        }
+
+        return new(
+            info.Symbol!,
+            info.Id,
+            context,
+            cancellationToken
+        );
+    }
+
+    public override InterpolationState? UpdateState(
+        InterpolationState state,
+        IComponentContext context,
+        IDiagnosticBag diagnostics,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var info = context.GetInterpolationInfo(state.InterpolationId);
+
+        if (context.ComponentTypingProvider is null) return null;
+
+        if (
+            !context.ComponentTypingProvider.IsValidComponentType(
+                context,
+                info.Symbol,
+                cancellationToken
+            )
+        )
+        {
+            // the symbol is no longer a component
+            return null;
+        }
+
+        return state with
+        {
+            Symbol = info.Symbol!
+        };
     }
 
     public override void Validate(

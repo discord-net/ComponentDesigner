@@ -33,6 +33,8 @@ public sealed class SourceGenerator : IIncrementalGenerator
 
     public static DiscordNetComponentDesignerImplementation Implementation { get; } = new();
 
+    private readonly IncrementalGraphManager _manager = new();
+    
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
         IncrementalValuesProvider<ComponentDesignerTarget> targetProvider = context
@@ -45,18 +47,17 @@ public sealed class SourceGenerator : IIncrementalGenerator
             .Where(x => x is not null)
             .WithTrackingName(TrackingNames.FILTER_NOT_NULL_TARGETS)!;
 
-        Provider = targetProvider
+        var parametersProvider = targetProvider
             .Combine(CreateGraphOptionsProvider(context))
             .WithTrackingName(TrackingNames.TARGET_WITH_GENERATOR_OPTIONS)
             .Select(CreateGraphParameters)
             .WithTrackingName(TrackingNames.CREATE_GRAPH_PARAMETERS)
-            .WithComparer(Stage1GraphParametersComparer.Instance)
-            .Select(CreateGraph)
-            .WithTrackingName(TrackingNames.CREATE_GRAPH)
+            .Collect()
+            .SelectMany(_manager.Update);
+
+        Provider = parametersProvider
             .Combine(context.CompilationProvider)
-            .WithTrackingName(TrackingNames.GRAPH_WITH_COMPILATION)
             .Select(UpdateGraphDependencies)
-            .WithTrackingName(TrackingNames.UPDATE_GRAPH_EXTERNAL_DEPENDENCIES)
             .Select(EmitGraph)
             .WithTrackingName(TrackingNames.EMIT_GRAPH)
             .Collect()
@@ -67,6 +68,34 @@ public sealed class SourceGenerator : IIncrementalGenerator
                     .WithTrackingName(TrackingNames.ALL_TARGETS)
             )
             .WithTrackingName(TrackingNames.EMITTED_GRAPHS_AND_TARGETS);
+        
+        // var graphProvider = parametersProvider
+        //     .Select(CreateGraph)
+        //     .WithTrackingName(TrackingNames.CREATE_GRAPH);
+        
+        
+        // Provider = targetProvider
+        //     .Combine(CreateGraphOptionsProvider(context))
+        //     .WithTrackingName(TrackingNames.TARGET_WITH_GENERATOR_OPTIONS)
+        //     .Select(CreateGraphParameters)
+        //     .WithTrackingName(TrackingNames.CREATE_GRAPH_PARAMETERS)
+        //     .WithComparer(Stage1GraphParametersComparer.Instance)
+        //     .Select(CreateGraph)
+        //     .WithTrackingName(TrackingNames.CREATE_GRAPH)
+        //     .Combine(context.CompilationProvider)
+        //     .WithTrackingName(TrackingNames.GRAPH_WITH_COMPILATION)
+        //     .Select(UpdateGraphDependencies)
+        //     .WithTrackingName(TrackingNames.UPDATE_GRAPH_EXTERNAL_DEPENDENCIES)
+        //     .Select(EmitGraph)
+        //     .WithTrackingName(TrackingNames.EMIT_GRAPH)
+        //     .Collect()
+        //     .WithTrackingName(TrackingNames.ALL_EMITTED_GRAPHS)
+        //     .Combine(
+        //         targetProvider
+        //             .Collect()
+        //             .WithTrackingName(TrackingNames.ALL_TARGETS)
+        //     )
+        //     .WithTrackingName(TrackingNames.EMITTED_GRAPHS_AND_TARGETS);
 
         context.RegisterImplementationSourceOutput(
             Provider,
@@ -74,6 +103,7 @@ public sealed class SourceGenerator : IIncrementalGenerator
         );
     }
 
+    
     private void Generate(
         SourceProductionContext context,
         FinalProduct product
@@ -103,7 +133,7 @@ public sealed class SourceGenerator : IIncrementalGenerator
                     target.CX.Location,
                     diagnostic.TextSpan
                 );
-                
+
                 context.ReportDiagnostic(
                     diagnostic.ToRoslyn(location)
                 );
@@ -258,7 +288,7 @@ public sealed class SourceGenerator : IIncrementalGenerator
                 ),
                 new Microsoft.CodeAnalysis.Text.LinePositionSpan(
                     new Microsoft.CodeAnalysis.Text.LinePosition(
-                        cxInfo.LineSpan.Start.Line + sourceLineSpan.Start.Line ,
+                        cxInfo.LineSpan.Start.Line + sourceLineSpan.Start.Line,
                         sourceLineSpan.Start.Character
                     ),
                     new Microsoft.CodeAnalysis.Text.LinePosition(
@@ -286,18 +316,20 @@ public sealed class SourceGenerator : IIncrementalGenerator
     }
 
     public static UpdatedGraph UpdateGraphDependencies(
-        (CXComponentGraph Graph, Compilation Compilation) tuple,
+        (CXComponentGraph, Compilation) tuple,
         CancellationToken cancellationToken
     )
     {
-        var provider = CSharpCompilationProvider.Get(tuple.Compilation);
+        var (graph, compilation) = tuple;
 
-        var graph = tuple.Graph.UpdateDependencies(
+        var provider = CSharpCompilationProvider.Get(compilation);
+        
+        var newGraph = graph.UpdateDependencies(
             provider,
             cancellationToken
         );
 
-        return new(graph, provider);
+        return new(newGraph, provider);
     }
 
     public static CXComponentGraph CreateGraph(GraphParameters parameters, CancellationToken cancellationToken)
@@ -394,9 +426,7 @@ public sealed class SourceGenerator : IIncrementalGenerator
             )
         ) return null;
 
-        var parentKey = semanticModel
-            .GetEnclosingSymbol(invocationExpressionSyntax.SpanStart, cancellationToken)
-            ?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+        var parentKey = GetParentKey();
 
         var designerParameter = invocationOperation
             .TargetMethod
@@ -425,6 +455,7 @@ public sealed class SourceGenerator : IIncrementalGenerator
                 ToParametersString(invocationOperation.TargetMethod)
             ),
             new CXModel(
+                parentKey,
                 cx,
                 locationInfo,
                 quoteCount,
@@ -434,6 +465,25 @@ public sealed class SourceGenerator : IIncrementalGenerator
                 interpolations
             )
         );
+
+        string GetParentKey()
+        {
+            using var _ = StringBuilder.Pooled(out var sb);
+            
+            var symbol = semanticModel
+                .GetEnclosingSymbol(invocationExpressionSyntax.SpanStart, cancellationToken);
+
+            while (symbol is not null)
+            {
+                if (sb.Length > 0) sb.Insert(0, "::");
+
+                sb.Insert(0, symbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
+
+                symbol = symbol.ContainingSymbol;
+            }
+
+            return sb.ToString();
+        }
 
         static string ToParametersString(IMethodSymbol symbol)
         {
@@ -497,6 +547,10 @@ public sealed class SourceGenerator : IIncrementalGenerator
 
             case InterpolatedStringExpressionSyntax interpolated:
                 content = interpolated.Contents.ToString();
+                locationInfo = LocationInfo.From(
+                    cxExpressionSyntax.SyntaxTree.GetLocation(interpolated.Contents.Span),
+                    cancellationToken
+                );
                 interpolations = interpolated
                     .Contents
                     .OfType<InterpolationSyntax>()
@@ -506,16 +560,17 @@ public sealed class SourceGenerator : IIncrementalGenerator
 
                         return new InterpolationInfo(
                             i,
-                            x.Span.AsCXTextSpan,
+                            new(
+                                x.Span.Start - interpolated.Contents.Span.Start,
+                                x.Span.Length
+                            ),
                             provider.GetTypeSymbol(typeInfo.Type),
-                            semanticModel.GetConstantValue(x.Expression, cancellationToken).AsComponentDesignerOptional
+                            semanticModel
+                                .GetConstantValue(x.Expression, cancellationToken)
+                                .AsComponentDesignerOptional
                         );
                     })
                     .ToArray();
-                locationInfo = LocationInfo.From(
-                    cxExpressionSyntax.SyntaxTree.GetLocation(interpolated.Contents.Span),
-                    cancellationToken
-                );
                 quoteCount = interpolated.StringEndToken.Span.Length;
                 return true;
             default:

@@ -7,6 +7,7 @@ using ComponentDesigner.Util;
 namespace ComponentDesigner;
 
 public sealed class CXModel(
+    string? parentKey,
     string syntax,
     LocationInfo location,
     int quoteCount,
@@ -16,6 +17,7 @@ public sealed class CXModel(
     IReadOnlyList<InterpolationInfo> interpolations
 ) : ICXModel, IEquatable<CXModel>
 {
+    public string? ParentKey { get; } = parentKey;
     public string Syntax { get; } = syntax;
 
     public LocationInfo Location { get; } = location;
@@ -30,14 +32,16 @@ public sealed class CXModel(
     public IReadOnlyList<InterpolationInfo> Interpolations { get; } = interpolations;
 
     public bool Equals(CXModel? other)
-        => other is not null &&
-           other.Syntax == Syntax &&
-           other.Location == Location &&
-           other.QuoteCount == QuoteCount &&
-           other.UsesDesignerParameter == UsesDesignerParameter &&
-           other.DesignerParameterType == DesignerParameterType && 
-           other.DesignerParameterName == DesignerParameterName &&
-           Interpolations.SequenceEqual(other.Interpolations);
+        => ReferenceEquals(this, other) || (
+            other is not null &&
+            other.Syntax.Equals(Syntax) &&
+            other.Location == Location &&
+            other.QuoteCount == QuoteCount &&
+            other.UsesDesignerParameter == UsesDesignerParameter &&
+            other.DesignerParameterType == DesignerParameterType &&
+            other.DesignerParameterName == DesignerParameterName &&
+            Interpolations.SequenceEqual(other.Interpolations)
+        );
 
     public override bool Equals(object? obj)
         => obj is CXModel other && Equals(other);
@@ -49,5 +53,4 @@ public sealed class CXModel(
         );
 
     IReadOnlyList<IInterpolationInfo> ICXModel.Interpolations => Interpolations;
-    bool IEquatable<ICXModel>.Equals(ICXModel other) => other is CXModel cx && Equals(cx);
 }

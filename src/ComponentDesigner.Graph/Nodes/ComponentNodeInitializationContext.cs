@@ -10,12 +10,12 @@ public readonly struct ComponentNodeInitializationContext
 
     public readonly GraphNode GraphNode;
     public readonly ICXNode? CXNode;
-    public readonly GraphInitializationContext GraphContext;
+    public readonly IGraphContext GraphContext;
 
     public ComponentNodeInitializationContext(
         ICXNode? cxNode,
         GraphNode graphNode,
-        GraphInitializationContext context
+        IGraphContext context
     )
     {
         GraphNode = graphNode;
@@ -25,10 +25,9 @@ public readonly struct ComponentNodeInitializationContext
 
     public void AddChild(ICXNode cxNode, CancellationToken cancellationToken = default)
     {
-        CXComponentGraph.CreateNodes(
-            cxNode,
+        GraphContext.Push(
             GraphNode,
-            GraphContext,
+            [cxNode],
             cancellationToken
         );
     }
@@ -36,76 +35,28 @@ public readonly struct ComponentNodeInitializationContext
     public GraphNode? Push(
         GraphNodeInitializationRequest request,
         CancellationToken cancellationToken = default
-    ) => CXComponentGraph.CreateFromInitializationRequest(request, GraphContext, cancellationToken);
+    ) => GraphContext.Push(request, cancellationToken);
 
     public IReadOnlyList<GraphNode> PushAsChildren(
         CXElement element,
         CancellationToken cancellationToken = default
-    )
-    {
-        var start = GraphNode.Children.Count;
-
-        CXComponentGraph.CreateElementNodes(
-            element,
-            GraphNode,
-            GraphContext,
-            cancellationToken
-        );
-
-        var end = GraphNode.Children.Count;
-
-        if (start == end) return [];
-
-        return [..GraphNode.Children.Skip(start).Take(end - start)];
-    }
+    ) => GraphContext.Push(GraphNode, [element], cancellationToken);
 
     public IReadOnlyList<GraphNode> PushAsChildren<T>(
         CXCollection<T> syntaxNodes,
         CancellationToken cancellationToken = default
     ) where T : class, ICXNode
         => PushAsChildren((IReadOnlyList<ICXNode>)syntaxNodes, cancellationToken);
-    
+
     public IReadOnlyList<GraphNode> PushAsChildren(
         IReadOnlyList<ICXNode> syntaxNodes,
         CancellationToken cancellationToken = default
-    )
-    {
-        var start = GraphNode.Children.Count;
+    ) => GraphContext.Push(GraphNode, syntaxNodes, cancellationToken);
 
-        CXComponentGraph.CreateNodes(
-            syntaxNodes,
-            GraphNode,
-            GraphContext,
-            cancellationToken
-        );
-
-        var end = GraphNode.Children.Count;
-
-        if (start == end) return [];
-
-        return [..GraphNode.Children.Skip(start).Take(end - start)];
-    }
-    
     public IReadOnlyList<GraphNode> PushAsChildren(
         ICXNode syntaxNode,
         CancellationToken cancellationToken = default
-    )
-    {
-        var start = GraphNode.Children.Count;
-
-        CXComponentGraph.CreateNodes(
-            syntaxNode,
-            GraphNode,
-            GraphContext,
-            cancellationToken
-        );
-
-        var end = GraphNode.Children.Count;
-
-        if (start == end) return [];
-
-        return [..GraphNode.Children.Skip(start).Take(end - start)];
-    }
+    ) => PushAsChildren([syntaxNode], cancellationToken);
 
     public GraphNode? Push<T>(
         T component,

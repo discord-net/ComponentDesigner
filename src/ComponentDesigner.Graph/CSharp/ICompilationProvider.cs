@@ -11,7 +11,9 @@ public interface ICompilationProvider
     );
 
     IReadOnlyList<ICSharpSymbol> LookupSymbols(
-        LocationInfo location, string name, ICSharpTypeSymbol? container = null,
+        ICXModel cxModel,
+        string name,
+        ICSharpTypeSymbol? container = null,
         CancellationToken cancellationToken = default
     );
 }

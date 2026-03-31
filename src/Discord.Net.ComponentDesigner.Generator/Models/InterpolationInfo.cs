@@ -20,18 +20,18 @@ public sealed class InterpolationInfo(
     public Optional<object?> ConstantValue { get; } = constantValue;
 
     public bool Equals(InterpolationInfo? other)
-        => other is not null &&
-           Id == other.Id &&
-           TextSpan == other.TextSpan &&
-           (Symbol?.Equals(other.Symbol!) ?? other.Symbol is null) &&
-           ConstantValue == other.ConstantValue;
+        => ReferenceEquals(this, other) ||
+           (
+               other is not null &&
+               Id == other.Id &&
+               TextSpan == other.TextSpan &&
+               (Symbol?.Equals(other.Symbol!) ?? other.Symbol is null) &&
+               ConstantValue == other.ConstantValue
+           );
 
     public override bool Equals(object? obj)
         => obj is InterpolationInfo other && Equals(other);
 
     public override int GetHashCode()
         => Hash.Combine(Id, TextSpan, Symbol, ConstantValue);
-
-    bool IEquatable<IInterpolationInfo>.Equals(IInterpolationInfo other)
-        => other is InterpolationInfo info && Equals(info);
 }

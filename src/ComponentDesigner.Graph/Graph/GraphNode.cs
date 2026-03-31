@@ -20,7 +20,7 @@ public sealed class GraphNode : IEquatable<GraphNode>, ISourceLocatable
     public CXTextSpan TextSpan => State.TextSpan;
 
     public GraphNode? Parent
-        => _parentId.HasValue ? Tree[_parentId.Value] : null;
+        => ParentId.HasValue ? Tree[ParentId.Value] : null;
 
     public IComponentNode Component { get; }
 
@@ -47,10 +47,10 @@ public sealed class GraphNode : IEquatable<GraphNode>, ISourceLocatable
     }
     
     internal readonly CXComponentTree Tree;
+    internal readonly int? ParentId;
 
     private Result<RenderedComponent>? _result;
 
-    private readonly int? _parentId;
     private NodeList? _children;
 
     internal GraphNode(
@@ -67,7 +67,7 @@ public sealed class GraphNode : IEquatable<GraphNode>, ISourceLocatable
         Tree = tree;
         Component = component;
         _children = children;
-        _parentId = parentId;
+        ParentId = parentId;
         
         State = state ?? new(this);
         Flags = flags;
@@ -95,7 +95,7 @@ public sealed class GraphNode : IEquatable<GraphNode>, ISourceLocatable
         Component,
         state ?? State,
         _children?.WithTree(tree),
-        _parentId,
+        ParentId,
         Flags
     );
 
@@ -116,7 +116,7 @@ public sealed class GraphNode : IEquatable<GraphNode>, ISourceLocatable
                 (_children?.Count ?? 0) == (other._children?.Count ?? 0) &&
                 (_children is null || _children.Equals(other._children))
             ) &&
-            _parentId == other._parentId;
+            ParentId == other.ParentId;
     }
 
     public override int GetHashCode()
@@ -124,6 +124,6 @@ public sealed class GraphNode : IEquatable<GraphNode>, ISourceLocatable
             Component,
             State,
             _children,
-            _parentId
+            ParentId
         );
 }

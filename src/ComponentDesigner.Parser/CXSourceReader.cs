@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Text;
 using ComponentDesigner;
@@ -87,10 +88,10 @@ public sealed class CXSourceReader
     public CXSourceText Source { get; }
 
     /// <summary>
-    ///     Gets a read-only array of <see cref="CXTextSpan"/>s representing the interpolations found within the
+    ///     Gets a read-only list of <see cref="CXTextSpan"/>s representing the interpolations found within the
     ///     <see cref="Source"/>.
     /// </summary>
-    public ImmutableArray<CXTextSpan> Interpolations { get; }
+    public IReadOnlyList<CXTextSpan> Interpolations { get; }
 
     /// <summary>
     ///     Gets the number of quotes that wrap the <see cref="Source"/>.
@@ -120,13 +121,13 @@ public sealed class CXSourceReader
     /// </param>
     public CXSourceReader(
         CXSourceText source,
-        CXTextSpan[] interpolations,
+        IReadOnlyList<CXTextSpan> interpolations,
         int wrappingQuoteCount
     )
     {
         Source = source;
         Position = 0;
-        Interpolations = [..interpolations];
+        Interpolations = interpolations;
         WrappingQuoteCount = wrappingQuoteCount;
 
         StringTable = new();
@@ -144,7 +145,7 @@ public sealed class CXSourceReader
     {
         // nit: a binary search could be faster, but generally there are not that many
         // interpolations to warrant it
-        for (var i = 0; i < Interpolations.Length; i++)
+        for (var i = 0; i < Interpolations.Count; i++)
             if (Interpolations[i].Contains(index))
                 return true;
 

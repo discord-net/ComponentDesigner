@@ -8,6 +8,40 @@ namespace UnitTests.GeneratorTests;
 public sealed class IncrementalAssuranceTests(ITestOutputHelper output) : BaseGeneratorTest(output)
 {
     [Fact]
+    public void InterpolatedComponentChanged()
+    {
+        var a = RunCX(
+            """
+            <container>
+                {foo}
+            </container>
+            """,
+            pretext:
+            """
+            IMessageComponentBuilder foo = null!;
+            """,
+            options: new(
+                AllowAutoTextDisplays: true
+            )
+        );
+
+        var b = RunCX(
+            """
+            <container>
+                {foo}
+            </container>
+            """,
+            pretext:
+            """
+            string foo = null!;
+            """,
+            options: new(
+                AllowAutoTextDisplays: true
+            )
+        );
+    }
+
+    [Fact]
     public void GraphDoesntReRender()
     {
         var a = RunCX(
@@ -31,7 +65,7 @@ public sealed class IncrementalAssuranceTests(ITestOutputHelper output) : BaseGe
             )
             """
         );
-        
+
         LogRunVisual(b);
     }
 
@@ -53,7 +87,7 @@ public sealed class IncrementalAssuranceTests(ITestOutputHelper output) : BaseGe
         // the graph should be cached, while the update graph state should be modified
         AssertStepResult(b, TrackingNames.CREATE_GRAPH, IncrementalStepRunReason.Cached);
         AssertStepResult(b, TrackingNames.UPDATE_GRAPH_EXTERNAL_DEPENDENCIES, IncrementalStepRunReason.Modified);
-        
+
 
         var render1 = GetStepValue<EmittedGraph>(a, TrackingNames.RENDER_GRAPH);
         {
@@ -79,7 +113,7 @@ public sealed class IncrementalAssuranceTests(ITestOutputHelper output) : BaseGe
                 )
             );
         }
-        
+
         LogRunVisual(b);
     }
 }

@@ -102,13 +102,13 @@ public sealed class CSharpCompilationProvider : ICompilationProvider
     );
 
     public IReadOnlyList<ICSharpSymbol> LookupSymbols(
-        LocationInfo location,
+        ICXModel cxModel,
         string name,
         ICSharpTypeSymbol? container = null,
         CancellationToken cancellationToken = default
     )
     {
-        var tree = FindSyntaxTree(location);
+        var tree = FindSyntaxTree(cxModel.Location);
 
         if (tree is null) return [];
 
@@ -117,7 +117,7 @@ public sealed class CSharpCompilationProvider : ICompilationProvider
             ..Inner
                 .GetSemanticModel(tree)
                 .LookupSymbols(
-                    location.TextSpan.Start,
+                    cxModel.Location.TextSpan.Start,
                     GetTypeFromImplementation(container, cancellationToken),
                     name
                 )

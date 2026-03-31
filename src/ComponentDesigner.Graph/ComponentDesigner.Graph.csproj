@@ -12,4 +12,8 @@
       <ProjectReference Include="..\ComponentDesigner.Parser\ComponentDesigner.Parser.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <PackageReference Include="OptimizedPriorityQueue" Version="5.1.0" />
+    </ItemGroup>
+
 </Project>

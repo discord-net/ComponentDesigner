@@ -135,32 +135,24 @@ public abstract record CompletionResult(CXComponentGraph Graph, int Position)
 
             if (property is null) return EmptyCompletionList;
 
+            var info = PropertyCompletionInfo.Get(graphNode.Component, property, graphNode.State);
+            
             if (Attribute.Value is null)
             {
-                var insertPostfix = property.AutoFillMode switch
-                {
-                    PropertyAutoFillMode.InlineComponent => "=($0)",
-                    PropertyAutoFillMode.Interpolation => "=\\{$0\\}",
-                    PropertyAutoFillMode.String => property.AutoFillChoices.Count > 0
-                        ? $"=\'${{1|{string.Join(",", property.AutoFillChoices)}|}}\'"
-                        : "='$0'",
-                    _ => string.Empty
-                };
-
                 return new CompletionList(
                     isIncomplete: false,
                     items:
                     [
                         new CompletionItem()
                         {
-                            Label = property.AutoFillMode.ToString(),
+                            Label = property.Kind.ToString(),
                             Kind = CompletionItemKind.Value,
-                            InsertTextFormat = insertPostfix != string.Empty
+                            InsertTextFormat = info.HasAutoFill
                                 ? InsertTextFormat.Snippet
                                 : InsertTextFormat.PlainText,
                             TextEdit = new(new TextEdit()
                             {
-                                NewText = insertPostfix,
+                                NewText = info.AutoFill,
                                 Range = ComponentDocument.GetRange(
                                     Graph.Document.Source!,
                                     Attribute.EqualsToken.FullTextSpan
@@ -174,19 +166,21 @@ public abstract record CompletionResult(CXComponentGraph Graph, int Position)
             // we're in an attribute value
             switch (Attribute.Value)
             {
-                case CXValue.StringLiteral { HasInterpolations: false } literal when property.AutoFillChoices.Count > 0:
-                    return new CompletionList(
-                        isIncomplete: false,
-                        items: property
-                            .AutoFillChoices
-                            .Select(x => new CompletionItem()
-                            {
-                                InsertText = x,
-                                Kind = CompletionItemKind.EnumMember,
-                                Label = x,
-                                SortText = literal.Tokens.ToValueString()
-                            })
-                    );
+                // TODO: choices
+                
+                // case CXValue.StringLiteral { HasInterpolations: false } literal when info.AutoFillKind is AutoFillKind.Choices:
+                //     return new CompletionList(
+                //         isIncomplete: false,
+                //         items: property
+                //             .AutoFillChoices
+                //             .Select(x => new CompletionItem()
+                //             {
+                //                 InsertText = x,
+                //                 Kind = CompletionItemKind.EnumMember,
+                //                 Label = x,
+                //                 SortText = literal.Tokens.ToValueString()
+                //             })
+                //     );
             }
 
             return EmptyCompletionList;
@@ -216,28 +210,7 @@ public abstract record CompletionResult(CXComponentGraph Graph, int Position)
                 if (Element.Attributes.Any(x => property.MatchesName(x.Identifier)))
                     continue;
 
-                var insertPostfix = property.AutoFillMode switch
-                {
-                    PropertyAutoFillMode.InlineComponent => "=($0)",
-                    PropertyAutoFillMode.Interpolation => "=\\{$0\\}",
-                    PropertyAutoFillMode.String => property.AutoFillChoices.Count > 0
-                        ? $"=\'${{1|{string.Join(",", property.AutoFillChoices)}|}}\'"
-                        : "='$0'",
-                    _ => string.Empty
-                };
-
-                var description = Documentation.GetDescriptionOfProperty(
-                    graphNode.Component,
-                    property
-                );
-
-                var details = (property.IsOptional, property.RequiresValue) switch
-                {
-                    (false, false) => "(required flag)",
-                    (false, true) => "(required)",
-                    (true, false) => "(optional flag)",
-                    (true, true) => "(optional)"
-                };
+                var info = PropertyCompletionInfo.Get(graphNode.Component, property, graphNode.State);
 
                 foreach (var name in property.Aliases.Prepend(property.Name))
                 {
@@ -246,15 +219,15 @@ public abstract record CompletionResult(CXComponentGraph Graph, int Position)
                         Label = name,
                         Kind = CompletionItemKind.Property,
                         SortText = PartialIdentifier,
-                        InsertText = $"{name}{insertPostfix}",
-                        InsertTextFormat = insertPostfix != string.Empty
+                        InsertText = $"{name}{info.AutoFill}",
+                        InsertTextFormat = info.HasAutoFill
                             ? InsertTextFormat.Snippet
                             : InsertTextFormat.PlainText,
-                        Detail = details,
-                        Documentation = description is null ? null : new StringOrMarkupContent(new MarkupContent()
+                        Detail = info.Details,
+                        Documentation = info.Description is null ? null : new StringOrMarkupContent(new MarkupContent()
                         {
                             Kind = MarkupKind.Markdown,
-                            Value = description
+                            Value = info.Description
                         })
                     });
                 }
