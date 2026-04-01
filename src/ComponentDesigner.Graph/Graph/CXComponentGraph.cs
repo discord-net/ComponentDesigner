@@ -113,12 +113,20 @@ public sealed partial class CXComponentGraph : IEquatable<CXComponentGraph>
 
         if (ReferenceEquals(this, other)) return true;
 
-        return
-            Document.Equals(other.Document) &&
-            RootNodes.SequenceEqual(other.RootNodes) &&
-            Diagnostics.SequenceEqual(other.Diagnostics) &&
-            CX.Equals(other.CX) &&
-            Options.Equals(other.Options);
+        if (_tree.Count != other._tree.Count) return false;
+        
+        for (var i = 0; i < _tree.Count; i++)
+        {
+            var left = _tree[i];
+            var right = other._tree[i];
+
+            if (
+                left.Component.GetType() != right.Component.GetType() ||
+                !left.State.Equals(right.State)
+            ) return false;
+        }
+
+        return true;
     }
 
     public override bool Equals(object? obj)

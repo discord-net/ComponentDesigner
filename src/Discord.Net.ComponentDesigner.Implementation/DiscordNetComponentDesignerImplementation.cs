@@ -7,6 +7,8 @@ namespace Discord;
 public sealed partial class DiscordNetComponentDesignerImplementation :
     IComponentImplementation
 {
+    public static readonly DiscordNetComponentDesignerImplementation Instance = new();
+    
     public string Name => "Discord.Net";
 
     public IComponentRenderer Renderer { get; } = new DiscordNetRenderer();

@@ -1,0 +1,32 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net10.0</TargetFramework>
+        <LangVersion>latest</LangVersion>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Spectre.Console" Version="0.54.0" />
+      <PackageReference Include="System.CommandLine" Version="2.0.5" />
+      <PackageReference Include="TextMateSharp" Version="2.0.3" />
+      <PackageReference Include="TextMateSharp.Grammars" Version="2.0.3" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\ComponentDesigner.Core\ComponentDesigner.Core.csproj" />
+      <ProjectReference Include="..\ComponentDesigner.CSharp\ComponentDesigner.CSharp.csproj" />
+      <ProjectReference Include="..\ComponentDesigner.Graph\ComponentDesigner.Graph.csproj" />
+      <ProjectReference Include="..\ComponentDesigner.Parser\ComponentDesigner.Parser.csproj" />
+      <ProjectReference Include="..\Discord.Net.ComponentDesigner.Implementation\Discord.Net.ComponentDesigner.Implementation.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <EmbeddedResource Include="..\..\ide-ext\vs-code\syntaxes\cx.tmLanguage.json">
+        <Link>cx.tmLanguage.json</Link>
+      </EmbeddedResource>
+    </ItemGroup>
+
+</Project>

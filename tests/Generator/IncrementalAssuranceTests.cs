@@ -39,6 +39,30 @@ public sealed class IncrementalAssuranceTests(ITestOutputHelper output) : BaseGe
                 AllowAutoTextDisplays: true
             )
         );
+        
+        AssertRenders(
+            a,
+            """
+            new global::Discord.ContainerBuilder(
+                components: 
+                [
+                    designer.GetValue<global::Discord.IMessageComponentBuilder>(0)
+                ]
+            )
+            """
+        );
+        
+        AssertRenders(
+            b,
+            """
+            new global::Discord.ContainerBuilder(
+                components: 
+                [
+                    designer.GetValue<global::Discord.IMessageComponentBuilder>(0)
+                ]
+            )
+            """
+        );
     }
 
     [Fact]

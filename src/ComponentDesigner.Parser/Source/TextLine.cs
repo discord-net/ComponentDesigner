@@ -16,6 +16,8 @@ public readonly record struct TextLine(
     int EndIncludingBreaks
 )
 {
+    public int Length => Span.Length;
+    
     /// <summary>
     ///     Gets the zero-based line number of this <see cref="TextLine"/>.
     /// </summary>

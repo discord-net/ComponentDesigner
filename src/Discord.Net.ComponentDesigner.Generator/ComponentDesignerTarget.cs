@@ -8,12 +8,14 @@ namespace ComponentDesigner;
 public sealed class ComponentDesignerTarget(
     Compilation compilation,
     InterceptableMethodInfo interceptableMethodInfo,
-    CXModel cx
+    CXModel cx,
+    GraphOptionsOverloads overloads
 ) : IEquatable<ComponentDesignerTarget>
 {
     public Compilation Compilation { get; } = compilation;
     public InterceptableMethodInfo InterceptableMethodInfo { get; } = interceptableMethodInfo;
     public CXModel CX { get; } = cx;
+    public GraphOptionsOverloads Overloads { get; } = overloads;
 
     public bool Equals(ComponentDesignerTarget? other)
     {

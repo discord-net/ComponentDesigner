@@ -324,12 +324,17 @@ public sealed class SourceGenerator : IIncrementalGenerator
 
         var provider = CSharpCompilationProvider.Get(compilation);
         
-        var newGraph = graph.UpdateDependencies(
-            provider,
-            cancellationToken
-        );
+        return new UpdatedGraph(graph, provider);
 
-        return new(newGraph, provider);
+        //
+        // var provider = CSharpCompilationProvider.Get(compilation);
+        //
+        // var newGraph = graph.UpdateDependencies(
+        //     provider,
+        //     cancellationToken
+        // );
+        //
+        // return new(newGraph, provider);
     }
 
     public static CXComponentGraph CreateGraph(GraphParameters parameters, CancellationToken cancellationToken)
@@ -342,7 +347,7 @@ public sealed class SourceGenerator : IIncrementalGenerator
         Implementation,
         CSharpCompilationProvider.Get(tuple.Target.Compilation),
         tuple.Target.CX,
-        tuple.Options
+        tuple.Options.WithOverloads(tuple.Target.Overloads)
     );
 
     public static IncrementalValueProvider<GeneratorGraphOptions> CreateGraphOptionsProvider(
@@ -463,9 +468,56 @@ public sealed class SourceGenerator : IIncrementalGenerator
                 designerParameterName,
                 designerParameterType,
                 interpolations
-            )
+            ),
+            GetOptionOverloads(invocationOperation, semanticModel, cancellationToken)
         );
 
+        static GraphOptionsOverloads GetOptionOverloads(
+            IInvocationOperation operation,
+            SemanticModel semanticModel,
+            CancellationToken token
+        )
+        {
+            var enableAutoRows = Result<bool>.Empty;
+            var enableAutoTextDisplays = Result<bool>.Empty;
+            
+            foreach (var argument in operation.Arguments)
+            {
+                if(argument.ArgumentKind is ArgumentKind.DefaultValue) continue;
+                
+                switch (argument.Parameter?.Name)
+                {
+                    case "autoRows" when argument.Syntax is ArgumentSyntax {Expression: {} expression}:
+                        enableAutoRows = GetConstantValue(expression);
+                        break;
+                    case "autoTextDisplays"when argument.Syntax is ArgumentSyntax {Expression: {} expression}:
+                        enableAutoTextDisplays = GetConstantValue(expression);
+                        break;
+                }
+            }
+
+            return new(enableAutoRows, enableAutoTextDisplays);
+
+            Result<bool> GetConstantValue(ExpressionSyntax expression)
+            {
+                var value = semanticModel.GetConstantValue(expression, token);
+
+                if (!value.HasValue)
+                {
+                    return new Diagnostic(
+                        expression.Span.AsCXTextSpan,
+                        Diagnostic.ExpectedAConstantValue
+                    );
+                }
+
+                return value.Value switch
+                {
+                    true or false => new((bool)value.Value),
+                    _ => Result<bool>.Empty
+                };
+            }
+        }
+        
         string GetParentKey()
         {
             using var _ = StringBuilder.Pooled(out var sb);

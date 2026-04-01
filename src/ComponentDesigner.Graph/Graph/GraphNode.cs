@@ -28,7 +28,7 @@ public sealed class GraphNode : IEquatable<GraphNode>, ISourceLocatable
 
     public bool HasChildren => _children?.Count > 0;
 
-    public IReadOnlyList<GraphNode> Children => _children ?? (IReadOnlyList<GraphNode>)[];
+    public IReadOnlyList<GraphNode> Children => _children ??= new(Tree);
     
     public int Depth { get; }
 

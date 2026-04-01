@@ -1,0 +1,5 @@
+<container>
+    <foo />
+    <bar baz='foo' />
+    <abc>
+</container>
