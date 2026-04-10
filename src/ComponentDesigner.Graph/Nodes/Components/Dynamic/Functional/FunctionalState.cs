@@ -7,7 +7,7 @@ namespace ComponentDesigner.Nodes;
 public sealed record FunctionalState : ComponentState
 {
     public ICSharpMethodSymbol Symbol { get; init; }
-    public override IReadOnlyList<ComponentProperty> Properties { get; }
+    public  IReadOnlyList<ComponentProperty> Properties { get; }
     public ComponentProperty? ChildrenParameter { get; init; }
 
     public int SymbolDependencyKey => _dependencyKey ??= MakeSymbolDependencyKey();
@@ -176,13 +176,8 @@ public sealed record FunctionalState : ComponentState
         return state;
     }
 
-    public override bool TryGetProperty(string name, [MaybeNullWhen(false)] out ComponentProperty property)
-    {
-        property = Properties
-            .FirstOrDefault(x => x.MatchesName(name));
-
-        return property is not null || base.TryGetProperty(name, out property);
-    }
+    public override ComponentPropertyInfo GetPropertyInfo(ComponentNodeInitializationContext context)
+        => new(Properties);
 
     private static bool IsChildParameter(ICSharpParameterSymbol symbol)
         => symbol

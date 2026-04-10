@@ -27,5 +27,6 @@ partial class DiscordNetRenderer
                 symbol
             )
         )
+        .Map(ApplyRefParameter(context, state, cancellationToken))
         .Map(GetConverterFromOptions(context, state, typingContext, cancellationToken));
 }

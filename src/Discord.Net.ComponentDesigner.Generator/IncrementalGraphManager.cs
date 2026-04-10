@@ -64,7 +64,7 @@ public sealed class IncrementalGraphManager
                 return entry.Graph;
             }
 
-            var newGraph = entry.Graph.Update(parameters, cancellationToken);
+            var newGraph = entry.Graph.UpdateFromParameters(parameters, cancellationToken);
             
             _graphs[key] = new(
                 parameters,

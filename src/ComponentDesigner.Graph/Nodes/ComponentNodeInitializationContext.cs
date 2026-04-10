@@ -5,8 +5,10 @@ namespace ComponentDesigner.Nodes;
 public readonly struct ComponentNodeInitializationContext
 {
     public ICXModel CX => GraphContext.CX;
+    public IComponentImplementation Implementation => GraphContext.Implementation;
     public ICompilationProvider CompilationProvider => GraphContext.CompilationProvider;
     public IComponentTypingProvider? ComponentTypingProvider => GraphContext.ComponentTypingProvider;
+    public IComponentExtensionProvider? ComponentExtensionProvider => GraphContext.ComponentExtensionProvider;
 
     public readonly GraphNode GraphNode;
     public readonly ICXNode? CXNode;

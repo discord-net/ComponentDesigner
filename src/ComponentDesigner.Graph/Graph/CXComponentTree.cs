@@ -107,6 +107,40 @@ public sealed class CXComponentTree :
         _nodesWithExternalDependencies?.Remove(graphNode!);
     }
 
+    /// <summary>
+    /// Recursively dereferences all children and descendants of
+    /// <paramref name="graphNode"/>, removing them from parent children lists,
+    /// root-node tracking, and external-dependency tracking. The node itself
+    /// is left in the tree with an empty children list.
+    /// </summary>
+    public void DereferenceChildren(GraphNode graphNode)
+    {
+        if (!graphNode.HasChildren) return;
+
+        // Snapshot to avoid mutation during iteration.
+        var children = graphNode.Children.ToArray();
+
+        foreach (var child in children)
+            DereferenceSubtree(child);
+    }
+
+    /// <summary>
+    /// Recursively dereferences <paramref name="graphNode"/> and all its
+    /// descendants from the tree. The nodes remain in the internal list as
+    /// orphans but are removed from parent children, root-node, and
+    /// external-dependency tracking.
+    /// </summary>
+    public void DereferenceSubtree(GraphNode graphNode)
+    {
+        if (graphNode.HasChildren)
+        {
+            foreach (var child in graphNode.Children.ToArray())
+                DereferenceSubtree(child);
+        }
+
+        DereferenceFromTree(graphNode);
+    }
+
     public GraphNode Push(
         IComponentNode component,
         ComponentState? state = null,

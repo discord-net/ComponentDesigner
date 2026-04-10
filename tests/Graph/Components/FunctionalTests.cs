@@ -134,7 +134,7 @@ public sealed class FunctionalTests(ITestOutputHelper output) : BaseComponentTes
                 Component<SeparatorComponentNode>();
             }
 
-            var fooProperty = node.State.Properties.FirstOrDefault(x => x.Name is "foo");
+            var fooProperty = node.State.PropertyInfo.Properties.FirstOrDefault(x => x.Name is "foo");
 
             Assert.NotNull(fooProperty);
             

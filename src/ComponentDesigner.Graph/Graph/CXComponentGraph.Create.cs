@@ -287,7 +287,34 @@ partial class CXComponentGraph
             parent: request.Parent
         );
 
-        // map attribute nodes first
+        if (!ReinitializeNode(node, request, context, cancellationToken))
+        {
+            context.Tree.DereferenceFromTree(node);
+            return null;
+        }
+
+        return node;
+    }
+
+    /// <summary>
+    /// Recreates the children, attributes, and state of an existing
+    /// <paramref name="node"/> using <paramref name="request"/> as the source
+    /// of truth for CX syntax and children. Callers must ensure that the
+    /// node's previous children have already been dereferenced before calling
+    /// this method.
+    /// </summary>
+    /// <returns>
+    /// <see langword="true"/> if <see cref="IComponentNode.Initialize"/>
+    /// produced a non-null state; <see langword="false"/> otherwise.
+    /// </returns>
+    internal static bool ReinitializeNode(
+        GraphNode node,
+        GraphNodeInitializationRequest request,
+        GraphInitializationContext context,
+        CancellationToken cancellationToken
+    )
+    {
+        // Map attribute nodes first.
         if (request.CXNode is CXElement { OpeningTag.Attributes: { Count: > 0 } attributes })
         {
             foreach (var attribute in attributes)
@@ -298,7 +325,7 @@ partial class CXComponentGraph
             }
         }
 
-        // then do children
+        // Then process children syntax nodes.
         if (request.Children?.Count > 0)
         {
             CreateNodes(request.Children, node, context, cancellationToken);
@@ -311,17 +338,20 @@ partial class CXComponentGraph
         );
 
         var numDiagnostics = context.Diagnostics.Count;
-        var state = node.Component.Initialize(initContext, context.Diagnostics, cancellationToken);
-        node.ComponentInitializationProducedDiagnostics = numDiagnostics != context.Diagnostics.Count;
+
+        var state = node.Component.Initialize(
+            initContext,
+            context.Diagnostics,
+            cancellationToken
+        );
+
+        node.ComponentInitializationProducedDiagnostics =
+            numDiagnostics != context.Diagnostics.Count;
 
         if (state is null)
-        {
-            context.Tree.DereferenceFromTree(node);
-            return null;
-        }
+            return false;
 
         node.State = state;
-
-        return node;
+        return true;
     }
 }

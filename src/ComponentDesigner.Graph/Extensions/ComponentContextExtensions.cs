@@ -11,6 +11,7 @@ public static class ComponentContextExtensions
         public IComponentRenderer Renderer => context.Implementation.Renderer;
         public ITextControlProvider TextControlProvider => context.Implementation.TextControlProvider;
         public IComponentTypingProvider? ComponentTypingProvider => context.Implementation.ComponentTypingProvider;
+        public IComponentExtensionProvider? ComponentExtensionProvider => context.Implementation.ComponentExtensionProvider;
 
         public bool HasTypedCustomComponentSupport => context.ComponentTypingProvider is not null;
         

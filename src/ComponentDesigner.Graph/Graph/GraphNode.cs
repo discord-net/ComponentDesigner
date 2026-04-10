@@ -43,7 +43,13 @@ public sealed class GraphNode : IEquatable<GraphNode>, ISourceLocatable
     public bool ComponentInitializationProducedDiagnostics
     {
         get => Flags.HasFlag(GraphNodeFlags.InitializeProducedDiagnostics);
-        internal set => Flags |= (value ? GraphNodeFlags.InitializeProducedDiagnostics : GraphNodeFlags.None);
+        internal set
+        {
+            if (value)
+                Flags |= GraphNodeFlags.InitializeProducedDiagnostics;
+            else
+                Flags &= ~GraphNodeFlags.InitializeProducedDiagnostics;
+        }
     }
     
     internal readonly CXComponentTree Tree;

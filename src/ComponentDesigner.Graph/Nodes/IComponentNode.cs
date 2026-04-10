@@ -37,11 +37,4 @@ public interface IComponentNode : IEquatable<IComponentNode>
         ComponentEmitContext context, ComponentState state, ComponentOptions options,
         CancellationToken cancellationToken = default
     );
-
-    // Result<RenderedComponent> Emit(
-    //     ComponentState state,
-    //     ComponentEmitContext context,
-    //     ComponentOptions options,
-    //     CancellationToken cancellationToken = default
-    // );
 }

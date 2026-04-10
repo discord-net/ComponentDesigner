@@ -14,7 +14,7 @@ partial class CXComponentGraph
         Options = 1 << 2,
     }
 
-    public CXComponentGraph Update(
+    public CXComponentGraph UpdateFromParameters(
         GraphParameters parameters,
         CancellationToken cancellationToken
     )
@@ -85,7 +85,7 @@ partial class CXComponentGraph
         }
     }
 
-    public CXComponentGraph UpdateDependencies(
+    public CXComponentGraph UpdateFromCompilation(
         ICompilationProvider compilationProvider,
         CancellationToken cancellationToken
     )
@@ -99,6 +99,17 @@ partial class CXComponentGraph
         );
     }
 
+    [Flags]
+    private enum UpdateMode : byte
+    {
+        None = 0,
+        
+        Compilation = 1 << 0,
+        Interpolations = 1 << 1,
+        
+        All = byte.MaxValue
+    }
+
     private CXComponentGraph Update(
         UpdateMode mode,
         ICompilationProvider compilationProvider,
@@ -107,439 +118,391 @@ partial class CXComponentGraph
         CancellationToken cancellationToken
     )
     {
-        if (mode is 0) return this;
+        using var diagnostics = PooledDiagnosticBag.Get();
+        var updateContext = new GraphUpdateContext(cx, options, Implementation, compilationProvider);
 
-        var includeInterpolationNodes = mode.HasFlag(UpdateMode.Interpolations);
-        var includeNonInterpolationNodes = mode.HasFlag(UpdateMode.Compilation);
-        var hasExternalNodeUpdates = includeInterpolationNodes || includeNonInterpolationNodes;
+        // ── Phase 1: Evaluate state updates ──────────────────────────────
+        // Walk every node that declared external dependencies and, depending
+        // on the requested mode, ask the component to produce an updated
+        // state.  Results fall into one of three buckets:
+        //
+        //   • Same state (Case 1)   – nothing to do.
+        //   • New state   (Case 2)  – update the node in-place.
+        //   • Null         (Case 3) – node is invalid in the new context;
+        //                             the parent subtree must be rebuilt.
+        Dictionary<int, ComponentState>? stateUpdates = null;
+        HashSet<int>? parentsToRebuild = null;
+        HashSet<int>? rootsToRebuild = null;
 
-        if (hasExternalNodeUpdates && !_tree.HasExternalDependencies)
+        foreach (var node in _tree.NodesWithExternalDependencies)
         {
-            // Nothing in the current tree depends on external symbols.
+            if (!ShouldUpdate(node, mode))
+                continue;
+
+            var newState = node.Component.UpdateState(
+                node.State, updateContext, diagnostics, cancellationToken
+            );
+
+            if (newState is null)
+            {
+                // Case 3: node is no longer valid.  Mark its parent (or
+                // itself if it is a root) for rebuilding.
+                if (node.ParentId.HasValue)
+                    (parentsToRebuild ??= []).Add(node.ParentId.Value);
+                else
+                    (rootsToRebuild ??= []).Add(node.Id);
+            }
+            else if (!newState.Equals(node.State))
+            {
+                // Case 2: state changed.
+                (stateUpdates ??= []).Add(node.Id, newState);
+            }
+            // Case 1: state unchanged – no action required.
+        }
+
+        // Fast-path: nothing changed → reuse this graph as-is.
+        if (stateUpdates is null && parentsToRebuild is null && rootsToRebuild is null)
             return this;
-        }
 
-        if (hasExternalNodeUpdates)
+        // ── Phase 2: Clone tree & apply in-place state updates ───────────
+        var newTree = _tree.Clone();
+
+        if (stateUpdates is not null)
         {
-            var updateContext = new GraphUpdateContext(
-                cx,
-                options,
-                Implementation,
-                compilationProvider
+            foreach (var entry in stateUpdates)
+                newTree[entry.Key].State = entry.Value;
+        }
+
+        // ── Phase 3: Rebuild subtrees for invalidated nodes ──────────────
+        if (parentsToRebuild is not null || rootsToRebuild is not null)
+        {
+            var initContext = new GraphInitializationContext(
+                Document, cx, options,
+                Implementation, compilationProvider,
+                diagnostics, newTree
             );
 
-            using var updateDiagnostics = PooledDiagnosticBag.Get();
-            var hasChanges = false;
-
-            var plans = new Dictionary<int, NodePlan>(capacity: _tree.Count);
-
-            foreach (var oldNode in _tree.NodesWithExternalDependencies)
+            // Rebuild parent subtrees whose children were invalidated.
+            if (parentsToRebuild is not null)
             {
-                cancellationToken.ThrowIfCancellationRequested();
-
-                var isInterpolationNode = ReferenceEquals(oldNode.Component, InterpolationComponentNode.Instance);
-
-                // Interpolation mode: only interpolation nodes
-                // Compilation mode: all external nodes except interpolation nodes
-                // Combined mode: all external nodes
-                if (
-                    (isInterpolationNode && !includeInterpolationNodes) ||
-                    (!isInterpolationNode && !includeNonInterpolationNodes)
-                )
-                {
-                    continue;
-                }
-
-                var updatedState = oldNode.Component.UpdateState(
-                    oldNode.State,
-                    updateContext,
-                    updateDiagnostics,
-                    cancellationToken
-                );
-
-                if (updatedState is null)
-                {
-                    if (!MarkParentForRebuild(oldNode, plans, ref hasChanges))
-                    {
-                        // No reconstructable parent exists (for example, null-sourced root),
-                        // so incremental repair is not possible.
-                        return RebuildFromCurrentDocument();
-                    }
-
-                    continue;
-                }
-
-                if (!ReferenceEquals(updatedState, oldNode.State) && !updatedState.Equals(oldNode.State))
-                {
-                    hasChanges = true;
-
-                    if (plans.TryGetValue(oldNode.Id, out var existingPlan))
-                    {
-                        plans[oldNode.Id] = existingPlan with
-                        {
-                            State = updatedState
-                        };
-                    }
-                    else
-                    {
-                        plans[oldNode.Id] = new(updatedState, RebuildChildren: false);
-                    }
-                }
+                foreach (var parentId in parentsToRebuild)
+                    RebuildParentSubtree(newTree[parentId], initContext, cancellationToken);
             }
 
-            var newTree = new CXComponentTree();
-
-            foreach (var root in _tree.RootNodes)
+            // Re-create root-level nodes that returned null.
+            if (rootsToRebuild is not null)
             {
-                if (!plans.TryGetValue(root.Id, out var rootPlan))
+                foreach (var rootId in rootsToRebuild)
                 {
-                    rootPlan = new(root.State, RebuildChildren: false);
+                    var rootNode = newTree[rootId];
+                    var cxNode = rootNode.State.CXNode;
+                    newTree.DereferenceSubtree(rootNode);
+
+                    if (cxNode is not null)
+                        CreateNodes(cxNode, null, initContext, cancellationToken);
                 }
-
-                BuildNode(
-                    root,
-                    rootPlan,
-                    parent: null,
-                    newTree,
-                    plans,
-                    updateContext,
-                    updateDiagnostics,
-                    ref hasChanges,
-                    cancellationToken
-                );
-            }
-
-            if (!hasChanges &&
-                ReferenceEquals(cx, CX) &&
-                ReferenceEquals(options, Options) &&
-                !updateDiagnostics.HasAny)
-            {
-                return this;
-            }
-
-            return new CXComponentGraph(
-                Document,
-                newTree,
-                _diagnostics,
-                cx,
-                options,
-                Implementation,
-                updateDiagnostics.HasAny ? updateDiagnostics.ToCollection() : null
-            );
-
-            static bool MarkParentForRebuild(
-                GraphNode oldNode,
-                Dictionary<int, NodePlan> plans,
-                ref bool hasChanges
-            )
-            {
-                var current = oldNode.Parent;
-
-                while (current is not null)
-                {
-                    if (current.State.CXNode is CXElement)
-                    {
-                        hasChanges = true;
-
-                        if (plans.TryGetValue(current.Id, out var existingPlan))
-                        {
-                            plans[current.Id] = existingPlan with
-                            {
-                                RebuildChildren = true
-                            };
-                        }
-                        else
-                        {
-                            plans[current.Id] = new(current.State, RebuildChildren: true);
-                        }
-
-                        return true;
-                    }
-
-                    current = current.Parent;
-                }
-
-                return false;
-            }
-
-            GraphNode BuildNode(
-                GraphNode oldNode,
-                NodePlan plan,
-                GraphNode? parent,
-                CXComponentTree targetTree,
-                IReadOnlyDictionary<int, NodePlan> plans,
-                GraphUpdateContext updateContext,
-                IDiagnosticBag diagnostics,
-                ref bool hasChanges,
-                CancellationToken cancellationToken
-            )
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-
-                // Phase 1: create the target node with a rebound state.
-                var node = CreateReboundNode(oldNode, plan.State, parent, targetTree);
-
-                // Fast path: children can be reused/re-evaluated recursively without re-initializing this parent.
-                if (!plan.RebuildChildren)
-                {
-                    BuildChildrenFromExisting(
-                        oldNode.Children,
-                        node,
-                        targetTree,
-                        plans,
-                        updateContext,
-                        diagnostics,
-                        ref hasChanges,
-                        cancellationToken
-                    );
-
-                    return node;
-                }
-
-                // Rebuild path: this parent must repush its children from syntax, then reconcile child-by-child.
-                if (oldNode.State.CXNode is not CXElement oldElement)
-                {
-                    return node;
-                }
-
-                var rebuiltChildren = RebuildChildrenFromSyntax(
-                    oldNode,
-                    node,
-                    oldElement,
-                    updateContext,
-                    diagnostics,
-                    cancellationToken
-                );
-
-                ReconcileChildren(
-                    oldNode.Children,
-                    rebuiltChildren,
-                    node,
-                    targetTree,
-                    plans,
-                    updateContext,
-                    diagnostics,
-                    ref hasChanges,
-                    cancellationToken
-                );
-
-                return node;
-            }
-
-            static GraphNode CreateReboundNode(
-                GraphNode source,
-                ComponentState state,
-                GraphNode? parent,
-                CXComponentTree targetTree
-            )
-            {
-                var node = targetTree.Push(
-                    source.Component,
-                    parent: parent
-                );
-
-                node.Flags = source.Flags;
-                node.State = state with
-                {
-                    GraphNode = node
-                };
-
-                return node;
-            }
-
-            void BuildChildrenFromExisting(
-                IReadOnlyList<GraphNode> oldChildren,
-                GraphNode parent,
-                CXComponentTree targetTree,
-                IReadOnlyDictionary<int, NodePlan> plans,
-                GraphUpdateContext updateContext,
-                IDiagnosticBag diagnostics,
-                ref bool hasChanges,
-                CancellationToken cancellationToken
-            )
-            {
-                foreach (var oldChild in oldChildren)
-                {
-                    BuildNode(
-                        oldChild,
-                        GetPlan(oldChild, plans),
-                        parent,
-                        targetTree,
-                        plans,
-                        updateContext,
-                        diagnostics,
-                        ref hasChanges,
-                        cancellationToken
-                    );
-                }
-            }
-
-            IReadOnlyList<GraphNode> RebuildChildrenFromSyntax(
-                GraphNode oldParent,
-                GraphNode reboundParent,
-                CXElement oldElement,
-                GraphUpdateContext updateContext,
-                IDiagnosticBag diagnostics,
-                CancellationToken cancellationToken
-            )
-            {
-                var scratchTree = new CXComponentTree();
-                var scratchContext = new GraphInitializationContext(
-                    Document,
-                    updateContext.CX,
-                    updateContext.Options,
-                    updateContext.Implementation,
-                    updateContext.CompilationProvider,
-                    diagnostics,
-                    scratchTree
-                );
-
-                var scratchParent = scratchTree.Push(
-                    oldParent.Component,
-                    parent: null
-                );
-
-                scratchParent.Flags = oldParent.Flags;
-                scratchParent.State = reboundParent.State with
-                {
-                    GraphNode = scratchParent
-                };
-
-                return scratchContext.Push(
-                    scratchParent,
-                    oldElement.Children,
-                    cancellationToken
-                );
-            }
-
-            void ReconcileChildren(
-                IReadOnlyList<GraphNode> oldChildren,
-                IReadOnlyList<GraphNode> rebuiltChildren,
-                GraphNode parent,
-                CXComponentTree targetTree,
-                IReadOnlyDictionary<int, NodePlan> plans,
-                GraphUpdateContext updateContext,
-                IDiagnosticBag diagnostics,
-                ref bool hasChanges,
-                CancellationToken cancellationToken
-            )
-            {
-                if (oldChildren.Count != rebuiltChildren.Count)
-                {
-                    hasChanges = true;
-                }
-
-                var sharedCount = Math.Min(oldChildren.Count, rebuiltChildren.Count);
-
-                for (var i = 0; i < sharedCount; i++)
-                {
-                    var oldChild = oldChildren[i];
-                    var rebuiltChild = rebuiltChildren[i];
-
-                    if (AreEquivalentInitializationAndState(oldChild, rebuiltChild))
-                    {
-                        BuildNode(
-                            oldChild,
-                            GetPlan(oldChild, plans),
-                            parent,
-                            targetTree,
-                            plans,
-                            updateContext,
-                            diagnostics,
-                            ref hasChanges,
-                            cancellationToken
-                        );
-                    }
-                    else
-                    {
-                        hasChanges = true;
-                        CopySubTree(rebuiltChild, parent, targetTree);
-                    }
-                }
-
-                for (var i = sharedCount; i < rebuiltChildren.Count; i++)
-                {
-                    hasChanges = true;
-                    CopySubTree(rebuiltChildren[i], parent, targetTree);
-                }
-            }
-
-            static NodePlan GetPlan(
-                GraphNode oldNode,
-                IReadOnlyDictionary<int, NodePlan> plans
-            ) => plans.TryGetValue(oldNode.Id, out var plan)
-                ? plan
-                : new(oldNode.State, RebuildChildren: false);
-
-            static bool AreEquivalentInitializationAndState(GraphNode oldNode, GraphNode rebuiltNode)
-            {
-                if (!oldNode.Component.Equals(rebuiltNode.Component))
-                    return false;
-
-                if (!oldNode.State.Equals(rebuiltNode.State))
-                    return false;
-
-                if (oldNode.State.CXNode is null || rebuiltNode.State.CXNode is null)
-                    return oldNode.State.CXNode is null && rebuiltNode.State.CXNode is null;
-
-                return oldNode.State.CXNode.Equals(rebuiltNode.State.CXNode);
-            }
-
-            static GraphNode CopySubTree(
-                GraphNode source,
-                GraphNode? parent,
-                CXComponentTree target
-            )
-            {
-                var node = target.Push(
-                    source.Component,
-                    parent: parent
-                );
-
-                node.Flags = source.Flags;
-                node.State = source.State with
-                {
-                    GraphNode = node
-                };
-
-                foreach (var child in source.Children)
-                {
-                    CopySubTree(child, node, target);
-                }
-
-                return node;
             }
         }
 
-        // Non-compilation updates currently rebuild from the existing parsed document.
-        return RebuildFromCurrentDocument();
-
-        CXComponentGraph RebuildFromCurrentDocument()
-            => Create(
-                new(
-                    Implementation,
-                    compilationProvider,
-                    cx,
-                    options
-                ),
-                Document,
-                cancellationToken
-            );
-
+        return new CXComponentGraph(
+            Document,
+            newTree,
+            _diagnostics,
+            cx, options,
+            Implementation,
+            diagnostics.Count > 0 ? diagnostics.ToCollection() : _updateDiagnostics
+        );
     }
 
-    // Captures per-node incremental decisions for the current update pass.
-    private sealed record NodePlan(
-        ComponentState State,
-        bool RebuildChildren
-    );
-
-    [Flags]
-    private enum UpdateMode : byte
+    /// <summary>
+    /// Determines whether <paramref name="node"/> should be updated for the
+    /// current <paramref name="mode"/>.  Interpolation nodes are updated only
+    /// when <see cref="UpdateMode.Interpolations"/> is set; all other node
+    /// types require <see cref="UpdateMode.Compilation"/>.
+    /// </summary>
+    private static bool ShouldUpdate(GraphNode node, UpdateMode mode)
     {
-        Interpolations = 1 << 0,
-        Compilation = 1 << 1,
+        if (node.Component is InterpolationComponentNode)
+            return mode.HasFlag(UpdateMode.Interpolations);
 
-        All = byte.MaxValue
+        return mode.HasFlag(UpdateMode.Compilation);
+    }
+
+    /// <summary>
+    /// Rebuilds the children and state of <paramref name="parentNode"/>
+    /// after one or more of its children were invalidated during an
+    /// incremental update.
+    /// <para>
+    /// A <see cref="CapturingGraphContext"/> is used during
+    /// <see cref="IComponentNode.Initialize"/> to intercept all child-node
+    /// creation requests (<see cref="IGraphContext.Push(GraphNodeInitializationRequest, CancellationToken)"/>
+    /// and <see cref="IGraphContext.Push(GraphNode?, IReadOnlyList{ICXNode}, CancellationToken)"/>)
+    /// without mutating the tree. The captured requests are then compared
+    /// against the parent's existing children so that unchanged subtrees can
+    /// be reused and only the differing children are rebuilt.
+    /// </para>
+    /// </summary>
+    private static void RebuildParentSubtree(
+        GraphNode parentNode,
+        GraphInitializationContext context,
+        CancellationToken cancellationToken
+    )
+    {
+        // ── Step 1: Capture what Initialize *would* produce ──────────
+        // We feed a CapturingGraphContext to Initialize so that every call
+        // to Push / PushAsChildren is recorded instead of applied.
+        var capturingContext = new CapturingGraphContext(context, parentNode);
+
+        var captureInitContext = new ComponentNodeInitializationContext(
+            parentNode.State.CXNode,
+            parentNode,
+            capturingContext
+        );
+
+        using var captureDiagnostics = PooledDiagnosticBag.Get();
+
+        // Run Initialize — this calls the component's Initialize which may
+        // push children, set properties, etc.  All graph mutations are
+        // captured instead of applied.
+        var capturedState = parentNode.Component.Initialize(
+            captureInitContext,
+            captureDiagnostics,
+            cancellationToken
+        );
+
+        if (capturedState is null)
+        {
+            // The parent node itself is no longer valid. Cascade upward.
+            if (parentNode.ParentId.HasValue)
+            {
+                RebuildParentSubtree(
+                    context.Tree[parentNode.ParentId.Value],
+                    context,
+                    cancellationToken
+                );
+            }
+            else
+            {
+                var cxNode = parentNode.State.CXNode;
+                context.Tree.DereferenceSubtree(parentNode);
+
+                if (cxNode is not null)
+                    CreateNodes(cxNode, null, context, cancellationToken);
+            }
+
+            return;
+        }
+
+        // ── Step 2: Diff captured children against existing children ─
+        var existingChildren = parentNode.HasChildren
+            ? parentNode.Children.ToArray()
+            : [];
+
+        var capturedChildren = capturingContext.CapturedChildren;
+
+        // Build a lookup of existing children keyed by (ComponentType, CXNode)
+        // so that we can efficiently find reusable nodes.
+        var existingByIdentity = new Dictionary<(Type, ICXNode?), List<GraphNode>>();
+        foreach (var existing in existingChildren)
+        {
+            var key = (existing.Component.GetType(), existing.State.CXNode);
+            if (!existingByIdentity.TryGetValue(key, out var list))
+                existingByIdentity[key] = list = [];
+            list.Add(existing);
+        }
+
+        // Track which existing children we reused so we can dereference the rest.
+        var reused = new HashSet<int>();
+
+        // ── Step 3: Process each captured child request ──────────────
+        // For each child that Initialize wants, check if an equivalent
+        // existing child can be reused. If not, create it fresh.
+        foreach (var captured in capturedChildren)
+        {
+            switch (captured)
+            {
+                case CapturedChild.FromRequest fromRequest:
+                {
+                    var req = fromRequest.Request;
+                    var childKey = (req.Component.GetType(), req.CXNode);
+
+                    if (
+                        existingByIdentity.TryGetValue(childKey, out var candidates) &&
+                        candidates.Count > 0
+                    )
+                    {
+                        // Reuse the first matching existing child.
+                        var match = candidates[0];
+                        candidates.RemoveAt(0);
+                        reused.Add(match.Id);
+                        // The node is already in the tree; no action needed.
+                    }
+                    else
+                    {
+                        // New child — create it in the real tree.
+                        var newReq = req with { Parent = parentNode };
+                        context.Push(newReq, cancellationToken);
+                    }
+
+                    break;
+                }
+
+                case CapturedChild.FromSyntaxNodes fromSyntax:
+                {
+                    // Children pushed via PushAsChildren / AddChild.
+                    // Try to reuse existing children that match each syntax node.
+                    foreach (var syntaxNode in fromSyntax.SyntaxNodes)
+                    {
+                        var found = false;
+
+                        foreach (var existing in existingChildren)
+                        {
+                            if (reused.Contains(existing.Id)) continue;
+
+                            if (
+                                existing.State.CXNode is not null &&
+                                ReferenceEquals(existing.State.CXNode, syntaxNode)
+                            )
+                            {
+                                reused.Add(existing.Id);
+                                found = true;
+                                break;
+                            }
+                        }
+
+                        if (!found)
+                        {
+                            // New child from syntax — create it.
+                            CreateNodes(syntaxNode, parentNode, context, cancellationToken);
+                        }
+                    }
+
+                    break;
+                }
+            }
+        }
+
+        // ── Step 4: Dereference children that were not reused ────────
+        foreach (var existing in existingChildren)
+        {
+            if (!reused.Contains(existing.Id))
+                context.Tree.DereferenceSubtree(existing);
+        }
+
+        // ── Step 5: Apply the new state ──────────────────────────────
+        parentNode.State = capturedState;
+        parentNode.ComponentInitializationProducedDiagnostics = captureDiagnostics.HasAny;
+
+        if (captureDiagnostics.HasAny)
+            context.Diagnostics.Add(captureDiagnostics.ToCollection());
+    }
+
+    /// <summary>
+    /// Represents a child-node creation captured by
+    /// <see cref="CapturingGraphContext"/> during
+    /// <see cref="IComponentNode.Initialize"/>.
+    /// </summary>
+    private abstract record CapturedChild
+    {
+        /// <summary>A child requested via <see cref="IGraphContext.Push(GraphNodeInitializationRequest, CancellationToken)"/>.</summary>
+        public sealed record FromRequest(GraphNodeInitializationRequest Request) : CapturedChild;
+
+        /// <summary>Children requested via <see cref="IGraphContext.Push(GraphNode?, IReadOnlyList{ICXNode}, CancellationToken)"/>.</summary>
+        public sealed record FromSyntaxNodes(IReadOnlyList<ICXNode> SyntaxNodes) : CapturedChild;
+    }
+
+    /// <summary>
+    /// A lightweight <see cref="IGraphContext"/> that records all
+    /// child-creation requests made during
+    /// <see cref="IComponentNode.Initialize"/> without modifying the tree.
+    /// This enables <see cref="RebuildParentSubtree"/> to compare the
+    /// component's desired child structure against the existing children
+    /// and reuse unchanged subtrees.
+    /// </summary>
+    private sealed class CapturingGraphContext : IGraphContext
+    {
+        private readonly IComponentContext _source;
+        private readonly GraphNode _parentNode;
+        private readonly List<CapturedChild> _capturedChildren = [];
+
+        public CapturingGraphContext(IComponentContext source, GraphNode parentNode)
+        {
+            _source = source;
+            _parentNode = parentNode;
+        }
+
+        public IComponentImplementation Implementation => _source.Implementation;
+        public ICompilationProvider CompilationProvider => _source.CompilationProvider;
+        public ICXModel CX => _source.CX;
+        public IGraphOptions Options => _source.Options;
+
+        /// <summary>All captured child-creation requests, in order.</summary>
+        public IReadOnlyList<CapturedChild> CapturedChildren => _capturedChildren;
+
+        public GraphNode? Push(
+            GraphNodeInitializationRequest request,
+            CancellationToken cancellationToken = default
+        )
+        {
+            _capturedChildren.Add(new CapturedChild.FromRequest(request));
+
+            // Return an existing child that matches, if any, so that
+            // Initialize code that references the returned node (e.g. to set
+            // property values) keeps working during the capture pass.
+            if (_parentNode.HasChildren)
+            {
+                foreach (var existing in _parentNode.Children)
+                {
+                    if (
+                        existing.Component.GetType() == request.Component.GetType() &&
+                        ReferenceEquals(existing.State.CXNode, request.CXNode)
+                    )
+                    {
+                        return existing;
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        public IReadOnlyList<GraphNode> Push(
+            GraphNode? parent,
+            IReadOnlyList<ICXNode> syntaxNodes,
+            CancellationToken cancellationToken
+        )
+        {
+            _capturedChildren.Add(new CapturedChild.FromSyntaxNodes(syntaxNodes));
+
+            // Return existing children that match, so Initialize code
+            // referencing returned nodes keeps working.
+            if (_parentNode.HasChildren)
+            {
+                var result = new List<GraphNode>();
+
+                foreach (var syntaxNode in syntaxNodes)
+                {
+                    foreach (var existing in _parentNode.Children)
+                    {
+                        if (
+                            existing.State.CXNode is not null &&
+                            ReferenceEquals(existing.State.CXNode, syntaxNode)
+                        )
+                        {
+                            result.Add(existing);
+                            break;
+                        }
+                    }
+                }
+
+                return result;
+            }
+
+            return [];
+        }
+
+        public bool Equals(IComponentContext? other)
+            => other is CapturingGraphContext ctx
+               && ReferenceEquals(_source, ctx._source);
     }
 }

@@ -7,7 +7,7 @@ namespace Discord;
 /// <summary>
 ///     Represents the entrypoint for creating components using the CX syntax.
 /// </summary>
-public static class ComponentDesigner
+public static partial class ComponentDesigner
 {
     /// <summary>
     ///     Returns the pre-compiled components representing the provided CX syntax.

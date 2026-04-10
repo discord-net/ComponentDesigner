@@ -13,10 +13,7 @@ public interface IComponentImplementation
     
     IComponentTypingProvider? ComponentTypingProvider { get; }
 
-    ComponentPropertyValueKind? GetPropertyKindOverload(
-        IComponentNode component,
-        ComponentProperty property
-    );
+    IComponentExtensionProvider? ComponentExtensionProvider { get; }
 
     bool TryAnalyzeNumberOfValues(
         IComponentContext context,

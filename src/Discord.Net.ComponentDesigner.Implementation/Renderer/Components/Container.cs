@@ -25,6 +25,7 @@ partial class DiscordNetRenderer
                 $"new {symbol.ToQualifiedName()}({parameters})"
             )
         )
+        .Map(ApplyRefParameter(context, state, cancellationToken))
         .Map(GetConverterFromOptions(context, state, typingContext, cancellationToken));
     
     private static Result<string> RenderContainerComponents(

@@ -17,11 +17,7 @@ public sealed partial class DiscordNetComponentDesignerImplementation :
 
     public IComponentTypingProvider ComponentTypingProvider { get; } = new ComponentTyping();
 
-    public ComponentPropertyValueKind? GetPropertyKindOverload(
-        IComponentNode component,
-        ComponentProperty property
-    )
-    {
-        return null;
-    }
+    public IComponentExtensionProvider? ComponentExtensionProvider => ComponentExtensions.Instance;
+
+
 }

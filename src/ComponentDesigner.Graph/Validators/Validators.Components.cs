@@ -53,7 +53,7 @@ public static partial class Validators
 
         foreach (var attribute in element.Attributes)
         {
-            if (!state.TryGetProperty(attribute.Identifier, out _))
+            if (!state.PropertyInfo.TryGet(attribute.Identifier, out _))
             {
                 bag.Add(
                     attribute.Report(
@@ -70,7 +70,7 @@ public static partial class Validators
         IDiagnosticBag bag
     )
     {
-        foreach (var property in state.Properties)
+        foreach (var property in state.PropertyInfo.Properties)
         {
             ValidateProperty(component, state.GetPropertyValue(property), bag);
         }

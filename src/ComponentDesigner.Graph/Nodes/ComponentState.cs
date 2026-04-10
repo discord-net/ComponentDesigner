@@ -52,8 +52,8 @@ public record ComponentState : ISourceLocatable
 
     public bool IsRootNode => GraphNode.Parent is null;
 
-    public virtual IReadOnlyList<ComponentProperty> Properties => GraphNode.Component.Properties;
-
+    public ComponentPropertyInfo PropertyInfo { get; private set; }
+    
     [field: MaybeNull]
     public ComponentPropertyValueSource ChildSource
         => field ??= new ComponentPropertyValueSource.Child(GraphNode);
@@ -70,17 +70,19 @@ public record ComponentState : ISourceLocatable
         bool initialize = true
     )
     {
+        PropertyInfo = ComponentPropertyInfo.Empty;
         _textSpan = textSpan;
         GraphNode = graphNode;
         CXNode = cxNode;
 
-        if(initialize) Initialize(context, cancellationToken);
+        if (initialize) Initialize(context, cancellationToken);
     }
 
     public ComponentState(
         GraphNode graphNode
     )
     {
+        PropertyInfo = ComponentPropertyInfo.Empty;
         GraphNode = graphNode;
         CXNode = null;
     }
@@ -100,21 +102,27 @@ public record ComponentState : ISourceLocatable
         CXNode = other.CXNode;
         _propertyValues = other._propertyValues;
         _textSpan = other._textSpan;
+        PropertyInfo = other.PropertyInfo;
     }
 
-    public virtual bool TryGetProperty(
-        string name, [MaybeNullWhen(false)] out ComponentProperty property
-    ) => GraphNode.Component.TryGetProperty(name, out property);
+    public virtual ComponentPropertyInfo GetPropertyInfo(
+        ComponentNodeInitializationContext context
+    ) => ComponentPropertyInfo.Get(GraphNode.Component, context.Implementation);
 
-    protected void Initialize(ComponentNodeInitializationContext context, CancellationToken cancellationToken)
+    protected void Initialize(
+        ComponentNodeInitializationContext context,
+        CancellationToken cancellationToken
+    )
     {
+        PropertyInfo = GetPropertyInfo(context);
+        
         if (CXNode is not CXElement element) return;
 
         _propertyValues ??= [];
 
         foreach (var attribute in element.Attributes)
         {
-            if (!TryGetProperty(attribute.Identifier, out var property)) continue;
+            if (!PropertyInfo.TryGet(attribute.Identifier, out var property)) continue;
 
             var source = new ComponentPropertyValueSource.Attribute(
                 attribute
@@ -189,7 +197,8 @@ public record ComponentState : ISourceLocatable
             return graphNodes.Count switch
             {
                 0 => new ComponentPropertyValue.None(source, property, textSpan),
-                1 when property.ValueCardinalityOfOne => new ComponentPropertyValue.Component(source, property, graphNodes[0]),
+                1 when property.ValueCardinalityOfOne => new ComponentPropertyValue.Component(source, property,
+                    graphNodes[0]),
                 _ => new ComponentPropertyValue.Many(
                     source,
                     property,

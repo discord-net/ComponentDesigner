@@ -14,6 +14,12 @@ internal static class Symbols
 
     extension(ICompilationProvider compilation)
     {
+        public Result<ICSharpTypeSymbol> RefBox<T>(
+            T source,
+            CancellationToken cancellationToken = default
+        ) where T : ISourceLocatable
+            => compilation.GetSymbol("Discord.RefBox`1", source.TextSpan, cancellationToken);
+
         public Result<ICSharpTypeSymbol> IEnumerableOfIMessageComponentBuilder<T>(
             T source,
             CancellationToken cancellationToken = default
