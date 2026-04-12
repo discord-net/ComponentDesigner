@@ -87,7 +87,8 @@ public abstract class ComponentNode<TState> :
             children: context.CXNode is CXElement element && includeElementChildren
                 ? element.Children
                 : null,
-            parent: context.ParentGraphNode
+            parent: context.ParentGraphNode,
+            cancellationToken: cancellationToken
         );
     }
 

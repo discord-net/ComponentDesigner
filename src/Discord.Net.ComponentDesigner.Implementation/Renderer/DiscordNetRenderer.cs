@@ -7,7 +7,7 @@ namespace Discord;
 
 public sealed partial class DiscordNetRenderer : BaseCSharpRenderer
 {
-    public Func<RenderedComponent, Result<RenderedComponent>> ApplyRefParameter(
+    public static Func<RenderedComponent, Result<RenderedComponent>> ApplyRefParameter(
         IRendererContext context,
         ComponentState state,
         CancellationToken cancellationToken

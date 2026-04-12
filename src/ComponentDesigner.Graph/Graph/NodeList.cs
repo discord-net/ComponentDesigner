@@ -64,8 +64,15 @@ public sealed class NodeList :
     {
         if (!_tree.Equals(graphNode.Tree)) throw new InvalidOperationException("Trees differ");
 
-        _ids ??= [];
-        _ids.Add(graphNode.Id);
+        if (_ids is null || _ids.Count is 0)
+        {
+            _ids ??= [];
+            _ids.Add(graphNode.Id);
+            return;
+        }
+        
+        if(!_ids.Contains(graphNode.Id))
+            _ids.Add(graphNode.Id);
     }
 
     public void Clear() => _ids?.Clear();

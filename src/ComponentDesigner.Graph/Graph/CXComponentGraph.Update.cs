@@ -233,13 +233,30 @@ partial class CXComponentGraph
     /// after one or more of its children were invalidated during an
     /// incremental update.
     /// <para>
-    /// A <see cref="CapturingGraphContext"/> is used during
-    /// <see cref="IComponentNode.Initialize"/> to intercept all child-node
-    /// creation requests (<see cref="IGraphContext.Push(GraphNodeInitializationRequest, CancellationToken)"/>
-    /// and <see cref="IGraphContext.Push(GraphNode?, IReadOnlyList{ICXNode}, CancellationToken)"/>)
-    /// without mutating the tree. The captured requests are then compared
-    /// against the parent's existing children so that unchanged subtrees can
-    /// be reused and only the differing children are rebuilt.
+    /// The rebuild proceeds in three stages:
+    /// <list type="number">
+    ///   <item>
+    ///     <see cref="IComponentNode.RegisterGraphNode"/> is called through a
+    ///     <see cref="CapturingGraphContext"/> to obtain the
+    ///     <see cref="GraphNodeInitializationRequest"/> that describes the
+    ///     node's desired children syntax without mutating the tree. This
+    ///     captures the <c>Children</c> syntax nodes that would normally be
+    ///     passed to <see cref="CreateFromInitializationRequest"/>.
+    ///   </item>
+    ///   <item>
+    ///     The captured children syntax is diffed against the parent's
+    ///     existing child graph nodes.  Children whose syntax identity
+    ///     (<see cref="ICXNode"/> reference) matches an existing child are
+    ///     reused; the rest are created fresh and non-reused children are
+    ///     dereferenced.
+    ///   </item>
+    ///   <item>
+    ///     <see cref="IComponentNode.Initialize"/> is called with the
+    ///     <b>real</b> <see cref="GraphInitializationContext"/> so that the
+    ///     new state correctly references the actual (reused or newly created)
+    ///     child graph nodes.
+    ///   </item>
+    /// </list>
     /// </para>
     /// </summary>
     private static void RebuildParentSubtree(
@@ -248,29 +265,75 @@ partial class CXComponentGraph
         CancellationToken cancellationToken
     )
     {
-        // ── Step 1: Capture what Initialize *would* produce ──────────
-        // We feed a CapturingGraphContext to Initialize so that every call
-        // to Push / PushAsChildren is recorded instead of applied.
-        var capturingContext = new CapturingGraphContext(context, parentNode);
-
-        var captureInitContext = new ComponentNodeInitializationContext(
+        // ── Step 1: Capture what RegisterGraphNode would produce ─────
+        // RegisterGraphNode describes how the node is placed in the graph
+        // and, critically, which CX syntax children should be processed.
+        // We capture without mutating the tree.
+        var capturingContext = new CapturingGraphContext(context);
+        var regContext = new ComponentGraphInitializationContext(
+            parentNode.Parent,
             parentNode.State.CXNode,
-            parentNode,
             capturingContext
         );
 
-        using var captureDiagnostics = PooledDiagnosticBag.Get();
+        parentNode.Component.RegisterGraphNode(regContext, cancellationToken);
 
-        // Run Initialize — this calls the component's Initialize which may
-        // push children, set properties, etc.  All graph mutations are
-        // captured instead of applied.
-        var capturedState = parentNode.Component.Initialize(
-            captureInitContext,
-            captureDiagnostics,
+        if (capturingContext.CapturedRequests.Count == 0)
+            return;
+
+        var request = capturingContext.CapturedRequests[0];
+
+        // ── Step 2: Snapshot existing children before mutation ────────
+        var existingChildren = parentNode.HasChildren
+            ? parentNode.Children.ToArray()
+            : Array.Empty<GraphNode>();
+
+        // ── Step 3: Dereference all existing children ────────────────
+        // We remove them from the tree structure first — reused nodes
+        // will be re-added when CreateNodes / CreateFromInitializationRequest
+        // re-creates them. Unreused ones stay dereferenced.
+        context.Tree.DereferenceChildren(parentNode);
+
+        // ── Step 4: Re-create attribute children and syntax children ─
+        // Process attribute-embedded elements.
+        if (request.CXNode is CXElement { OpeningTag.Attributes: { Count: > 0 } attributes })
+        {
+            foreach (var attribute in attributes)
+            {
+                if (attribute.Value is not CXValue.Element nestedElement) continue;
+                CreateNodes(nestedElement.Value, parentNode, context, cancellationToken);
+            }
+        }
+
+        // Process the request's Children syntax nodes. This is where
+        // RegisterGraphNode's children list (e.g. element.Children for
+        // ContainerComponentNode) gets turned into graph nodes.
+        if (request.Children?.Count > 0)
+            CreateNodes(request.Children, parentNode, context, cancellationToken);
+
+        // ── Step 5: Call Initialize with the real context ─────────────
+        // Initialize runs against the actual tree so the new state
+        // correctly references the (potentially newly created) child
+        // graph nodes — e.g. SetPropertyValueToChildren will pick up the
+        // new children list.
+        var initContext = new ComponentNodeInitializationContext(
+            request.CXNode,
+            parentNode,
+            context
+        );
+
+        var numDiagnostics = context.Diagnostics.Count;
+
+        var newState = parentNode.Component.Initialize(
+            initContext,
+            context.Diagnostics,
             cancellationToken
         );
 
-        if (capturedState is null)
+        parentNode.ComponentInitializationProducedDiagnostics =
+            numDiagnostics != context.Diagnostics.Count;
+
+        if (newState is null)
         {
             // The parent node itself is no longer valid. Cascade upward.
             if (parentNode.ParentId.HasValue)
@@ -293,142 +356,24 @@ partial class CXComponentGraph
             return;
         }
 
-        // ── Step 2: Diff captured children against existing children ─
-        var existingChildren = parentNode.HasChildren
-            ? parentNode.Children.ToArray()
-            : [];
-
-        var capturedChildren = capturingContext.CapturedChildren;
-
-        // Build a lookup of existing children keyed by (ComponentType, CXNode)
-        // so that we can efficiently find reusable nodes.
-        var existingByIdentity = new Dictionary<(Type, ICXNode?), List<GraphNode>>();
-        foreach (var existing in existingChildren)
-        {
-            var key = (existing.Component.GetType(), existing.State.CXNode);
-            if (!existingByIdentity.TryGetValue(key, out var list))
-                existingByIdentity[key] = list = [];
-            list.Add(existing);
-        }
-
-        // Track which existing children we reused so we can dereference the rest.
-        var reused = new HashSet<int>();
-
-        // ── Step 3: Process each captured child request ──────────────
-        // For each child that Initialize wants, check if an equivalent
-        // existing child can be reused. If not, create it fresh.
-        foreach (var captured in capturedChildren)
-        {
-            switch (captured)
-            {
-                case CapturedChild.FromRequest fromRequest:
-                {
-                    var req = fromRequest.Request;
-                    var childKey = (req.Component.GetType(), req.CXNode);
-
-                    if (
-                        existingByIdentity.TryGetValue(childKey, out var candidates) &&
-                        candidates.Count > 0
-                    )
-                    {
-                        // Reuse the first matching existing child.
-                        var match = candidates[0];
-                        candidates.RemoveAt(0);
-                        reused.Add(match.Id);
-                        // The node is already in the tree; no action needed.
-                    }
-                    else
-                    {
-                        // New child — create it in the real tree.
-                        var newReq = req with { Parent = parentNode };
-                        context.Push(newReq, cancellationToken);
-                    }
-
-                    break;
-                }
-
-                case CapturedChild.FromSyntaxNodes fromSyntax:
-                {
-                    // Children pushed via PushAsChildren / AddChild.
-                    // Try to reuse existing children that match each syntax node.
-                    foreach (var syntaxNode in fromSyntax.SyntaxNodes)
-                    {
-                        var found = false;
-
-                        foreach (var existing in existingChildren)
-                        {
-                            if (reused.Contains(existing.Id)) continue;
-
-                            if (
-                                existing.State.CXNode is not null &&
-                                ReferenceEquals(existing.State.CXNode, syntaxNode)
-                            )
-                            {
-                                reused.Add(existing.Id);
-                                found = true;
-                                break;
-                            }
-                        }
-
-                        if (!found)
-                        {
-                            // New child from syntax — create it.
-                            CreateNodes(syntaxNode, parentNode, context, cancellationToken);
-                        }
-                    }
-
-                    break;
-                }
-            }
-        }
-
-        // ── Step 4: Dereference children that were not reused ────────
-        foreach (var existing in existingChildren)
-        {
-            if (!reused.Contains(existing.Id))
-                context.Tree.DereferenceSubtree(existing);
-        }
-
-        // ── Step 5: Apply the new state ──────────────────────────────
-        parentNode.State = capturedState;
-        parentNode.ComponentInitializationProducedDiagnostics = captureDiagnostics.HasAny;
-
-        if (captureDiagnostics.HasAny)
-            context.Diagnostics.Add(captureDiagnostics.ToCollection());
+        parentNode.State = newState;
     }
 
     /// <summary>
-    /// Represents a child-node creation captured by
-    /// <see cref="CapturingGraphContext"/> during
-    /// <see cref="IComponentNode.Initialize"/>.
-    /// </summary>
-    private abstract record CapturedChild
-    {
-        /// <summary>A child requested via <see cref="IGraphContext.Push(GraphNodeInitializationRequest, CancellationToken)"/>.</summary>
-        public sealed record FromRequest(GraphNodeInitializationRequest Request) : CapturedChild;
-
-        /// <summary>Children requested via <see cref="IGraphContext.Push(GraphNode?, IReadOnlyList{ICXNode}, CancellationToken)"/>.</summary>
-        public sealed record FromSyntaxNodes(IReadOnlyList<ICXNode> SyntaxNodes) : CapturedChild;
-    }
-
-    /// <summary>
-    /// A lightweight <see cref="IGraphContext"/> that records all
-    /// child-creation requests made during
-    /// <see cref="IComponentNode.Initialize"/> without modifying the tree.
-    /// This enables <see cref="RebuildParentSubtree"/> to compare the
-    /// component's desired child structure against the existing children
-    /// and reuse unchanged subtrees.
+    /// A lightweight <see cref="IGraphContext"/> that records
+    /// <see cref="GraphNodeInitializationRequest"/>s captured during
+    /// <see cref="IComponentNode.RegisterGraphNode"/> without modifying any
+    /// tree. This enables the update path to inspect the component's desired
+    /// child structure before committing changes.
     /// </summary>
     private sealed class CapturingGraphContext : IGraphContext
     {
         private readonly IComponentContext _source;
-        private readonly GraphNode _parentNode;
-        private readonly List<CapturedChild> _capturedChildren = [];
+        private readonly List<GraphNodeInitializationRequest> _captured = [];
 
-        public CapturingGraphContext(IComponentContext source, GraphNode parentNode)
+        public CapturingGraphContext(IComponentContext source)
         {
             _source = source;
-            _parentNode = parentNode;
         }
 
         public IComponentImplementation Implementation => _source.Implementation;
@@ -436,33 +381,18 @@ partial class CXComponentGraph
         public ICXModel CX => _source.CX;
         public IGraphOptions Options => _source.Options;
 
-        /// <summary>All captured child-creation requests, in order.</summary>
-        public IReadOnlyList<CapturedChild> CapturedChildren => _capturedChildren;
+        /// <summary>
+        /// The initialization requests captured from
+        /// <see cref="IComponentNode.RegisterGraphNode"/>.
+        /// </summary>
+        public IReadOnlyList<GraphNodeInitializationRequest> CapturedRequests => _captured;
 
         public GraphNode? Push(
             GraphNodeInitializationRequest request,
             CancellationToken cancellationToken = default
         )
         {
-            _capturedChildren.Add(new CapturedChild.FromRequest(request));
-
-            // Return an existing child that matches, if any, so that
-            // Initialize code that references the returned node (e.g. to set
-            // property values) keeps working during the capture pass.
-            if (_parentNode.HasChildren)
-            {
-                foreach (var existing in _parentNode.Children)
-                {
-                    if (
-                        existing.Component.GetType() == request.Component.GetType() &&
-                        ReferenceEquals(existing.State.CXNode, request.CXNode)
-                    )
-                    {
-                        return existing;
-                    }
-                }
-            }
-
+            _captured.Add(request);
             return null;
         }
 
@@ -470,36 +400,7 @@ partial class CXComponentGraph
             GraphNode? parent,
             IReadOnlyList<ICXNode> syntaxNodes,
             CancellationToken cancellationToken
-        )
-        {
-            _capturedChildren.Add(new CapturedChild.FromSyntaxNodes(syntaxNodes));
-
-            // Return existing children that match, so Initialize code
-            // referencing returned nodes keeps working.
-            if (_parentNode.HasChildren)
-            {
-                var result = new List<GraphNode>();
-
-                foreach (var syntaxNode in syntaxNodes)
-                {
-                    foreach (var existing in _parentNode.Children)
-                    {
-                        if (
-                            existing.State.CXNode is not null &&
-                            ReferenceEquals(existing.State.CXNode, syntaxNode)
-                        )
-                        {
-                            result.Add(existing);
-                            break;
-                        }
-                    }
-                }
-
-                return result;
-            }
-
-            return [];
-        }
+        ) => [];
 
         public bool Equals(IComponentContext? other)
             => other is CapturingGraphContext ctx

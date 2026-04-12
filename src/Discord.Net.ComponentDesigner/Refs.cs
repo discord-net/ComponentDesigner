@@ -1,4 +1,5 @@
 ﻿using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace Discord;
 
@@ -21,7 +22,7 @@ public static class Ext
     }
 }
 
-public readonly unsafe struct RefBox<T>
+public unsafe struct RefBox<T> : IDisposable
 {
     public T Value
     {
@@ -30,17 +31,21 @@ public readonly unsafe struct RefBox<T>
     }
 
     private ref T Ref => ref Unsafe.AsRef<T>(_ptr);
+    
     private readonly void* _ptr;
-
-    public RefBox(void* ptr)
+    private GCHandle _handle;
+    
+    public RefBox(ref T foo)
     {
-        _ptr = ptr;
+        _ptr = Unsafe.AsPointer(ref foo);
+        _handle = GCHandle.Alloc(foo);
     }
+
 
     public static RefBox<T> Create(out T value)
     {
         value = default!;
-        return new(Unsafe.AsPointer(ref value));
+        return new(ref value);
     }
 
     public U Set<U>(U value)
@@ -48,5 +53,10 @@ public readonly unsafe struct RefBox<T>
     {
         Value = value;
         return value;
+    }
+
+    public void Dispose()
+    {
+        _handle.Free();
     }
 }
