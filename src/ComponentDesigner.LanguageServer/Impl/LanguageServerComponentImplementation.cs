@@ -16,6 +16,8 @@ public sealed class LanguageServerComponentImplementation : IComponentImplementa
 
     public IComponentTypingProvider? ComponentTypingProvider => null; // TODO
 
+    public IComponentExtensionProvider? ComponentExtensionProvider => ComponentExtensions.Instance;
+
     public ComponentPropertyValueKind? GetPropertyKindOverload(
         IComponentNode component,
         ComponentProperty property

@@ -5,7 +5,7 @@ namespace Discord.ComponentDesigner.LanguageServer;
 public sealed class LSPCompilationProvider : ICompilationProvider
 {
     public static readonly LSPCompilationProvider Instance = new();
-    
+
     public ICSharpTypeSymbol? GetTypeFromQualifiedName(string name, CancellationToken cancellationToken = default)
     {
         return null;
@@ -21,7 +21,7 @@ public sealed class LSPCompilationProvider : ICompilationProvider
     }
 
     public IReadOnlyList<ICSharpSymbol> LookupSymbols(
-        LocationInfo location,
+        ICXModel cxModel,
         string name,
         ICSharpTypeSymbol? container = null,
         CancellationToken cancellationToken = default
