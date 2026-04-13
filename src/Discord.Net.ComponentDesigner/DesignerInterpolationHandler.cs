@@ -79,6 +79,14 @@ public ref struct DesignerInterpolationHandler : IDisposable
     public void Dispose()
     {
         if (_interpolatedValues is not null)
+        {
+            for (var i = 0; i < _interpolatedValues.Length; i++)
+            {
+                if(_interpolatedValues[i] is IRefBox refBox)
+                    refBox.Dispose();
+            }
+            
             ArrayPool<object?>.Shared.Return(_interpolatedValues);
+        }
     }
 }

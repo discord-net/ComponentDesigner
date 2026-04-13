@@ -22,7 +22,9 @@ public static class Ext
     }
 }
 
-public unsafe struct RefBox<T> : IDisposable
+public interface IRefBox : IDisposable;
+
+public unsafe struct RefBox<T> : IRefBox
 {
     public T Value
     {
