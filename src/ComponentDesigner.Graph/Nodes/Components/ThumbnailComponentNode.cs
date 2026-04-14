@@ -4,6 +4,8 @@ public sealed class ThumbnailComponentNode : ComponentNode
 {
     public override string Name => "thumbnail";
 
+    public override ComponentTargetType Target => ComponentTargetType.Message;
+
     public override IReadOnlyList<ComponentProperty> Properties { get; }
 
     public ComponentProperty Id { get; }

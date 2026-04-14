@@ -4,7 +4,7 @@ using Xunit.Abstractions;
 
 namespace UnitTests.Graph.Components;
 
-public sealed class SelectMenuTests(ITestOutputHelper output) : BaseComponentTest(output)
+public sealed class SelectMenuTests(ITestOutputHelper output) : BaseDiscordNetComponentTest(output)
 {
     [Fact]
     public void EmptyMenu()

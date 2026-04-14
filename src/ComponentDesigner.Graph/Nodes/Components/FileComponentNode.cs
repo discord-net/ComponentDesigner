@@ -4,10 +4,12 @@ public sealed class FileComponentNode : ComponentNode
 {
     public override string Name => "file";
 
+    public override ComponentTargetType Target => ComponentTargetType.Message;
+    
     public override IReadOnlyList<ComponentProperty> Properties { get; }
 
     public ComponentProperty Id { get; }
-    public ComponentProperty Media { get; }
+    public ComponentProperty File { get; }
     public ComponentProperty IsSpoiler { get; }
 
     public FileComponentNode()
@@ -15,9 +17,9 @@ public sealed class FileComponentNode : ComponentNode
         Properties =
         [
             Id = ComponentProperty.Id,
-            Media = new(
-                "media",
-                aliases: ["url"],
+            File = new(
+                "file",
+                aliases: ["url", "media"],
                 kind: ComponentPropertyValueKind.SyntaxValue
             ),
             IsSpoiler = new(

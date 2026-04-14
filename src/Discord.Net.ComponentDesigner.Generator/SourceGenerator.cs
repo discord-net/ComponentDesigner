@@ -57,7 +57,7 @@ public sealed class SourceGenerator : IIncrementalGenerator
 
         Provider = parametersProvider
             .Combine(context.CompilationProvider)
-            .Select(UpdateGraphDependencies)
+            .Select(_manager.UpdateGraphDependencies)
             .Select(EmitGraph)
             .WithTrackingName(TrackingNames.EMIT_GRAPH)
             .Collect()
@@ -314,29 +314,7 @@ public sealed class SourceGenerator : IIncrementalGenerator
             parameters.CompilationProvider
         );
     }
-
-    public static UpdatedGraph UpdateGraphDependencies(
-        (CXComponentGraph, Compilation) tuple,
-        CancellationToken cancellationToken
-    )
-    {
-        var (graph, compilation) = tuple;
-
-        var provider = CSharpCompilationProvider.Get(compilation);
-        
-        return new UpdatedGraph(graph, provider);
-
-        //
-        // var provider = CSharpCompilationProvider.Get(compilation);
-        //
-        // var newGraph = graph.UpdateDependencies(
-        //     provider,
-        //     cancellationToken
-        // );
-        //
-        // return new(newGraph, provider);
-    }
-
+    
     public static CXComponentGraph CreateGraph(GraphParameters parameters, CancellationToken cancellationToken)
         => CXComponentGraph.Create(parameters, cancellationToken);
 

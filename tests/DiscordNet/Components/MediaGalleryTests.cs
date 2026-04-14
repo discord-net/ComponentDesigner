@@ -4,7 +4,7 @@ using Xunit.Abstractions;
 
 namespace UnitTests.Graph.Components;
 
-public sealed class MediaGalleryTests(ITestOutputHelper output) : BaseComponentTest(output)
+public sealed class MediaGalleryTests(ITestOutputHelper output) : BaseDiscordNetComponentTest(output)
 {
     [Fact]
     public void EmptyGallery()

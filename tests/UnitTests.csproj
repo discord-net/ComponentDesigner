@@ -26,6 +26,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\src\ComponentDesigner.Graph\ComponentDesigner.Graph.csproj" />
+      <ProjectReference Include="..\src\ComponentDesigner.Json\ComponentDesigner.Json.csproj" />
       <ProjectReference Include="..\src\ComponentDesigner.Parser\ComponentDesigner.Parser.csproj" />
       <ProjectReference Include="..\src\Discord.Net.ComponentDesigner.Generator\Discord.Net.ComponentDesigner.Generator.csproj" />
       <ProjectReference Include="..\src\Discord.Net.ComponentDesigner.Implementation\Discord.Net.ComponentDesigner.Implementation.csproj" />

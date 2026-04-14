@@ -7,6 +7,8 @@ public sealed class SectionComponentNode : ComponentNode
     public override string Name => "section";
 
     public override bool IsParentOfOtherComponents => true;
+    
+    public override ComponentTargetType Target => ComponentTargetType.Message;
 
     public override IReadOnlyList<ComponentProperty> Properties { get; }
 

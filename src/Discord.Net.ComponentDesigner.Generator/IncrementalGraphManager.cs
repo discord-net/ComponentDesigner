@@ -1,6 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Threading;
+using ComponentDesigner.CSharp;
+using Microsoft.CodeAnalysis;
 
 namespace ComponentDesigner;
 
@@ -14,7 +16,22 @@ public sealed class IncrementalGraphManager
         GraphParameters Parameters,
         CXComponentGraph Graph
     );
-        
+
+    public UpdatedGraph UpdateGraphDependencies(
+        (CXComponentGraph, Compilation) tuple,
+        CancellationToken cancellationToken
+    )
+    {
+        var (graph, compilation) = tuple;
+
+        var provider = CSharpCompilationProvider.Get(compilation);
+
+        return new(
+            graph.UpdateFromCompilation(provider, cancellationToken),
+            provider
+        );
+    }
+    
     public IEnumerable<CXComponentGraph> Update(
         ImmutableArray<GraphParameters> parameters,
         CancellationToken cancellationToken

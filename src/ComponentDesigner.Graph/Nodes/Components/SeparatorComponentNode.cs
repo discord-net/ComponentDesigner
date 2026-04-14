@@ -5,6 +5,8 @@ public sealed class SeparatorComponentNode : ComponentNode
     public override string Name => "separator";
 
     public override IReadOnlyList<ComponentProperty> Properties { get; }
+    
+    public override ComponentTargetType Target => ComponentTargetType.Message;
 
     public ComponentProperty Id { get; }
     public ComponentProperty Divider { get; }

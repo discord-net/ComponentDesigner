@@ -48,6 +48,8 @@ public sealed class ButtonComponentNode : ComponentNode<ButtonState>
         "link-button",
         "premium-button"
     ];
+    
+    public override ComponentTargetType Target => ComponentTargetType.Message;
 
     // label can be in children
     public override bool AllowChildrenInCX => true;

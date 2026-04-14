@@ -6,7 +6,7 @@ using Xunit.Abstractions;
 
 namespace UnitTests.DiscordNet;
 
-public class RefTests(ITestOutputHelper output) : BaseComponentTest(output)
+public class RefTests(ITestOutputHelper output) : BaseDiscordNetComponentTest(output)
 {
     [Fact]
     public void BasicRef()

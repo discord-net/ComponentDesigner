@@ -51,6 +51,8 @@ public sealed class SelectMenuComponentNode : ComponentNode<SelectMenuState>
         "mentionable-select-menu",
     ];
 
+    public override ComponentTargetType Target => ComponentTargetType.Any;
+    
     public override bool IsParentOfOtherComponents => true;
 
     public ComponentProperty Id { get; }

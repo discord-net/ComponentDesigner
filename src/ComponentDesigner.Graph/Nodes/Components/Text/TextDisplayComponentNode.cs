@@ -22,6 +22,8 @@ public class TextDisplayComponentNode : ComponentNode<TextDisplayState>
 
     public override IReadOnlyList<string> Aliases => ["text"];
 
+    public override ComponentTargetType Target => ComponentTargetType.Any;
+    
     public override bool AllowChildrenInCX => true;
 
     public override bool IsParentOfOtherComponents => true;

@@ -29,6 +29,8 @@ public abstract class ComponentNode<TState> :
 
     public virtual IReadOnlyList<ComponentProperty> Properties { get; } = [];
 
+    public virtual ComponentTargetType Target => ComponentTargetType.Any;
+    
     public virtual bool IsParentOfOtherComponents => false;
 
     public virtual bool IsUserAccessible => true;

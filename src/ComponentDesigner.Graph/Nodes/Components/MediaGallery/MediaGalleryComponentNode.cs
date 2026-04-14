@@ -10,6 +10,8 @@ public sealed class MediaGalleryComponentNode : ComponentNode
 
     public override IReadOnlyList<ComponentProperty> Properties { get; }
 
+    public override ComponentTargetType Target => ComponentTargetType.Message;
+    
     public override bool IsParentOfOtherComponents => true;
 
     public ComponentProperty Id { get; }

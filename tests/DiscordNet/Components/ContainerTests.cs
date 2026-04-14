@@ -4,7 +4,7 @@ using Xunit.Abstractions;
 
 namespace UnitTests.Graph.Components;
 
-public sealed class ContainerTests(ITestOutputHelper output) : BaseComponentTest(output)
+public sealed class ContainerTests(ITestOutputHelper output) : BaseDiscordNetComponentTest(output)
 {
     [Fact]
     public void EmptyContainer()

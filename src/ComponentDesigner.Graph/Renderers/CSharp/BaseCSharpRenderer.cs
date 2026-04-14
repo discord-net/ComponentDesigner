@@ -178,7 +178,7 @@ public abstract partial class BaseCSharpRenderer : IComponentRenderer
             return Math.Max(result, count);
         }
 
-        static TextControl Join(EquatableArray<TextControl> elements)
+        static TextControl Join(IReadOnlyList<TextControl> elements)
         {
             if (elements.Count is 0) return TextControl.Empty;
 

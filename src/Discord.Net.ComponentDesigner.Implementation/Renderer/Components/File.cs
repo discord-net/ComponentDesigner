@@ -17,7 +17,7 @@ partial class DiscordNetRenderer
             RenderPropertiesAsParameters(
                 context, state, cancellationToken,
                 ("id", file.Id, CSharpValueGenerator.NullableInt32),
-                ("media", file.Media, CSharpValueGenerator.UnfurledMediaItemProperties),
+                ("media", file.File, CSharpValueGenerator.UnfurledMediaItemProperties),
                 ("isSpoiler", file.IsSpoiler, CSharpValueGenerator.Boolean)
             ),
             (symbol, parameters) => new RenderedComponent(

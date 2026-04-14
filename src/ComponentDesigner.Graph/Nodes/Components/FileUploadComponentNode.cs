@@ -4,6 +4,8 @@ public sealed class FileUploadComponentNode : ComponentNode
 {
     public override string Name => "file-upload";
 
+    public override ComponentTargetType Target => ComponentTargetType.Modal;
+    
     public override IReadOnlyList<ComponentProperty> Properties { get; }
 
     public ComponentProperty Id { get; }

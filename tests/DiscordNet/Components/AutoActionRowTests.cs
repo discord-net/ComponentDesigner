@@ -3,7 +3,7 @@ using Xunit.Abstractions;
 
 namespace UnitTests.Graph.Components;
 
-public sealed class AutoActionRowTests(ITestOutputHelper output) : BaseComponentTest(output)
+public sealed class AutoActionRowTests(ITestOutputHelper output) : BaseDiscordNetComponentTest(output)
 {
     [Fact]
     public void MixOfButtonsAndSelectMenus()

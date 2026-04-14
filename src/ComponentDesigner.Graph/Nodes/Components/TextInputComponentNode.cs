@@ -5,7 +5,9 @@ public sealed class TextInputComponentNode : ComponentNode
     public override string Name => "text-input";
 
     public override IReadOnlyList<string> Aliases { get; } = ["input"];
-
+    
+    public override ComponentTargetType Target => ComponentTargetType.Modal;
+    
     public override IReadOnlyList<ComponentProperty> Properties { get; }
 
     public ComponentProperty Id { get; }

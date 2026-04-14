@@ -7,12 +7,14 @@ public sealed class LabelComponentNode : ComponentNode
     public override string Name => "label";
 
     public override bool IsParentOfOtherComponents => true;
+    
+    public override ComponentTargetType Target => ComponentTargetType.Modal;
 
     public override IReadOnlyList<ComponentProperty> Properties { get; }
 
     public ComponentProperty Id { get; }
     public ComponentProperty Component { get; }
-    public ComponentProperty Value { get; }
+    public ComponentProperty Label { get; }
     public ComponentProperty Description { get; }
 
     public LabelComponentNode()
@@ -25,8 +27,9 @@ public sealed class LabelComponentNode : ComponentNode
                 kind: ComponentPropertyValueKind.Component,
                 flags: ComponentPropertyFlags.FromChildren
             ),
-            Value = new(
-                "value",
+            Label = new(
+                "label",
+                aliases: ["value"],
                 kind: ComponentPropertyValueKind.SyntaxValue
             ),
             Description = new(
@@ -95,7 +98,7 @@ public sealed class LabelComponentNode : ComponentNode
 
         if (childValue is not null)
         {
-            state.SetPropertyValue(context, Value, childValue, cancellationToken);
+            state.SetPropertyValue(context, Label, childValue, cancellationToken);
         }
 
         return state;

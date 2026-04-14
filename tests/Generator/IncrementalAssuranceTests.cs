@@ -58,7 +58,9 @@ public sealed class IncrementalAssuranceTests(ITestOutputHelper output) : BaseGe
             new global::Discord.ContainerBuilder(
                 components: 
                 [
-                    designer.GetValue<global::Discord.IMessageComponentBuilder>(0)
+                    new global::Discord.TextDisplayBuilder(
+                        content: $"{designer.GetValueAsString(0)}"
+                    )
                 ]
             )
             """

@@ -1,5 +1,8 @@
 ﻿using static Discord.ComponentDesigner;
 
 var x = cx("""
-    <foo />
-""");
+    <container>
+        Hello
+        <separator />
+    </container>
+""", autoTextDisplays: true);

@@ -4,7 +4,7 @@ using Xunit.Abstractions;
 
 namespace UnitTests.Graph.Components;
 
-public sealed class FileTests(ITestOutputHelper output) : BaseComponentTest(output)
+public sealed class FileTests(ITestOutputHelper output) : BaseDiscordNetComponentTest(output)
 {
     [Fact]
     public void EmptyFile()
@@ -17,7 +17,7 @@ public sealed class FileTests(ITestOutputHelper output) : BaseComponentTest(outp
             
             Emits(null);
             {
-                AssertDiagnostic(Diagnostic.RequiredPropertyNotSpecified(file, file.Media));
+                AssertDiagnostic(Diagnostic.RequiredPropertyNotSpecified(file, file.File));
             }
         }
     }

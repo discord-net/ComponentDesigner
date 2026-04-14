@@ -28,6 +28,12 @@ public abstract class BaseComponentTest(ITestOutputHelper output) : TestWithDiag
     private Compilation? _compilation;
     private IEnumerator<GraphNode>? _nodeEnumerator;
 
+    protected abstract GraphParameters CreateGraphParameters(
+        ICompilationProvider compilationProvider,
+        ICXModel cxModel,
+        IGraphOptions? options
+    );
+
     public void Graph(
         string cx,
         [StringSyntax("csharp")] string? pretext = null,
@@ -77,13 +83,8 @@ public abstract class BaseComponentTest(ITestOutputHelper output) : TestWithDiag
         Assert.NotNull(target);
 
         var compilationProvider = CSharpCompilationProvider.Get(compilation);
-        
-        var graphParameters = new GraphParameters(
-            new DiscordNetComponentDesignerImplementation(),
-            compilationProvider,
-            target.CX,
-            options ?? GeneratorGraphOptions.Default
-        );
+
+        var graphParameters = CreateGraphParameters(compilationProvider, target.CX, options);
 
         var graph = CXComponentGraph.Create(graphParameters);
 
@@ -141,7 +142,7 @@ public abstract class BaseComponentTest(ITestOutputHelper output) : TestWithDiag
         graphNode = _nodeEnumerator.Current;
 
         Assert.IsType<U>(graphNode.State, exactMatch: false);
-        
+
         state = (U)graphNode.State;
 
         Assert.IsType<T>(graphNode.Component);

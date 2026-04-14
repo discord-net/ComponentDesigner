@@ -17,7 +17,7 @@ partial class DiscordNetRenderer
             RenderPropertiesAsParameters(
                 context, state, cancellationToken,
                 ("id", label.Id, CSharpValueGenerator.NullableInt32),
-                ("label", label.Value, CSharpValueGenerator.String),
+                ("label", label.Label, CSharpValueGenerator.String),
                 ("description", label.Description, CSharpValueGenerator.NullableString),
                 ("component", label.Component, new(RenderAsSingleChildComponent))
             ),

@@ -49,7 +49,9 @@ public static class DiagnosticFactory
         CannotConvertComponents,
         NotAComponentType,
         InvalidSyntax,
-        TypedComponentsAreNotSupported
+        TypedComponentsAreNotSupported,
+        NotAColor,
+        NotAnEmoji
     }
 
     private enum DiagnosticSource
@@ -568,6 +570,22 @@ public static class DiagnosticFactory
                 DiagnosticSeverity.Error,
                 $"'{variant}' is not a valid enum member of '{enumName}'"
             );
+        
+        public static DiagnosticDescriptor NotAValidEnumValue(int variant)
+            => Create(
+                DiagnosticSource.Graph,
+                DiagnosticCode.NotAValidEnumVariant,
+                DiagnosticSeverity.Error,
+                $"'{variant}' is not a valid enum value"
+            );
+        
+        public static DiagnosticDescriptor NotAValidEnumValue(string variant)
+            => Create(
+                DiagnosticSource.Graph,
+                DiagnosticCode.NotAValidEnumVariant,
+                DiagnosticSeverity.Error,
+                $"'{variant}' is not a valid enum value"
+            );
 
         public static DiagnosticDescriptor InvalidSnowflake(string text)
             => Create(
@@ -740,11 +758,15 @@ public static class DiagnosticFactory
 
         public static DiagnosticDescriptor TypedComponentsAreNotSupported(
             IComponentImplementation implementation
+        ) => TypedComponentsAreNotSupported(implementation.Name);
+        
+        public static DiagnosticDescriptor TypedComponentsAreNotSupported(
+            string name
         ) => Create(
             DiagnosticSource.Graph,
             DiagnosticCode.TypedComponentsAreNotSupported,
             DiagnosticSeverity.Error,
-            $"'{implementation.Name}' does not support custom components (interpolations, functional, etc)"
+            $"'{name}' does not support custom components (interpolations, functional, etc)"
         );
 
         public static DiagnosticDescriptor InvalidSyntaxValue(
@@ -757,6 +779,24 @@ public static class DiagnosticFactory
                 CXToken token => token.Kind.ToString(),
                 _ => syntax.GetType().Name
             }}' is not a valid value"
+        );
+        
+        public static DiagnosticDescriptor NotAColorCode(
+            string code
+        ) => Create(
+            DiagnosticSource.Renderer,
+            DiagnosticCode.NotAColor,
+            DiagnosticSeverity.Error,
+            $"'{code}' is not a valid color"
+        );
+        
+        public static DiagnosticDescriptor NotAnEmoji(
+            string code
+        ) => Create(
+            DiagnosticSource.Renderer,
+            DiagnosticCode.NotAnEmoji,
+            DiagnosticSeverity.Error,
+            $"'{code}' is not a valid emoji"
         );
     }
 }

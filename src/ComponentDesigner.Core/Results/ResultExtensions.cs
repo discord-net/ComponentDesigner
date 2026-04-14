@@ -8,9 +8,9 @@ public static class ResultExtensions
         where T : IEquatable<T>
         => result?.Or(other) ?? other;
 
-    extension<T>(IEnumerable<Result<T>> collection) where T : IEquatable<T>
+    extension<T>(IEnumerable<Result<T>> collection)
     {
-        public Result<EquatableArray<T>> FlattenAll()
+        public Result<IReadOnlyList<T>> FlattenAll()
         {
             var isAny = false;
             var isAll = true;
@@ -25,12 +25,12 @@ public static class ResultExtensions
                 diag.AddRange(result.Diagnostics);
             }
 
-            if (!isAny) return EquatableArray<T>.Empty;
+            if (!isAny) return Result<IReadOnlyList<T>>.FromValue([]);
 
-            return isAll ? new Result<EquatableArray<T>>([..parts], diag) : new(diag);
+            return isAll ? new Result<IReadOnlyList<T>>([..parts], diag) : new(diag);
         }
 
-        public Result<EquatableArray<T>> Flatten()
+        public Result<IReadOnlyList<T>> Flatten()
         {
             var parts = new List<T>();
             var diag = new List<Diagnostic>();
@@ -41,7 +41,7 @@ public static class ResultExtensions
                 diag.AddRange(result.Diagnostics);
             }
 
-            return new Result<EquatableArray<T>>([..parts], diag);
+            return new Result<IReadOnlyList<T>>([..parts], diag);
         }
     }
 

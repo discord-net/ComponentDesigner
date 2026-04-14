@@ -4,7 +4,7 @@ using Xunit.Abstractions;
 
 namespace UnitTests.Graph.Components;
 
-public sealed class TextDisplayTests(ITestOutputHelper output) : BaseComponentTest(output)
+public sealed class TextDisplayTests(ITestOutputHelper output) : BaseDiscordNetComponentTest(output)
 {
     [Fact]
     public void EmptyTextDisplay()
