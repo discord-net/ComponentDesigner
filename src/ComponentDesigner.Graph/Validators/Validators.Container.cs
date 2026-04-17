@@ -13,32 +13,17 @@ partial class Validators
     {
         ValidateGenericComponent(container, state, bag);
         
-        foreach (var child in state.Children)
-            ValidateChildIsAllowedInContainer(container, state, bag, child.Component);
+        PropertyMatchesComponents(
+            container, state.GetPropertyValue(container.Components), bag,
+            static x => x
+                is IDynamicComponentNode
+                or ActionRowComponentNode
+                or TextDisplayComponentNode
+                or SectionComponentNode
+                or MediaGalleryComponentNode
+                or SeparatorComponentNode
+                or FileComponentNode
+        );
     }
-
-    private static void ValidateChildIsAllowedInContainer(
-        ContainerComponentNode container,
-        ComponentState state,
-        IDiagnosticBag bag,
-        IComponentNode child
-    )
-    {
-        if (
-            child is not IDynamicComponentNode
-            and not ActionRowComponentNode
-            and not TextDisplayComponentNode
-            and not SectionComponentNode 
-            and not MediaGalleryComponentNode
-            and not SeparatorComponentNode
-            and not FileComponentNode
-        )
-        {
-            bag.Add(
-                state.TextSpan.Report(
-                    Diagnostic.InvalidChildOfComponent(container, child)
-                )
-            );
-        }
-    }
+    
 }

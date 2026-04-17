@@ -50,7 +50,7 @@ public abstract record ComponentPropertyValue(
 
     public bool IsSourcedFromAttribute => Source is ComponentPropertyValueSource.Attribute;
     public bool IsSourcedFromParent => Source is ComponentPropertyValueSource.Child;
-
+    
     public bool IsSome => !IsNone;
     public bool IsNone => this is None;
     public bool IsLiteral => this is Literal;

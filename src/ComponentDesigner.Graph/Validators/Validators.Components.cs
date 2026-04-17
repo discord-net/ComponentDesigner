@@ -5,9 +5,15 @@ namespace ComponentDesigner;
 
 public static partial class Validators
 {
-    public static void ValidateGenericComponent(IComponentNode component, ComponentState state, IDiagnosticBag bag)
+    public static void ValidateGenericComponent(
+        IComponentNode component,
+        ComponentState state,
+        IDiagnosticBag bag,
+        bool? allowsChildrenInCX = null,
+        bool? isParentOfOtherComponents = null
+    )
     {
-        ValidateElementStructure(component, state, bag);
+        ValidateElementStructure(component, state, bag, allowsChildrenInCX, isParentOfOtherComponents);
         ValidateProperties(component, state, bag);
         ReportDiagnosticsForUnknownProperties(component, state, bag);
     }
@@ -16,29 +22,21 @@ public static partial class Validators
         IComponentNode component,
         ComponentState state,
         IDiagnosticBag bag,
-        bool? allowsChildrenInCXOverride = null,
-        bool? isParentOverride = null
+        bool? allowsChildrenInCX = null,
+        bool? isParentOfOtherComponents = null
     )
     {
         if (state.CXNode is not CXElement element) return;
 
-        var allowsChildrenInCX = allowsChildrenInCXOverride ?? component.AllowChildrenInCX;
-        var isParent = isParentOverride ?? component.IsParentOfOtherComponents;
-
-        if (!allowsChildrenInCX && element.Children.Count > 0)
+        if (
+            (allowsChildrenInCX is false && element.Children.Count > 0) ||
+            (isParentOfOtherComponents is false && state.Children.Count > 0)
+        )
         {
             bag.Add(
-                element.Children.Report(
-                    Diagnostic.ComponentDoesntAllowChildren(component)
-                )
-            );
-        }
-        else if (!isParent && state.Children.Count > 0)
-        {
-            bag.Add(
-                element.Children.Report(
-                    Diagnostic.ComponentDoesntAllowChildren(component)
-                )
+                Diagnostic
+                    .ComponentDoesntAllowChildren(component)
+                    .At(element.Children)
             );
         }
     }
@@ -105,7 +103,7 @@ public static partial class Validators
                 );
                 return;
             }
-            
+
             // property is not specified at all, and its not optional
             DiagnosticDescriptor diagnostic;
 
@@ -162,5 +160,39 @@ public static partial class Validators
                 );
                 return;
         }
+    }
+
+    public static bool PropertyMatchesComponents(
+        IComponentNode parent,
+        ComponentPropertyValue propertyValue,
+        IDiagnosticBag bag,
+        Func<IComponentNode, bool> matches
+    )
+    {
+        var isValid = true;
+        
+        foreach (var innerValue in propertyValue.AsFlattened)
+        {
+            if (
+                innerValue is not ComponentPropertyValue.Component
+                {
+                    GraphNode:
+                    {
+                        State.TextSpan: { } textSpan,
+                        Component: { } component
+                    }
+                }
+            ) continue;
+
+            if (!matches(component))
+            {
+                bag.Add(
+                    Diagnostic.InvalidChildOfComponent(parent, component).At(textSpan)
+                );
+                isValid = false;
+            }
+        }
+
+        return isValid;
     }
 }

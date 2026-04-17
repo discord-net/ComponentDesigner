@@ -5,9 +5,29 @@ using ComponentDesigner.Util;
 
 namespace ComponentDesigner;
 
-public static class ValueValidators
+partial class Validators
 {
-    public static void PropertyRange(
+    public static bool StringNotEmptyAndRange(
+        IComponentContext context,
+        ComponentPropertyValue propertyValue,
+        IDiagnosticBag bag,
+        int? lower = null,
+        int? upper = null
+    ) => StringIsNotEmpty(propertyValue, bag) && StringRange(context, propertyValue, bag, lower, upper);
+
+    public static bool StringIsNotEmpty(ComponentPropertyValue propertyValue, IDiagnosticBag bag)
+    {
+        if (propertyValue.AsSingle is not ComponentPropertyValue.Literal literal)
+            return true;
+
+        if (!string.IsNullOrEmpty(literal.Value))
+            return true;
+
+        bag.Add(Diagnostic.EmptyValueNotAllowed.At(propertyValue));
+        return false;
+    }
+
+    public static bool PropertyRange(
         IComponentContext context,
         ComponentPropertyValue lowerPropertyValue,
         ComponentPropertyValue upperPropertyValue,
@@ -17,12 +37,12 @@ public static class ValueValidators
         if (
             !lowerPropertyValue.Matches(ComponentPropertyValueKind.SingleSyntaxValue) ||
             !upperPropertyValue.Matches(ComponentPropertyValueKind.SingleSyntaxValue)
-        ) return;
+        ) return true;
 
         if (
             !TryGetIntValue(context, lowerPropertyValue, out var lowerInt) ||
             !TryGetIntValue(context, upperPropertyValue, out var upperInt)
-        ) return;
+        ) return true;
 
         if (lowerInt > upperInt)
         {
@@ -36,10 +56,40 @@ public static class ValueValidators
                     )
                 )
             );
+
+            return false;
         }
+
+        return true;
     }
 
-    public static void IntRange(
+    public static bool IntRange(
+        ComponentPropertyValue propertyValue,
+        IDiagnosticBag bag,
+        int? value,
+        int? lower = null,
+        int? upper = null
+    )
+    {
+        if (lower > value || upper < value)
+        {
+            bag.Add(
+                Diagnostic
+                    .IntegerOutOfRange(
+                        propertyValue.Property,
+                        value.Value,
+                        lower,
+                        upper
+                    )
+                    .At(propertyValue)
+            );
+            return false;
+        }
+
+        return true;
+    }
+
+    public static bool IntRange(
         IComponentContext context,
         ComponentPropertyValue propertyValue,
         IDiagnosticBag bag,
@@ -47,7 +97,7 @@ public static class ValueValidators
         int? upper = null
     ) => Range(context, propertyValue, bag, asString: false, lower, upper);
 
-    public static void StringRange(
+    public static bool StringRange(
         IComponentContext context,
         ComponentPropertyValue propertyValue,
         IDiagnosticBag bag,
@@ -56,8 +106,8 @@ public static class ValueValidators
     ) => Range(context, propertyValue, bag, asString: true, lower, upper);
 
     private delegate void SumFunc(ComponentPropertyValue value, ref int? sum);
-    
-    public static void Range(
+
+    public static bool Range(
         IComponentContext context,
         ComponentPropertyValue propertyValue,
         IDiagnosticBag bag,
@@ -77,10 +127,10 @@ public static class ValueValidators
             sumFunc(value, ref sum);
         }
 
-        if (sum is null) return;
+        if (sum is null) return true;
 
-        Check(sum.Value);
-        
+        return Check(sum.Value);
+
 
         static void SumStr(ComponentPropertyValue value, ref int? sum)
         {
@@ -119,7 +169,7 @@ public static class ValueValidators
             }
         }
 
-        void Check(int target)
+        bool Check(int target)
         {
             if (target > upper || target < lower)
             {
@@ -140,7 +190,11 @@ public static class ValueValidators
                             )
                     )
                 );
+
+                return false;
             }
+
+            return true;
         }
     }
 

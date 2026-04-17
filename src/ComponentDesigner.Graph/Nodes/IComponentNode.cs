@@ -8,14 +8,10 @@ public interface IComponentNode : IEquatable<IComponentNode>
     IReadOnlyList<string> Aliases { get; }
     IReadOnlyList<ComponentProperty> Properties { get; }
     ComponentTargetType Target { get; }
-    bool IsParentOfOtherComponents { get; }
     bool IsUserAccessible { get; }
-    bool AllowChildrenInCX { get; }
     bool HasExternalDependencies { get; }
 
-    bool TryGetProperty(string name, [MaybeNullWhen(false)] out ComponentProperty property);
-    
-    ComponentState? Initialize(
+    ComponentState? CreateState(
         ComponentNodeInitializationContext context,
         IDiagnosticBag diagnostics,
         CancellationToken cancellationToken = default

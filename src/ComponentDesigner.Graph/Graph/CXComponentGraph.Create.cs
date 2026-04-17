@@ -1,4 +1,5 @@
-﻿using ComponentDesigner.Nodes;
+﻿using System.Diagnostics.CodeAnalysis;
+using ComponentDesigner.Nodes;
 using ComponentDesigner.Nodes.TextControls;
 using ComponentDesigner.Parser;
 
@@ -204,17 +205,17 @@ partial class CXComponentGraph
         );
 
         var numDiagnostics = context.Diagnostics.Count;
-        
-        var state = graphNode.Component.Initialize(
+
+        var state = graphNode.Component.CreateState(
             new(cxNode, graphNode, context),
             context.Diagnostics,
             cancellationToken
         );
 
         graphNode.ComponentInitializationProducedDiagnostics = numDiagnostics != context.Diagnostics.Count;
-        
+
         if (state is null) return;
-        
+
         graphNode.State = state;
     }
 
@@ -233,12 +234,7 @@ partial class CXComponentGraph
             return;
         }
 
-        if (!ComponentNode.TryGetNode(element.Identifier, out var componentNode))
-        {
-            ResolveUnknownElement(element, context, ref componentNode, cancellationToken);
-        }
-
-        if (componentNode is null)
+        if (!TryGetComponentForElementSyntax(context, element, parent, out var componentNode))
         {
             context.Diagnostics.Add(
                 element.Report(Diagnostic.UnknownComponentElement(element.Identifier))
@@ -255,26 +251,40 @@ partial class CXComponentGraph
         componentNode.RegisterGraphNode(initializationContext, cancellationToken);
     }
 
-    private static void ResolveUnknownElement(
-        CXElement element,
+    private static bool TryGetComponentForElementSyntax(
         GraphInitializationContext context,
-        ref IComponentNode? result,
-        CancellationToken cancellationToken = default
+        CXElement element,
+        GraphNode? parent,
+        [MaybeNullWhen(false)] out IComponentNode componentNode
     )
     {
+        if (element.Identifier is "option" && parent?.Component is { } parentComponent)
+        {
+            componentNode = parentComponent switch
+            {
+                CheckboxGroupComponentNode => ComponentNode.GetNodeInstance<CheckboxGroupOptionComponentNode>(),
+                RadioGroupComponentNode => ComponentNode.GetNodeInstance<RadioGroupOptionComponentNode>(),
+                SelectMenuComponentNode => ComponentNode.GetNodeInstance<SelectMenuOptionComponentNode>(),
+                _ => null
+            };
+
+            if (componentNode is not null) return true;
+        }
+
+        if (ComponentNode.TryGetNode(element.Identifier, out componentNode))
+            return true;
+        
         if (context.HasTypedCustomComponentSupport)
         {
             // for now, just assume it to be a functional component
-            result = FunctionalComponentNode.Instance;
-            return;
+            componentNode = FunctionalComponentNode.Instance;
+            return true;
         }
 
-        context.Diagnostics.Add(
-            Diagnostic
-                .UnknownComponentElement(element.Identifier)
-                .At(element)
-        );
+        componentNode = null;
+        return false;
     }
+
 
     public static GraphNode? CreateFromInitializationRequest(
         GraphNodeInitializationRequest request,
@@ -304,7 +314,7 @@ partial class CXComponentGraph
     /// this method.
     /// </summary>
     /// <returns>
-    /// <see langword="true"/> if <see cref="IComponentNode.Initialize"/>
+    /// <see langword="true"/> if <see cref="IComponentNode.CreateState"/>
     /// produced a non-null state; <see langword="false"/> otherwise.
     /// </returns>
     internal static bool ReinitializeNode(
@@ -339,7 +349,7 @@ partial class CXComponentGraph
 
         var numDiagnostics = context.Diagnostics.Count;
 
-        var state = node.Component.Initialize(
+        var state = node.Component.CreateState(
             initContext,
             context.Diagnostics,
             cancellationToken

@@ -13,9 +13,7 @@ partial class Validators
         IDiagnosticBag bag
     )
     {
-        ValidateElementStructure(section, state, bag);
-        ValidateProperty(section, state.GetPropertyValue(section.Id), bag);
-        ReportDiagnosticsForUnknownProperties(section, state, bag);
+        ValidateGenericComponent(section, state, bag);
 
         ValidateChildComponents();
         ValidateAccessory();
@@ -55,7 +53,6 @@ partial class Validators
                 );
             }
         }
-
 
         void ValidateChildComponents()
         {

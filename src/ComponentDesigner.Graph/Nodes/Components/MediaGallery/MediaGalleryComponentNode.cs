@@ -12,8 +12,6 @@ public sealed class MediaGalleryComponentNode : ComponentNode
 
     public override ComponentTargetType Target => ComponentTargetType.Message;
     
-    public override bool IsParentOfOtherComponents => true;
-
     public ComponentProperty Id { get; }
     public ComponentProperty Items { get; }
 
@@ -35,13 +33,13 @@ public sealed class MediaGalleryComponentNode : ComponentNode
         CancellationToken cancellationToken = default
     ) => base.RegisterGraphNode(context, includeElementChildren: false, cancellationToken);
 
-    public override ComponentState? Initialize(
+    public override ComponentState? CreateState(
         ComponentNodeInitializationContext context,
         IDiagnosticBag diagnostics,
         CancellationToken cancellationToken = default
     )
     {
-        var state = base.Initialize(context, diagnostics, cancellationToken);
+        var state = base.CreateState(context, diagnostics, cancellationToken);
 
         if (state is not null && context.CXNode is CXElement { Children.Count: > 0 } element)
         {

@@ -26,20 +26,6 @@ partial class BaseCSharpRenderer
 
             var parameterValue = state.GetPropertyValue(parameter);
 
-            // if (parameterValue.IsNone)
-            // {
-            //     if (!parameter.IsOptional)
-            //     {
-            //         bag.Add(
-            //             state.ElementIdentifierTextSpanOrBetter.Report(
-            //                 Diagnostic.RequiredPropertyNotSpecified(functionalComponent, parameter)
-            //             )
-            //         );
-            //     }
-            //
-            //     continue;
-            // }
-
             var result = BuildPropertyValue(parameterSymbol.Type, parameterValue);
 
             bag.Add(result.Diagnostics);

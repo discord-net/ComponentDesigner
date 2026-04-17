@@ -4,6 +4,8 @@ public class CheckboxGroupOptionComponentNode : ComponentNode
 {
     public override string Name => "checkbox-group-option";
 
+    public override ComponentTargetType Target => ComponentTargetType.Modal;
+    
     public override IReadOnlyList<ComponentProperty> Properties { get; }
 
     public ComponentProperty Value { get; }

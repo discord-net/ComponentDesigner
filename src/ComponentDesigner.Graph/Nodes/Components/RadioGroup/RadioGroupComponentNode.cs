@@ -4,6 +4,8 @@ public sealed class RadioGroupComponentNode : ComponentNode
 {
     public override string Name => "radio-group";
 
+    public override ComponentTargetType Target => ComponentTargetType.Modal;
+    
     public override IReadOnlyList<ComponentProperty> Properties { get; }
 
     public ComponentProperty Id { get; }
@@ -34,13 +36,13 @@ public sealed class RadioGroupComponentNode : ComponentNode
         ];
     }
 
-    public override ComponentState? Initialize(
+    public override ComponentState? CreateState(
         ComponentNodeInitializationContext context,
         IDiagnosticBag diagnostics,
         CancellationToken cancellationToken = default
     )
     {
-        var state = base.Initialize(context, diagnostics, cancellationToken);
+        var state = base.CreateState(context, diagnostics, cancellationToken);
         
         state?.SetPropertyValueToChildren(Options);
 
@@ -48,9 +50,11 @@ public sealed class RadioGroupComponentNode : ComponentNode
     }
 
     public override void Validate(
-        IComponentContext context, ComponentState state, IDiagnosticBag bag,
+        IComponentContext context, 
+        ComponentState state, 
+        IDiagnosticBag bag,
         CancellationToken cancellationToken = default
-    ) => Validators.ValidateRadioGroup(context, this, state, bag);
+    ) => Validators.ValidateRadioGroup(context, this, state, bag, cancellationToken);
 
     public override Result<RenderedComponent> Render(
         ComponentEmitContext context,

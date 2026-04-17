@@ -6,8 +6,6 @@ public class ActionRowComponentNode : ComponentNode
 
     public override IReadOnlyList<string> Aliases { get; } = ["row"];
 
-    public override bool IsParentOfOtherComponents => true;
-
     public override ComponentTargetType Target => ComponentTargetType.Message;
     
     public override IReadOnlyList<ComponentProperty> Properties { get; }
@@ -28,13 +26,13 @@ public class ActionRowComponentNode : ComponentNode
         ];
     }
 
-    public override ComponentState? Initialize(
+    public override ComponentState? CreateState(
         ComponentNodeInitializationContext context,
         IDiagnosticBag diagnostics,
         CancellationToken cancellationToken = default
     )
     {
-        var state = base.Initialize(context, diagnostics, cancellationToken);
+        var state = base.CreateState(context, diagnostics, cancellationToken);
 
         state?.SetPropertyValueToChildren(Components);
 

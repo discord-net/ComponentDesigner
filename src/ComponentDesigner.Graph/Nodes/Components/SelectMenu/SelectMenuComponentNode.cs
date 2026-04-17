@@ -53,8 +53,6 @@ public sealed class SelectMenuComponentNode : ComponentNode<SelectMenuState>
 
     public override ComponentTargetType Target => ComponentTargetType.Any;
     
-    public override bool IsParentOfOtherComponents => true;
-
     public ComponentProperty Id { get; }
     public ComponentProperty Type { get; }
     public ComponentProperty CustomId { get; }
@@ -140,7 +138,7 @@ public sealed class SelectMenuComponentNode : ComponentNode<SelectMenuState>
             base.RegisterGraphNode(context, includeElementChildren: false, cancellationToken);
     }
 
-    public override SelectMenuState? Initialize(
+    public override SelectMenuState? CreateState(
         ComponentNodeInitializationContext context,
         IDiagnosticBag diagnostics,
         CancellationToken cancellationToken = default

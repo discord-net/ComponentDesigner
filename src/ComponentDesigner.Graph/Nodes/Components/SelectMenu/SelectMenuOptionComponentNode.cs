@@ -6,10 +6,6 @@ public sealed class SelectMenuOptionComponentNode : ComponentNode
 {
     public override string Name => "select-menu-option";
 
-    public override IReadOnlyList<string> Aliases { get; } = ["option"];
-
-    public override bool AllowChildrenInCX => true;
-
     public override IReadOnlyList<ComponentProperty> Properties { get; }
 
     public ComponentProperty Label { get; }
@@ -50,13 +46,13 @@ public sealed class SelectMenuOptionComponentNode : ComponentNode
         ];
     }
 
-    public override ComponentState? Initialize(
+    public override ComponentState? CreateState(
         ComponentNodeInitializationContext context,
         IDiagnosticBag diagnostics,
         CancellationToken cancellationToken = default
     )
     {
-        if (base.Initialize(context, diagnostics, cancellationToken) is not { } state) return null;
+        if (base.CreateState(context, diagnostics, cancellationToken) is not { } state) return null;
 
         // check for substitute of label or value
         var label = state.GetPropertyValue(Label);

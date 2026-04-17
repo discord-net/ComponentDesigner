@@ -12,8 +12,11 @@ public readonly record struct StaticRange(
 
     [MemberNotNullWhen(true, nameof(Lower), nameof(Upper))]
     public bool IsBoundedRange => Lower is not null && Upper is not null;
-    
+
     public bool IsEmpty => Lower is null && Upper is null;
+
+    [MemberNotNullWhen(true, nameof(Lower), nameof(Upper))]
+    public bool IsInvalid => IsBoundedRange && Lower > Upper;
 
     public bool IsUnboundedLower => Lower is null;
     public bool IsUnboundedUpper => Upper is null;
@@ -27,42 +30,39 @@ public readonly record struct StaticRange(
     public bool Contains(StaticRange other)
     {
         if (IsEmpty) return true;
-        
+
         return
             (Lower is null || Lower <= other.Lower) &&
             (Upper is null || Upper >= other.Upper);
     }
 
-    public static bool TryCreateFromProperties(
-        ComponentPropertyValue lower,
-        ComponentPropertyValue upper,
-        out StaticRange range
-    )
+    public bool Contains(int value)
     {
-        var isValidLower = TryGetInt(lower, out var lowerValue);
-        var isValidUpper = TryGetInt(upper, out var upperValue);
-        range = new(lowerValue, upperValue);
-        return isValidLower && isValidUpper;
-        
-        static bool TryGetInt(ComponentPropertyValue propertyValue, out int? result)
-        {
-            switch (propertyValue.AsSingle)
-            {
-                case ComponentPropertyValue.Literal { Value: var str }
-                    when int.TryParse(str, out var value):
-                case ComponentPropertyValue.Interpolation { Info.ConstantValue: { IsSpecified: true } constant }
-                    when int.TryParse(constant.ToString(), out value):
-                    result = value;
-                    return true;
-                case ComponentPropertyValue.None when !propertyValue.IsAttributeNameOnly:
-                    result = null;
-                    return true;
-            }
+        if (value > Upper || value < Lower) return false;
 
-            result = null;
-            return false;
-        }
+        return true;
     }
+
+    public bool? Fits(StaticRange other)
+    {
+        var min = other.Lower;
+        var max = other.Upper;
+
+        if (Upper > max || Lower < min) return false;
+        
+        if (
+            other.IsEmpty ||
+            (other.Lower is not null && Lower is null) ||
+            (other.Upper is not null && Upper is null)
+        ) return null;
+        
+        return (Lower is null || Lower >= other.Lower) && (Upper is null || Upper <= other.Upper);
+    }
+
+    public bool? Fits(
+        int? lower = null,
+        int? upper = null
+    ) => Fits((lower, upper));
 
     public StaticRange WithBoundedLower()
         => this with { Lower = Lower ?? 0 };
@@ -80,10 +80,11 @@ public readonly record struct StaticRange(
         => self + 1;
 
     public static implicit operator StaticRange(int value) => new(value);
+    public static implicit operator StaticRange((int?, int?) tuple) => new(tuple.Item1, tuple.Item2);
 
     public string ToRangeString()
         => $"{Lower}..{Upper}";
-    
+
     public override string ToString()
         => (Lower, Upper) switch
         {

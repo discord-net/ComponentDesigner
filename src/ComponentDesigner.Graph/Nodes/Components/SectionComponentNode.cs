@@ -6,8 +6,6 @@ public sealed class SectionComponentNode : ComponentNode
 {
     public override string Name => "section";
 
-    public override bool IsParentOfOtherComponents => true;
-    
     public override ComponentTargetType Target => ComponentTargetType.Message;
 
     public override IReadOnlyList<ComponentProperty> Properties { get; }
@@ -39,7 +37,7 @@ public sealed class SectionComponentNode : ComponentNode
         CancellationToken cancellationToken = default
     ) => base.RegisterGraphNode(context, includeElementChildren: false, cancellationToken);
 
-    public override ComponentState? Initialize(
+    public override ComponentState? CreateState(
         ComponentNodeInitializationContext context,
         IDiagnosticBag diagnostics,
         CancellationToken cancellationToken = default
@@ -47,7 +45,7 @@ public sealed class SectionComponentNode : ComponentNode
     {
         if (
             context.CXNode is not CXElement element ||
-            base.Initialize(context, diagnostics, cancellationToken) is not { } state
+            base.CreateState(context, diagnostics, cancellationToken) is not { } state
         ) return null;
 
         using var _ = ObjectPool<List<ICXNode>>.GetScoped(out var children);

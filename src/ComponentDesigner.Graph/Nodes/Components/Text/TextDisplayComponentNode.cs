@@ -24,10 +24,6 @@ public class TextDisplayComponentNode : ComponentNode<TextDisplayState>
 
     public override ComponentTargetType Target => ComponentTargetType.Any;
     
-    public override bool AllowChildrenInCX => true;
-
-    public override bool IsParentOfOtherComponents => true;
-
     public override IReadOnlyList<ComponentProperty> Properties { get; }
 
     public ComponentProperty Id { get; }
@@ -51,7 +47,7 @@ public class TextDisplayComponentNode : ComponentNode<TextDisplayState>
         CancellationToken cancellationToken = default
     ) => base.RegisterGraphNode(context, includeElementChildren: false, cancellationToken);
 
-    public override TextDisplayState? Initialize(
+    public override TextDisplayState? CreateState(
         ComponentNodeInitializationContext context,
         IDiagnosticBag diagnostics,
         CancellationToken cancellationToken = default

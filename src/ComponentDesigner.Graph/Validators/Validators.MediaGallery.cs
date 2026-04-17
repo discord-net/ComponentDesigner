@@ -5,6 +5,7 @@ namespace ComponentDesigner;
 partial class Validators
 {
     public const int MEDIA_GALLERY_MAX_ITEMS = 10;
+    public const int MEDIA_GALLERY_ITEM_DESCRIPTION_MAX_LENGTH = 1024;
 
     public static void ValidateMediaGallery(
         IComponentContext context,
@@ -61,5 +62,10 @@ partial class Validators
     )
     {
         ValidateGenericComponent(item, state, bag);
+
+        StringRange(
+            context, state.GetPropertyValue(item.Description), bag,
+            upper: MEDIA_GALLERY_ITEM_DESCRIPTION_MAX_LENGTH
+        );
     }
 }

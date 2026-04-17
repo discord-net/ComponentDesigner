@@ -4,6 +4,8 @@ public sealed class RadioGroupOptionComponentNode : ComponentNode
 {
     public override string Name => "radio-group-option";
 
+    public override ComponentTargetType Target => ComponentTargetType.Modal;
+    
     public override IReadOnlyList<ComponentProperty> Properties { get; }
 
     public ComponentProperty Value { get; }

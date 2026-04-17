@@ -30,7 +30,7 @@ public sealed class InterpolationComponentNode : ComponentNode<InterpolationStat
 
     public override bool HasExternalDependencies => true;
 
-    public override InterpolationState? Initialize(
+    public override InterpolationState? CreateState(
         ComponentNodeInitializationContext context,
         IDiagnosticBag diagnostics,
         CancellationToken cancellationToken = default

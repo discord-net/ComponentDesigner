@@ -4,6 +4,8 @@ namespace ComponentDesigner;
 
 partial class Validators
 {
+    public const int THUMBNAIL_DESCRIPTION_MAX_LENGTH = 1024;
+    
     public static void ValidateThumbnail(
         IComponentContext context,
         ThumbnailComponentNode thumbnail,
@@ -11,7 +13,11 @@ partial class Validators
         IDiagnosticBag bag
     )
     {
-        
+        ValidateGenericComponent(thumbnail, state, bag, isParentOfOtherComponents: false);
+
+        StringRange(
+            context, state.GetPropertyValue(thumbnail.Description), bag,
+            upper: THUMBNAIL_DESCRIPTION_MAX_LENGTH
+        );
     }
-    
 }

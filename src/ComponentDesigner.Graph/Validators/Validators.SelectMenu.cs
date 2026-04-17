@@ -4,13 +4,17 @@ namespace ComponentDesigner;
 
 partial class Validators
 {
-    private const int SELECT_MENU_PLACEHOLDER_MAX_LENGTH = 150;
-    private const int SELECT_MENU_MIN_VALUES_LOWER = 0;
-    private const int SELECT_MENU_MAX_VALUES_LOWER = 1;
-    private const int SELECT_MENU_MIN_VALUES_UPPER = 25;
-    private const int SELECT_MENU_MAX_VALUES_UPPER = 25;
-    private const int SELECT_MENU_MIN_OPTIONS = 1;
-    private const int SELECT_MENU_MAX_OPTIONS = 25;
+    public const int SELECT_MENU_PLACEHOLDER_MAX_LENGTH = 150;
+    public const int SELECT_MENU_MIN_VALUES_LOWER = 0;
+    public const int SELECT_MENU_MAX_VALUES_LOWER = 1;
+    public const int SELECT_MENU_MIN_VALUES_UPPER = 25;
+    public const int SELECT_MENU_MAX_VALUES_UPPER = 25;
+    public const int SELECT_MENU_MIN_OPTIONS = 1;
+    public const int SELECT_MENU_MAX_OPTIONS = 25;
+    
+    public const int SELECT_MENU_OPTION_VALUE_MAX_LENGTH = 100;
+    public const int SELECT_MENU_OPTION_LABEL_MAX_LENGTH = 100;
+    public const int SELECT_MENU_OPTION_DESCRIPTION_MAX_LENGTH = 100;
 
     public static void ValidateSelectMenu(
         IComponentContext context,
@@ -25,12 +29,12 @@ partial class Validators
         ValidateKindOfSelectMenu();
 
         // placeholder.length <= 150
-        ValueValidators.StringRange(
+        StringNotEmptyAndRange(
             context, state.GetPropertyValue(selectMenu.Placeholder), bag,
             upper: SELECT_MENU_PLACEHOLDER_MAX_LENGTH
         );
 
-        StaticRange.TryCreateFromProperties(
+        Analysis.TryCreateRangeFromProperties(
             state.GetPropertyValue(selectMenu.MinValues),
             state.GetPropertyValue(selectMenu.MaxValues),
             out var minMaxRange
@@ -204,25 +208,6 @@ partial class Validators
             }
         }
 
-        void ValidateChildren(
-            Func<IComponentNode, bool> validator
-        )
-        {
-            foreach (var child in state.Children)
-            {
-                if (validator(child.Component)) continue;
-
-                bag.Add(
-                    Diagnostic
-                        .InvalidChildOfComponent(
-                            selectMenu,
-                            child.Component
-                        )
-                        .At(child)
-                );
-            }
-        }
-
         static bool IsValidEntitySelectMenuChild(IComponentNode component)
             => component is IDynamicComponentNode or SelectMenuDefaultValueComponentNode;
 
@@ -260,7 +245,28 @@ partial class Validators
         IDiagnosticBag bag
     )
     {
-        ValidateGenericComponent(option, state, bag);
+        ValidateGenericComponent(option, state, bag, isParentOfOtherComponents: false);
+        
+        StringNotEmptyAndRange(
+            context,
+            state.GetPropertyValue(option.Value),
+            bag,
+            upper: SELECT_MENU_OPTION_VALUE_MAX_LENGTH
+        );
+
+        StringNotEmptyAndRange(
+            context,
+            state.GetPropertyValue(option.Label),
+            bag,
+            upper: SELECT_MENU_OPTION_LABEL_MAX_LENGTH
+        );
+        
+        StringNotEmptyAndRange(
+            context,
+            state.GetPropertyValue(option.Description),
+            bag,
+            upper: SELECT_MENU_OPTION_DESCRIPTION_MAX_LENGTH
+        );
     }
 
     public static void ValidateSelectMenuDefaultValue(

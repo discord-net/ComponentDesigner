@@ -11,7 +11,7 @@ public sealed class AutoTextDisplayComponentNode : TextDisplayComponentNode
         CancellationToken cancellationToken = default
     ) => throw new InvalidOperationException("Auto nodes don't use default graph initialization");
 
-    public override TextDisplayState? Initialize(
+    public override TextDisplayState? CreateState(
         ComponentNodeInitializationContext context,
         IDiagnosticBag diagnostics,
         CancellationToken cancellationToken = default

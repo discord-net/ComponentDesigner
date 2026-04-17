@@ -4,6 +4,8 @@ public sealed class CheckboxComponentNode : ComponentNode
 {
     public override string Name => "checkbox";
 
+    public override ComponentTargetType Target => ComponentTargetType.Modal;
+
     public override IReadOnlyList<ComponentProperty> Properties { get; }
 
     public ComponentProperty Id { get; }

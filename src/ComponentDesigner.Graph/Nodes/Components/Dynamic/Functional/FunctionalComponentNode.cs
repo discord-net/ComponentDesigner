@@ -10,16 +10,12 @@ public sealed class FunctionalComponentNode : ComponentNode<FunctionalState>, ID
 
     public override bool IsUserAccessible => false;
 
-    public override bool AllowChildrenInCX => true;
-
-    public override bool IsParentOfOtherComponents => true;
-
     public override void RegisterGraphNode(
         ComponentGraphInitializationContext context,
         CancellationToken cancellationToken = default
     ) => base.RegisterGraphNode(context, includeElementChildren: false, cancellationToken);
 
-    public override FunctionalState? Initialize(
+    public override FunctionalState? CreateState(
         ComponentNodeInitializationContext context,
         IDiagnosticBag diagnostics,
         CancellationToken cancellationToken = default

@@ -6,8 +6,6 @@ public sealed class LabelComponentNode : ComponentNode
 {
     public override string Name => "label";
 
-    public override bool IsParentOfOtherComponents => true;
-    
     public override ComponentTargetType Target => ComponentTargetType.Modal;
 
     public override IReadOnlyList<ComponentProperty> Properties { get; }
@@ -45,7 +43,7 @@ public sealed class LabelComponentNode : ComponentNode
         CancellationToken cancellationToken = default
     ) => base.RegisterGraphNode(context, includeElementChildren: false, cancellationToken);
 
-    public override ComponentState? Initialize(
+    public override ComponentState? CreateState(
         ComponentNodeInitializationContext context,
         IDiagnosticBag diagnostics,
         CancellationToken cancellationToken = default
@@ -53,7 +51,7 @@ public sealed class LabelComponentNode : ComponentNode
     {
         if (
             context.CXNode is not CXElement element ||
-            base.Initialize(context, diagnostics, cancellationToken) is not { } state
+            base.CreateState(context, diagnostics, cancellationToken) is not { } state
         ) return null;
 
         /*

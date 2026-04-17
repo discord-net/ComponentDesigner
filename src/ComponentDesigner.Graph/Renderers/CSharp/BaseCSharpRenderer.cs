@@ -220,6 +220,46 @@ public abstract partial class BaseCSharpRenderer : IComponentRenderer
         CancellationToken cancellationToken = default
     );
 
+    public abstract Result<RenderedComponent> RenderCheckbox(
+        IRendererContext context,
+        CheckboxComponentNode checkbox,
+        ComponentState state,
+        RendererTypingContext? typingContext = null,
+        CancellationToken cancellationToken = default
+    );
+
+    public abstract Result<RenderedComponent> RenderCheckboxGroupOption(
+        IRendererContext context,
+        CheckboxGroupOptionComponentNode checkboxGroupOption,
+        ComponentState state,
+        RendererTypingContext? typingContext = null,
+        CancellationToken cancellationToken = default
+    );
+
+    public abstract Result<RenderedComponent> RenderCheckboxGroup(
+        IRendererContext context,
+        CheckboxGroupComponentNode checkboxGroup,
+        ComponentState state,
+        RendererTypingContext? typingContext = null,
+        CancellationToken cancellationToken = default
+    );
+
+    public abstract Result<RenderedComponent> RenderRadioGroupOption(
+        IRendererContext context,
+        RadioGroupOptionComponentNode radioGroupOption,
+        ComponentState state,
+        RendererTypingContext? typingContext = null,
+        CancellationToken cancellationToken = default
+    );
+
+    public abstract Result<RenderedComponent> RenderRadioGroup(
+        IRendererContext context,
+        RadioGroupComponentNode radioGroup,
+        ComponentState state,
+        RendererTypingContext? typingContext = null,
+        CancellationToken cancellationToken = default
+    );
+
     public abstract Result<RenderedComponent> RenderMediaGalleryItem(
         IRendererContext context,
         MediaGalleryItemComponentNode mediaGalleryItem,

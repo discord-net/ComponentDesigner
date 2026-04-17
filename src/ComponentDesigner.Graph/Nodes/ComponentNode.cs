@@ -6,7 +6,7 @@ public abstract class ComponentNode : ComponentNode<ComponentState>
 {
     public static readonly IReadOnlyDictionary<string, IComponentNode> AccessibleComponents;
     
-    public override ComponentState? Initialize(
+    public override ComponentState? CreateState(
         ComponentNodeInitializationContext context,
         IDiagnosticBag diagnostics,
         CancellationToken cancellationToken = default
@@ -36,6 +36,6 @@ public abstract class ComponentNode : ComponentNode<ComponentState>
         [MaybeNullWhen(false)] out IComponentNode node
     ) => AccessibleComponents.TryGetValue(name, out node);
 
-    public static T GetNode<T>() where T : IComponentNode
+    public static T GetNodeInstance<T>() where T : IComponentNode
         => (T)AccessibleComponents.Values.First(x => x.GetType() == typeof(T));
 }

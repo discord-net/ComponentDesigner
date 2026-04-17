@@ -31,35 +31,11 @@ public abstract class ComponentNode<TState> :
 
     public virtual ComponentTargetType Target => ComponentTargetType.Any;
     
-    public virtual bool IsParentOfOtherComponents => false;
-
     public virtual bool IsUserAccessible => true;
-
-    public virtual bool AllowChildrenInCX => IsParentOfOtherComponents;
-
+    
     public virtual bool HasExternalDependencies => false;
-
-    private Dictionary<string, ComponentProperty>? _propertyLookupMap;
-
-    public bool TryGetProperty(string name, [MaybeNullWhen(false)] out ComponentProperty property)
-    {
-        if (_propertyLookupMap is null)
-        {
-            _propertyLookupMap = Properties
-                .SelectMany(x => x.Aliases.Prepend(x.Name).Select(y => (K: y, V: x)))
-                .ToDictionary(x => x.K, x => x.V);
-        }
-
-        if (_propertyLookupMap.Count is 0)
-        {
-            property = null;
-            return false;
-        }
-
-        return _propertyLookupMap.TryGetValue(name, out property);
-    }
-
-    public abstract TState? Initialize(
+    
+    public abstract TState? CreateState(
         ComponentNodeInitializationContext context,
         IDiagnosticBag diagnostics,
         CancellationToken cancellationToken = default
@@ -124,11 +100,11 @@ public abstract class ComponentNode<TState> :
         return base.GetHashCode();
     }
 
-    ComponentState? IComponentNode.Initialize(
+    ComponentState? IComponentNode.CreateState(
         ComponentNodeInitializationContext context,
         IDiagnosticBag diagnostics,
         CancellationToken cancellationToken
-    ) => Initialize(context, diagnostics, cancellationToken);
+    ) => CreateState(context, diagnostics, cancellationToken);
 
     ComponentState? IComponentNode.UpdateState(
         ComponentState state,

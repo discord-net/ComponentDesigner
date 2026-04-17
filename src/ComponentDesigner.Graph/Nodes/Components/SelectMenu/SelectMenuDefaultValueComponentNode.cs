@@ -44,7 +44,7 @@ public sealed class SelectMenuDefaultValueComponentNode : ComponentNode<DefaultV
         ];
     }
 
-    public override DefaultValueState? Initialize(
+    public override DefaultValueState? CreateState(
         ComponentNodeInitializationContext context,
         IDiagnosticBag diagnostics,
         CancellationToken cancellationToken = default

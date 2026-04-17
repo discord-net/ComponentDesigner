@@ -33,7 +33,7 @@ public sealed class TextControlNode : ComponentNode<TextControlState>
 
     public override bool IsUserAccessible => false;
 
-    public override TextControlState? Initialize(
+    public override TextControlState? CreateState(
         ComponentNodeInitializationContext context,
         IDiagnosticBag diagnostics,
         CancellationToken cancellationToken = default

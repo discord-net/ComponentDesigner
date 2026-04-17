@@ -51,9 +51,6 @@ public sealed class ButtonComponentNode : ComponentNode<ButtonState>
     
     public override ComponentTargetType Target => ComponentTargetType.Message;
 
-    // label can be in children
-    public override bool AllowChildrenInCX => true;
-
     public override IReadOnlyList<ComponentProperty> Properties { get; }
 
     public ComponentProperty Id { get; }
@@ -120,7 +117,7 @@ public sealed class ButtonComponentNode : ComponentNode<ButtonState>
             base.RegisterGraphNode(context, includeElementChildren: false, cancellationToken);
     }
 
-    public override ButtonState? Initialize(
+    public override ButtonState? CreateState(
         ComponentNodeInitializationContext context,
         IDiagnosticBag diagnostics,
         CancellationToken cancellationToken = default
