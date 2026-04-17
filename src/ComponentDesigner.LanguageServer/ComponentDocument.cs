@@ -84,6 +84,10 @@ public sealed class ComponentDocument
             );
     }
 
+    public Result<string> GetJson(
+        CancellationToken cancellationToken
+    ) => GetGraph(cancellationToken).Emit(LSPCompilationProvider.Instance, cancellationToken);
+
     public CXComponentGraph GetGraph(CancellationToken cancellationToken)
     {
         lock (_lock)
@@ -113,35 +117,36 @@ public sealed class ComponentDocument
     }
 
     private CXDocument GetParsedSourceInternal(CancellationToken cancellationToken)
-        =>  _document ??= CXParser.Parse(Source.CreateReader(), cancellationToken);
-    
+        => _document ??= CXParser.Parse(Source.CreateReader(), cancellationToken);
+
     public IReadOnlyList<LSPDiagnostic> GetDiagnostics(CancellationToken cancellationToken)
     {
         var graph = GetGraph(cancellationToken);
 
-        IReadOnlyList<Diagnostic> diagnostics = [
-            ..graph.Diagnostics, 
+        IReadOnlyList<Diagnostic> diagnostics =
+        [
+            ..graph.Diagnostics,
             ..graph.Validate(LSPCompilationProvider.Instance, cancellationToken)
         ];
-        
-        
-        return [..diagnostics.Distinct().Select(ConvertDiagnostic)];
 
-        LSPDiagnostic ConvertDiagnostic(Diagnostic diagnostic)
-            => new()
-            {
-                Code = new(diagnostic.Id),
-                Severity = diagnostic.Severity switch
-                {
-                    DiagnosticSeverity.Error => LSPDiagnosticSeverity.Error,
-                    DiagnosticSeverity.Info => LSPDiagnosticSeverity.Information,
-                    DiagnosticSeverity.Warning => LSPDiagnosticSeverity.Warning,
-                    _ => LSPDiagnosticSeverity.Hint,
-                },
-                Message = diagnostic.Title,
-                Range = GetRange(diagnostic.TextSpan),
-            };
+
+        return [..diagnostics.Distinct().Select(ConvertDiagnostic)];
     }
+    
+    public LSPDiagnostic ConvertDiagnostic(Diagnostic diagnostic)
+        => new()
+        {
+            Code = new(diagnostic.Id),
+            Severity = diagnostic.Severity switch
+            {
+                DiagnosticSeverity.Error => LSPDiagnosticSeverity.Error,
+                DiagnosticSeverity.Info => LSPDiagnosticSeverity.Information,
+                DiagnosticSeverity.Warning => LSPDiagnosticSeverity.Warning,
+                _ => LSPDiagnosticSeverity.Hint,
+            },
+            Message = diagnostic.Title,
+            Range = GetRange(diagnostic.TextSpan),
+        };
 
     public int GetSourceOffsetFromPosition(Position position)
     {
@@ -155,7 +160,7 @@ public sealed class ComponentDocument
 
     public LSPRange GetRange(CXTextSpan span)
         => GetRange(Source, span);
-    
+
     public static LSPRange GetRange(CXSourceText source, CXTextSpan span)
     {
         var start = source.Lines.GetLinePositon(span.Start);

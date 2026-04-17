@@ -11,6 +11,15 @@ namespace Discord.ComponentDesigner.LanguageServer;
 
 public static class CompletionClassifier
 {
+    public static readonly Type[] ComponentsWithChildren =
+    [
+        typeof(ContainerComponentNode),
+        typeof(SelectMenuComponentNode),
+        typeof(ActionRowComponentNode),
+        typeof(TextDisplayComponentNode),
+        typeof(MediaGalleryComponentNode),
+    ];
+
     public static CompletionResult? Classify(
         CXComponentGraph graph,
         int position,
@@ -136,7 +145,7 @@ public abstract record CompletionResult(CXComponentGraph Graph, int Position)
             if (property is null) return EmptyCompletionList;
 
             var info = PropertyCompletionInfo.Get(graphNode.Component, property, graphNode.State);
-            
+
             if (Attribute.Value is null)
             {
                 return new CompletionList(
@@ -167,7 +176,7 @@ public abstract record CompletionResult(CXComponentGraph Graph, int Position)
             switch (Attribute.Value)
             {
                 // TODO: choices
-                
+
                 // case CXValue.StringLiteral { HasInterpolations: false } literal when info.AutoFillKind is AutoFillKind.Choices:
                 //     return new CompletionList(
                 //         isIncomplete: false,
@@ -224,11 +233,13 @@ public abstract record CompletionResult(CXComponentGraph Graph, int Position)
                             ? InsertTextFormat.Snippet
                             : InsertTextFormat.PlainText,
                         Detail = info.Details,
-                        Documentation = info.Description is null ? null : new StringOrMarkupContent(new MarkupContent()
-                        {
-                            Kind = MarkupKind.Markdown,
-                            Value = info.Description
-                        })
+                        Documentation = info.Description is null
+                            ? null
+                            : new StringOrMarkupContent(new MarkupContent()
+                            {
+                                Kind = MarkupKind.Markdown,
+                                Value = info.Description
+                            })
                     });
                 }
             }
@@ -263,9 +274,10 @@ public abstract record CompletionResult(CXComponentGraph Graph, int Position)
             }
             else
             {
-                Graph.TryLookupGraphNodeContainingSyntax(Element.FirstAncestorOfTypeOrDefault<CXElement>(), out parentGraphNode);
+                Graph.TryLookupGraphNodeContainingSyntax(Element.FirstAncestorOfTypeOrDefault<CXElement>(),
+                    out parentGraphNode);
             }
-            
+
             // having a valid graph node which isn't dynamic indicates that the identifier is a valid component, we
             // don't suggest anything
             if (
@@ -277,21 +289,27 @@ public abstract record CompletionResult(CXComponentGraph Graph, int Position)
 
             foreach (var (name, component) in ComponentNode.AccessibleComponents)
             {
-                if(!ComponentValidityMap.IsValidHierarchy(parentGraphNode, component))
+                if (!ComponentValidityMap.IsValidHierarchy(parentGraphNode, component))
                     continue;
-                
+
                 var insertText = new StringBuilder(name);
+
+                var opensWithChildren = CompletionClassifier.ComponentsWithChildren.Contains(component.GetType());
 
                 if (Element.OpeningTag.EndToken.IsMissing)
                 {
-                    if (component.IsParentOfOtherComponents)
+                    if (opensWithChildren)
                         insertText.Append(">$0</").Append(name).Append('>');
                     else
                         insertText.Append("$0/>");
                 }
-                else if (!component.IsParentOfOtherComponents &&
-                         Element.OpeningTag.EndToken.Kind is CXTokenKind.GreaterThan)
+                else if (
+                    !opensWithChildren &&
+                    Element.OpeningTag.EndToken.Kind is CXTokenKind.GreaterThan
+                )
+                {
                     insertText.Append("$0/");
+                }
 
                 var documentation = Documentation.GetDescriptionOfComponent(component);
 

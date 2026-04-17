@@ -29,6 +29,7 @@ var server = await LanguageServer
         .AddHandler<CompletionHandler>()
         .AddHandler<DocumentHandler>()
         .AddHandler<HoverHandler>()
+        .AddHandler<JsonPreviewHandler>()
         .OnInitialize((languageServer, request, token) =>
         {
             Log.Logger.Information("Server is initializing...");

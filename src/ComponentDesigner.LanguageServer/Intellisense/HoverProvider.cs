@@ -1,4 +1,5 @@
 ﻿using ComponentDesigner;
+using ComponentDesigner.Nodes;
 using ComponentDesigner.Parser;
 using Discord.ComponentDesigner.LanguageServer.CX;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
@@ -22,9 +23,12 @@ public static class HoverProvider
 
                     if (attribute.IdentifierToken.TextSpan.IntersectsWith(position))
                     {
-                        if (!graphNode.Component.TryGetProperty(attribute.Identifier, out var property))
-                            return null;
-
+                        if (
+                            !ComponentPropertyInfo
+                                .Get(graphNode.Component, LanguageServerComponentImplementation.Instance)
+                                .TryGet(attribute.Identifier, out var property)
+                        ) return null;
+                        
                         var description = Documentation
                             .GetDescriptionOfProperty(graphNode.Component, property, graphNode.State);
 

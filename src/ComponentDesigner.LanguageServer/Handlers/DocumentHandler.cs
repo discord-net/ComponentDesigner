@@ -62,6 +62,27 @@ public sealed class DocumentHandler : TextDocumentSyncHandlerBase
         );
     }
 
+    private void PublishPreview(ComponentDocument document, CancellationToken cancellationToken)
+    {
+        var result = document.GetJson(cancellationToken);
+        
+        _server.TextDocument.PublishDiagnostics(
+            new()
+            {
+                Uri = document.Uri,
+                Diagnostics = new(result.Diagnostics.Distinct().Select(document.ConvertDiagnostic))
+            }
+        );
+
+        var preview = result.GetValueOrDefault("// err");
+
+        _server.SendNotification("cx/preview-json", new
+        {
+            json = preview,
+            uri = document.Uri
+        });
+    }
+
     public override Task<Unit> Handle(DidOpenTextDocumentParams request, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Opening {Uri}", request.TextDocument.Uri);
@@ -74,7 +95,7 @@ public sealed class DocumentHandler : TextDocumentSyncHandlerBase
 
         _documents[request.TextDocument.Uri] = document;
 
-        PublishDiagnosticsForDocument(document, cancellationToken);
+        PublishPreview(document, cancellationToken);
 
         return Unit.Task;
     }
@@ -118,7 +139,7 @@ public sealed class DocumentHandler : TextDocumentSyncHandlerBase
         document = new(document.Uri, newSource, request.TextDocument.Version);
         _documents[document.Uri] = document;
 
-        PublishDiagnosticsForDocument(document, cancellationToken);
+        PublishPreview(document, cancellationToken);
 
         return Unit.Task;
         

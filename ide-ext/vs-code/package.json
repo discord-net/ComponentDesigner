@@ -18,6 +18,12 @@
   ],
   "main": "./out/extension.js",
   "contributes": {
+    "commands": [
+      {
+        "command": "cx.openPreview",
+        "title": "Show JSON Preview"
+      }
+    ],
     "languages": [
       {
         "id": "cx",

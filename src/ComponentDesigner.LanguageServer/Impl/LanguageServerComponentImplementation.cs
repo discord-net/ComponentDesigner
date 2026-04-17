@@ -1,4 +1,5 @@
 ﻿using ComponentDesigner;
+using ComponentDesigner.Json;
 using ComponentDesigner.Nodes;
 using ComponentDesigner.Nodes.TextControls;
 
@@ -10,21 +11,28 @@ public sealed class LanguageServerComponentImplementation : IComponentImplementa
 
     public string Name => "LSP";
 
-    public IComponentRenderer Renderer => new DiscordNetRenderer();
+    public IComponentRenderer Renderer { get; }
 
-    public ITextControlProvider TextControlProvider => DefaultTextControlProvider.Instance;
+    public ITextControlProvider TextControlProvider  { get; }
 
-    public IComponentTypingProvider? ComponentTypingProvider => null; // TODO
+    public IComponentTypingProvider? ComponentTypingProvider  { get; }
 
-    public IComponentExtensionProvider? ComponentExtensionProvider => ComponentExtensions.Instance;
+    public IComponentExtensionProvider? ComponentExtensionProvider  { get; }
 
-    public ComponentPropertyValueKind? GetPropertyKindOverload(
-        IComponentNode component,
-        ComponentProperty property
-    )
+    public LanguageServerComponentImplementation()
     {
-        return null;
+        Renderer = new JsonRenderer(
+            new()
+            {
+                IndentSize = 4,
+                WriteIndented = true
+            }
+        );
+        TextControlProvider = DefaultTextControlProvider.Instance;
+        ComponentTypingProvider = null;
+        ComponentExtensionProvider = null;
     }
+    
 
     public bool TryAnalyzeNumberOfValues(
         IComponentContext context,

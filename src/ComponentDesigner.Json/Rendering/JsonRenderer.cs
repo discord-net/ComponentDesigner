@@ -297,6 +297,7 @@ public sealed partial class JsonRenderer : IComponentRenderer
             arr.AddRange(x.OfType<RenderedJsonComponent>().Select(x => x.JsonNode));
             return arr.ToJsonString(JsonSerializerOptions);
         });
+    
 
     public Result<RenderedComponent> RenderFunctionalComponent(
         IRendererContext context,
