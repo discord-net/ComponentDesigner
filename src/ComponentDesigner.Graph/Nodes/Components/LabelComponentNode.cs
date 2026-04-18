@@ -54,6 +54,7 @@ public sealed class LabelComponentNode : ComponentNode
             base.CreateState(context, diagnostics, cancellationToken) is not { } state
         ) return null;
 
+
         /*
          * children of labels can be substituted into the 'component' and 'value' properties:
          *
@@ -63,40 +64,58 @@ public sealed class LabelComponentNode : ComponentNode
          * </label>
          */
 
-        CXValue? childValue = null;
-        CXNode? childComponent = null;
+        if (element.Children.Count is 0) return state;
+        
+        var childComponent = element.Children[element.Children.Count - 1];
+        var labelLength = element.Children.Count;
 
-        switch (element.Children.FirstOrDefault())
+        if (
+            CXComponentGraph.IsLikelyComponent(
+                context.GraphContext,
+                childComponent,
+                cancellationToken
+            )
+        )
         {
-            case CXValue value:
-            {
-                childValue = value;
+            state.SetPropertyValueToChildren(
+                Component,
+                context.AddChild(childComponent, cancellationToken)
+            );
 
-                if (
-                    element.Children.Count > 1 &&
-                    CXComponentGraph.IsLikelyComponent(context.GraphContext, element.Children[0], cancellationToken)
+            labelLength--;
+        }
+
+        ComponentPropertyValue[] labelValues = element.Children
+            .Take(labelLength)
+            .SelectMany(GraphNodeEnumerator.GetNext)
+            .OfType<CXValue>()
+            .Select(x =>
+                ComponentState.BuildPropertyValueFromSimpleSyntax(
+                    context.GraphContext,
+                    Label,
+                    state.ChildSource,
+                    x,
+                    x.TextSpan,
+                    cancellationToken
                 )
+            )
+            .Where(x => x is not null)
+            .ToArray()!;
+
+        if (labelValues.Length > 0)
+        {
+            state.SetPropertyValue(
+                Label,
+                labelValues.Length switch
                 {
-                    childComponent = element.Children[1];
+                    1 => labelValues[0],
+                    _ => new ComponentPropertyValue.Many(
+                        state.ChildSource,
+                        Label,
+                        labelValues
+                    )
                 }
-
-                break;
-            }
-
-            case { } any when CXComponentGraph.IsLikelyComponent(context.GraphContext, any, cancellationToken):
-                childComponent = any;
-                break;
-        }
-
-        if (childComponent is not null)
-        {
-            context.AddChild(childComponent, cancellationToken);
-            state.SetPropertyValueToChild(Component, childComponent);
-        }
-
-        if (childValue is not null)
-        {
-            state.SetPropertyValue(context, Label, childValue, cancellationToken);
+            );
         }
 
         return state;

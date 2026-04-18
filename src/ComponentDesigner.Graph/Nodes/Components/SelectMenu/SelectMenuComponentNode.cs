@@ -39,16 +39,21 @@ public sealed class SelectMenuComponentNode : ComponentNode<SelectMenuState>
         "select",
         "string-select",
         "string-select-menu",
+        "string-menu",
         "user-select",
         "user-select-menu",
+        "user-menu",
         "role-select",
         "role-select-menu",
+        "role-menu",
         "channel-select",
         "channel-select-menu",
+        "channel-menu",
         "mention-select",
         "mention-select-menu",
         "mentionable-select",
         "mentionable-select-menu",
+        "menu",
     ];
 
     public override ComponentTargetType Target => ComponentTargetType.Any;

@@ -12,15 +12,8 @@ public sealed class AutoActionRowComponentNode : ActionRowComponentNode
         ComponentGraphInitializationContext context
     )
     {
-        if (context.ParentGraphNode is null)
+        if (context.ParentGraphNode is null || !CanAddToParent(context.ParentGraphNode.Component))
         {
-            // root node, don't attempt a row
-            return false;
-        }
-
-        if (context.ParentGraphNode.Component is ActionRowComponentNode)
-        {
-            // we're in a row already
             return false;
         }
 
@@ -64,6 +57,9 @@ public sealed class AutoActionRowComponentNode : ActionRowComponentNode
         // we can create a new auto row
         context.Push(Instance, children: [context.CXNode], parent: context.ParentGraphNode);
         return true;
+
+        static bool CanAddToParent(IComponentNode parent)
+            => parent is not ActionRowComponentNode and not LabelComponentNode;
     }
     
     public override void Validate(

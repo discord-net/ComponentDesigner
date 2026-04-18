@@ -25,14 +25,12 @@ public readonly struct ComponentNodeInitializationContext
         GraphContext = context;
     }
 
-    public void AddChild(ICXNode cxNode, CancellationToken cancellationToken = default)
-    {
-        GraphContext.Push(
+    public IReadOnlyList<GraphNode> AddChild(ICXNode cxNode, CancellationToken cancellationToken = default)
+        => GraphContext.Push(
             GraphNode,
             [cxNode],
             cancellationToken
         );
-    }
 
     public GraphNode? Push(
         GraphNodeInitializationRequest request,

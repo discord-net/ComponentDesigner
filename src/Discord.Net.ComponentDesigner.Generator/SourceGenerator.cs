@@ -215,7 +215,7 @@ public sealed class SourceGenerator : IIncrementalGenerator
                       {
                           {{
                               string.Join(
-                                  $"{Environment.NewLine}{Environment.NewLine}",
+                                  $"{Environment.NewLine}{Environment.NewLine}        ",
                                   source.Value.Select(x => x.WithNewlinePadding(8))
                               )
                           }}
