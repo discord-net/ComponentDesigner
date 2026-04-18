@@ -21,7 +21,7 @@ partial class Validators
         IDiagnosticBag bag
     )
     {
-        ValidateGenericComponent(textInput, state, bag);
+        ValidateGenericComponent(context, textInput, state, bag);
 
         StringNotEmptyAndRange(
             context, state.GetPropertyValue(textInput.CustomId), bag,

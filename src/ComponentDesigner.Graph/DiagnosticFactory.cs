@@ -51,7 +51,8 @@ public static class DiagnosticFactory
         InvalidSyntax,
         TypedComponentsAreNotSupported,
         NotAColor,
-        NotAnEmoji
+        NotAnEmoji,
+        ComponentTargetIsNotAllowed
     }
 
     private enum DiagnosticSource
@@ -797,6 +798,16 @@ public static class DiagnosticFactory
             DiagnosticCode.NotAnEmoji,
             DiagnosticSeverity.Error,
             $"'{code}' is not a valid emoji"
+        );
+        
+        public static DiagnosticDescriptor ComponentTargetIsNotAllowed(
+            IComponentNode component,
+            ComponentTargetType allowed
+        ) => Create(
+            DiagnosticSource.Graph,
+            DiagnosticCode.NotAnEmoji,
+            DiagnosticSeverity.Error,
+            $"'{component.Name}' is not allowed in the current component context '{allowed}'"
         );
     }
 }

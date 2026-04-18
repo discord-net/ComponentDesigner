@@ -24,7 +24,7 @@ partial class Validators
         CancellationToken cancellationToken
     )
     {
-        ValidateGenericComponent(selectMenu, state, bag);
+        ValidateGenericComponent(context, selectMenu, state, bag);
 
         ValidateKindOfSelectMenu();
 
@@ -245,7 +245,7 @@ partial class Validators
         IDiagnosticBag bag
     )
     {
-        ValidateGenericComponent(option, state, bag, isParentOfOtherComponents: false);
+        ValidateGenericComponent(context, option, state, bag, isParentOfOtherComponents: false);
         
         StringNotEmptyAndRange(
             context,
@@ -276,6 +276,6 @@ partial class Validators
         IDiagnosticBag bag
     )
     {
-        ValidateGenericComponent(defaultValue, state, bag);
+        ValidateGenericComponent(context, defaultValue, state, bag);
     }
 }

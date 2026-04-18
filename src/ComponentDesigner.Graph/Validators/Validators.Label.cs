@@ -14,7 +14,7 @@ partial class Validators
         IDiagnosticBag bag
     )
     {
-        ValidateGenericComponent(label, state, bag);
+        ValidateGenericComponent(context, label, state, bag);
 
         StringNotEmptyAndRange(
             context, state.GetPropertyValue(label.Label), bag,

@@ -11,7 +11,7 @@ partial class Validators
         IDiagnosticBag bag
     )
     {
-        ValidateGenericComponent(container, state, bag);
+        ValidateGenericComponent(context, container, state, bag);
         
         PropertyMatchesComponents(
             container, state.GetPropertyValue(container.Components), bag,

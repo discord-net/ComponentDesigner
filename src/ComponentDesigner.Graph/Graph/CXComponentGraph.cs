@@ -200,12 +200,4 @@ public sealed partial class CXComponentGraph : IEquatable<CXComponentGraph>
             )
             .PrefaceDiagnostics(validation);
     }
-    /*
-     * var component = "";
-     *
-     * <container>
-     *      {component}
-     * </container>
-     * 
-     */
 }

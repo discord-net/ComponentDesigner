@@ -52,9 +52,11 @@ public abstract class BaseComponentTest(ITestOutputHelper output) : TestWithDiag
         _compilation = null;
         _nodeEnumerator = null;
 
+        var componentTargetType = options?.Target ?? ComponentTargetType.Any;
+        
         var source = MakeCSharpSource(
             cx, pretext, quoteCount, hasInterpolations, testClassName, testFuncName,
-            additionalMembers
+            additionalMembers, componentTargetType
         );
 
         var syntaxTree = CSharpSyntaxTree.ParseText(source);
@@ -68,10 +70,7 @@ public abstract class BaseComponentTest(ITestOutputHelper output) : TestWithDiag
         var invocation = syntaxTree.GetRoot()
             .DescendantNodes()
             .OfType<InvocationExpressionSyntax>()
-            .FirstOrDefault(x =>
-                x.Expression is IdentifierNameSyntax { Identifier.Value: "cx" }
-                    or MemberAccessExpressionSyntax { Name.Identifier.ValueText: "cx" }
-            );
+            .FirstOrDefault(x => SourceGenerator.IsComponentDesignerEntryPoint(x, CancellationToken.None));
 
         Assert.NotNull(invocation);
 
@@ -173,7 +172,8 @@ public abstract class BaseComponentTest(ITestOutputHelper output) : TestWithDiag
         bool hasInterpolations,
         string testClassName,
         string testFuncName,
-        string? additionalMethods
+        string? additionalMethods,
+        ComponentTargetType target
     )
     {
         var quotes = new string('"', quoteCount);
@@ -210,7 +210,7 @@ public abstract class BaseComponentTest(ITestOutputHelper output) : TestWithDiag
                   public void {{testFuncName}}()
                   {
                       {{pretext?.WithNewlinePadding(8)}}
-                      ComponentDesigner.cx(
+                      cx.{{target.ToString().ToLowerInvariant()}}(
                           {{cxString.ToString().WithNewlinePadding(12)}}
                       );
                   }

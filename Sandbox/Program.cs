@@ -1,8 +1,6 @@
-﻿using static Discord.ComponentDesigner;
+﻿
+using Discord;
 
-var x = cx("""
-    <container>
-        Hello
-        <separator />
-    </container>
-""", autoTextDisplays: true);
+var x = cx.modal("""
+    <separator />
+""");

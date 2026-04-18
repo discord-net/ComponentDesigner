@@ -6,6 +6,7 @@ namespace ComponentDesigner;
 public static partial class Validators
 {
     public static void ValidateGenericComponent(
+        IComponentContext context,
         IComponentNode component,
         ComponentState state,
         IDiagnosticBag bag,
@@ -13,9 +14,25 @@ public static partial class Validators
         bool? isParentOfOtherComponents = null
     )
     {
+        ValidateComponentTarget(context, component, state, bag);
         ValidateElementStructure(component, state, bag, allowsChildrenInCX, isParentOfOtherComponents);
         ValidateProperties(component, state, bag);
         ReportDiagnosticsForUnknownProperties(component, state, bag);
+    }
+
+    public static void ValidateComponentTarget(
+        IComponentContext context,
+        IComponentNode component,
+        ComponentState state,
+        IDiagnosticBag bag
+    )
+    {
+        if ((context.Options.Target & component.Target) is ComponentTargetType.None)
+        {
+            bag.Add(
+                Diagnostic.ComponentTargetIsNotAllowed(component, context.Options.Target).At(state)
+            );
+        }
     }
 
     public static void ValidateElementStructure(
@@ -170,7 +187,7 @@ public static partial class Validators
     )
     {
         var isValid = true;
-        
+
         foreach (var innerValue in propertyValue.AsFlattened)
         {
             if (

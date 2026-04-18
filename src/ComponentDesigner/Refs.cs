@@ -1,26 +1,7 @@
 ﻿using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-namespace Discord;
-
-partial class ComponentDesigner
-{
-    public static RefBox<T> CreateRef<T>(out T value)
-        where T : IMessageComponentBuilder
-        => RefBox<T>.Create(out value);
-
-    public static RefBox<IMessageComponentBuilder> CreateRef(out IMessageComponentBuilder value)
-        => CreateRef<IMessageComponentBuilder>(out value);
-}
-
-public static class Ext
-{
-    extension<T>(T) where T : IMessageComponentBuilder
-    {
-        public static RefBox<T> CreateRef(out T value)
-            => RefBox<T>.Create(out value);
-    }
-}
+namespace ComponentDesigner;
 
 public interface IRefBox : IDisposable;
 
@@ -42,8 +23,7 @@ public unsafe struct RefBox<T> : IRefBox
         _ptr = Unsafe.AsPointer(ref foo);
         _handle = GCHandle.Alloc(foo);
     }
-
-
+    
     public static RefBox<T> Create(out T value)
     {
         value = default!;

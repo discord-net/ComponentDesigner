@@ -13,7 +13,7 @@ partial class Validators
         IDiagnosticBag bag
     )
     {
-        ValidateGenericComponent(thumbnail, state, bag, isParentOfOtherComponents: false);
+        ValidateGenericComponent(context, thumbnail, state, bag, isParentOfOtherComponents: false);
 
         StringRange(
             context, state.GetPropertyValue(thumbnail.Description), bag,

@@ -21,7 +21,7 @@ partial class Validators
         CancellationToken cancellationToken
     )
     {
-        ValidateGenericComponent(radioGroup, state, bag);
+        ValidateGenericComponent(context, radioGroup, state, bag);
 
         StringNotEmptyAndRange(
             context, state.GetPropertyValue(radioGroup.CustomId), bag,
@@ -61,6 +61,7 @@ partial class Validators
     )
     {
         ValidateGenericComponent(
+            context,
             radioGroupOption,
             state,
             bag,

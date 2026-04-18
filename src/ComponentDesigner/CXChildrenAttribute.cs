@@ -1,4 +1,4 @@
-﻿namespace Discord;
+﻿namespace ComponentDesigner;
 
 /// <summary>
 ///     Marks this functional components parameter to accept children of the element. 

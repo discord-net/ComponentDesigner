@@ -1,5 +1,6 @@
 ﻿using ComponentDesigner;
 using ComponentDesigner.Nodes;
+using UnitTests.DiscordNet.Components;
 using UnitTests.GeneratorTests;
 using UnitTests.Graph.Components;
 using Xunit.Abstractions;

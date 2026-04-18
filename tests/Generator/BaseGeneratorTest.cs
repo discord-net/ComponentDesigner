@@ -89,7 +89,7 @@ public abstract class BaseGeneratorTest : TestWithDiagnostics
                   public void {{testFuncName}}()
                   {
                       {{pretext}}
-                      ComponentDesigner.cx(
+                      cx.any(
                           {{cxString.ToString().WithNewlinePadding(12)}},
                           autoRows: {{(options?.AllowAutoRows ?? false).ToString().ToLowerInvariant()}},
                           autoTextDisplays: {{(options?.AllowAutoTextDisplays ?? false).ToString().ToLowerInvariant()}}

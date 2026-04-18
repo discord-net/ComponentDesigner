@@ -15,7 +15,7 @@ partial class Validators
         CancellationToken cancellationToken
     )
     {
-        ValidateGenericComponent(gallery, state, bag);
+        ValidateGenericComponent(context, gallery, state, bag);
 
         var items = state.GetPropertyValue(gallery.Items);
 
@@ -61,7 +61,7 @@ partial class Validators
         IDiagnosticBag bag
     )
     {
-        ValidateGenericComponent(item, state, bag);
+        ValidateGenericComponent(context, item, state, bag);
 
         StringRange(
             context, state.GetPropertyValue(item.Description), bag,

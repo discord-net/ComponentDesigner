@@ -13,7 +13,7 @@ partial class Validators
         IDiagnosticBag bag
     )
     {
-        ValidateGenericComponent(section, state, bag);
+        ValidateGenericComponent(context, section, state, bag);
 
         ValidateChildComponents();
         ValidateAccessory();

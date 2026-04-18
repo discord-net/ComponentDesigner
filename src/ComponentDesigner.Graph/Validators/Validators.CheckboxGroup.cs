@@ -22,7 +22,7 @@ partial class Validators
         CancellationToken cancellationToken
     )
     {
-        ValidateGenericComponent(checkboxGroup, state, bag);
+        ValidateGenericComponent(context, checkboxGroup, state, bag);
 
         StringRange(
             context, state.GetPropertyValue(checkboxGroup.CustomId), bag,
@@ -119,6 +119,7 @@ partial class Validators
     )
     {
         ValidateGenericComponent(
+            context,
             checkboxGroupOption,
             state,
             bag,

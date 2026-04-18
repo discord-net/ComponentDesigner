@@ -14,7 +14,7 @@ partial class Validators
         IDiagnosticBag bag
     )
     {
-        ValidateGenericComponent(checkbox, state, bag);
+        ValidateGenericComponent(context, checkbox, state, bag);
         
         StringRange(
             context, state.GetPropertyValue(checkbox.CustomId), bag,

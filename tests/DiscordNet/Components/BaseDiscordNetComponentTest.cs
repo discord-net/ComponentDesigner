@@ -1,8 +1,9 @@
 ﻿using ComponentDesigner;
 using Discord;
+using UnitTests.Graph.Components;
 using Xunit.Abstractions;
 
-namespace UnitTests.Graph.Components;
+namespace UnitTests.DiscordNet.Components;
 
 public abstract class BaseDiscordNetComponentTest(ITestOutputHelper output) : BaseComponentTest(output)
 {

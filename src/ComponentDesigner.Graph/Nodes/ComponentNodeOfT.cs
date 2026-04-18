@@ -75,7 +75,7 @@ public abstract class ComponentNode<TState> :
         TState state,
         IDiagnosticBag bag,
         CancellationToken cancellationToken = default
-    ) => Validators.ValidateGenericComponent(this, state, bag);
+    ) => Validators.ValidateGenericComponent(context, this, state, bag);
 
     public abstract Result<RenderedComponent> Render(
         ComponentEmitContext context,

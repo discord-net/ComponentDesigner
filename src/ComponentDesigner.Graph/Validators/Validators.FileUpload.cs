@@ -18,7 +18,7 @@ partial class Validators
         IDiagnosticBag bag
     )
     {
-        ValidateGenericComponent(fileUpload, state, bag, isParentOfOtherComponents: false);
+        ValidateGenericComponent(context, fileUpload, state, bag, isParentOfOtherComponents: false);
 
         StringNotEmptyAndRange(
             context,

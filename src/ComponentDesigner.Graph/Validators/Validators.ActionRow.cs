@@ -11,7 +11,7 @@ partial class Validators
         IDiagnosticBag bag
     )
     {
-        ValidateGenericComponent(actionRow, state, bag);
+        ValidateGenericComponent(context, actionRow, state, bag);
 
         if (state.Children.Count > 0)
         {

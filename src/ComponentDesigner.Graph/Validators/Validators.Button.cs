@@ -16,7 +16,7 @@ partial class Validators
         IDiagnosticBag bag
     )
     {
-        ValidateGenericComponent(button, state, bag, isParentOfOtherComponents: false);
+        ValidateGenericComponent(context, button, state, bag, isParentOfOtherComponents: false);
 
         StringRange(
             context, state.GetPropertyValue(button.Label), bag,

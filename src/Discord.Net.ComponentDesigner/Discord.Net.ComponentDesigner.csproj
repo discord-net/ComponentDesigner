@@ -27,6 +27,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\ComponentDesigner\ComponentDesigner.csproj" />
     <ProjectReference
       Include="..\Discord.Net.ComponentDesigner.Generator\Discord.Net.ComponentDesigner.Generator.csproj"
       PrivateAssets="All"

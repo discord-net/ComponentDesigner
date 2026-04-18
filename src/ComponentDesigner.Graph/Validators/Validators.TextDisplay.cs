@@ -11,6 +11,6 @@ partial class Validators
         IDiagnosticBag bag
     )
     {
-        ValidateGenericComponent(textDisplay, state, bag);
+        ValidateGenericComponent(context, textDisplay, state, bag);
     }
 }

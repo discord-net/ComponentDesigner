@@ -1,4 +1,5 @@
-﻿using Discord;
+﻿using ComponentDesigner;
+using Discord;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 
@@ -10,7 +11,8 @@ public static class Compilations
     {
         IEnumerable<PortableExecutableReference> references = new[]
         {
-            MetadataReference.CreateFromFile(typeof(Discord.ComponentDesigner).Assembly.Location),
+            MetadataReference.CreateFromFile(typeof(Discord.cx).Assembly.Location),
+            MetadataReference.CreateFromFile(typeof(CXSyntax).Assembly.Location),
             MetadataReference.CreateFromFile(typeof(IDiscordClient).Assembly.Location),
             MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
             MetadataReference.CreateFromFile(typeof(System.Linq.Enumerable).Assembly.Location),

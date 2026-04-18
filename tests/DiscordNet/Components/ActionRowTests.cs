@@ -2,7 +2,7 @@
 using ComponentDesigner.Nodes;
 using Xunit.Abstractions;
 
-namespace UnitTests.Graph.Components;
+namespace UnitTests.DiscordNet.Components;
 
 public sealed class ActionRowTests(ITestOutputHelper output) : BaseDiscordNetComponentTest(output)
 {

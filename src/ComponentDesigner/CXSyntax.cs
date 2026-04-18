@@ -1,13 +1,13 @@
 ﻿using System.Buffers;
 using System.Runtime.CompilerServices;
 
-namespace Discord;
+namespace ComponentDesigner;
 
 /// <summary>
 ///     A <c>ref struct</c> containing interpolated values within the CX syntax.
 /// </summary>
 [InterpolatedStringHandler]
-public ref struct DesignerInterpolationHandler : IDisposable
+public ref struct CXSyntax : IDisposable
 {
     // incrementing index into the '_interpolatedValues'
     private int _index;
@@ -16,11 +16,11 @@ public ref struct DesignerInterpolationHandler : IDisposable
     private readonly object?[]? _interpolatedValues;
 
     /// <summary>
-    ///     Constructs a new <see cref="DesignerInterpolationHandler"/>.
+    ///     Constructs a new <see cref="CXSyntax"/>.
     /// </summary>
     /// <param name="literalLength">The number of literal values.</param>
     /// <param name="formattedCount">The number of interpolated values.</param>
-    public DesignerInterpolationHandler(
+    public CXSyntax(
         int literalLength,
         int formattedCount
     )
@@ -89,4 +89,6 @@ public ref struct DesignerInterpolationHandler : IDisposable
             ArrayPool<object?>.Shared.Return(_interpolatedValues);
         }
     }
+
+    public static implicit operator CXSyntax(string s) => default;
 }

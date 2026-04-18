@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using ComponentDesigner.CSharp;
+using ComponentDesigner.Nodes;
 using ComponentDesigner.Parser;
 using ComponentDesigner.Util;
 using Discord;
@@ -34,7 +35,7 @@ public sealed class SourceGenerator : IIncrementalGenerator
     public static DiscordNetComponentDesignerImplementation Implementation { get; } = new();
 
     private readonly IncrementalGraphManager _manager = new();
-    
+
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
         IncrementalValuesProvider<ComponentDesignerTarget> targetProvider = context
@@ -68,12 +69,12 @@ public sealed class SourceGenerator : IIncrementalGenerator
                     .WithTrackingName(TrackingNames.ALL_TARGETS)
             )
             .WithTrackingName(TrackingNames.EMITTED_GRAPHS_AND_TARGETS);
-        
+
         // var graphProvider = parametersProvider
         //     .Select(CreateGraph)
         //     .WithTrackingName(TrackingNames.CREATE_GRAPH);
-        
-        
+
+
         // Provider = targetProvider
         //     .Combine(CreateGraphOptionsProvider(context))
         //     .WithTrackingName(TrackingNames.TARGET_WITH_GENERATOR_OPTIONS)
@@ -103,7 +104,7 @@ public sealed class SourceGenerator : IIncrementalGenerator
         );
     }
 
-    
+
     private void Generate(
         SourceProductionContext context,
         FinalProduct product
@@ -314,7 +315,7 @@ public sealed class SourceGenerator : IIncrementalGenerator
             parameters.CompilationProvider
         );
     }
-    
+
     public static CXComponentGraph CreateGraph(GraphParameters parameters, CancellationToken cancellationToken)
         => CXComponentGraph.Create(parameters, cancellationToken);
 
@@ -325,7 +326,7 @@ public sealed class SourceGenerator : IIncrementalGenerator
         Implementation,
         CSharpCompilationProvider.Get(tuple.Target.Compilation),
         tuple.Target.CX,
-        tuple.Options.WithOverloads(tuple.Target.Overloads)
+        tuple.Options.WithOverloads(tuple.Target.Overloads, tuple.Target.ComponentTargetType)
     );
 
     public static IncrementalValueProvider<GeneratorGraphOptions> CreateGraphOptionsProvider(
@@ -427,6 +428,9 @@ public sealed class SourceGenerator : IIncrementalGenerator
             ? designerParameter.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
             : null;
 
+        if (!TryGetTarget(invocationOperation.TargetMethod.Name, out var target))
+            return null;
+
         return new ComponentDesignerTarget(
             semanticModel.Compilation,
             new InterceptableMethodInfo(
@@ -447,9 +451,21 @@ public sealed class SourceGenerator : IIncrementalGenerator
                 designerParameterType,
                 interpolations
             ),
-            GetOptionOverloads(invocationOperation, semanticModel, cancellationToken)
+            GetOptionOverloads(invocationOperation, semanticModel, cancellationToken),
+            target
         );
 
+        static bool TryGetTarget(
+            string name,
+            out ComponentTargetType target
+        ) => (target = name switch
+        {
+            "message" => ComponentTargetType.Message,
+            "modal" => ComponentTargetType.Modal,
+            "any" => ComponentTargetType.Any,
+            _ => ComponentTargetType.None
+        }) is not ComponentTargetType.None;
+        
         static GraphOptionsOverloads GetOptionOverloads(
             IInvocationOperation operation,
             SemanticModel semanticModel,
@@ -458,17 +474,17 @@ public sealed class SourceGenerator : IIncrementalGenerator
         {
             var enableAutoRows = Result<bool>.Empty;
             var enableAutoTextDisplays = Result<bool>.Empty;
-            
+
             foreach (var argument in operation.Arguments)
             {
-                if(argument.ArgumentKind is ArgumentKind.DefaultValue) continue;
-                
+                if (argument.ArgumentKind is ArgumentKind.DefaultValue) continue;
+
                 switch (argument.Parameter?.Name)
                 {
-                    case "autoRows" when argument.Syntax is ArgumentSyntax {Expression: {} expression}:
+                    case "autoRows" when argument.Syntax is ArgumentSyntax { Expression: { } expression }:
                         enableAutoRows = GetConstantValue(expression);
                         break;
-                    case "autoTextDisplays"when argument.Syntax is ArgumentSyntax {Expression: {} expression}:
+                    case "autoTextDisplays" when argument.Syntax is ArgumentSyntax { Expression: { } expression }:
                         enableAutoTextDisplays = GetConstantValue(expression);
                         break;
                 }
@@ -495,11 +511,11 @@ public sealed class SourceGenerator : IIncrementalGenerator
                 };
             }
         }
-        
+
         string GetParentKey()
         {
             using var _ = StringBuilder.Pooled(out var sb);
-            
+
             var symbol = semanticModel
                 .GetEnclosingSymbol(invocationExpressionSyntax.SpanStart, cancellationToken);
 
@@ -661,19 +677,8 @@ public sealed class SourceGenerator : IIncrementalGenerator
                 localOperation = invalid.ChildOperations.OfType<IInvocationOperation>().FirstOrDefault()!;
                 goto checkOperation;
             case IInvocationOperation invocation:
-                if (
-                    invocation
-                        .TargetMethod
-                        .ContainingType
-                        .ToDisplayString()
-                    is "Discord.ComponentDesigner"
-                )
-                {
-                    operation = invocation;
-                    break;
-                }
-
-                goto default;
+                operation = invocation;
+                break;
 
             default:
             {
@@ -682,6 +687,8 @@ public sealed class SourceGenerator : IIncrementalGenerator
             }
         }
 
+        if (!IsValidCXMethod(operation.TargetMethod)) return false;
+        
         if (syntaxNode is not InvocationExpressionSyntax syntax) return false;
 
         invocationSyntax = syntax;
@@ -698,15 +705,26 @@ public sealed class SourceGenerator : IIncrementalGenerator
         return true;
     }
 
-    public static bool IsComponentDesignerEntryPoint(SyntaxNode node, CancellationToken token)
-        => node is InvocationExpressionSyntax
-        {
-            Expression: MemberAccessExpressionSyntax
-            {
-                Name: { Identifier.Value: "Create" or "cx" }
-            } or IdentifierNameSyntax
-            {
-                Identifier.ValueText: "cx"
-            }
-        };
+    public static bool IsValidCXMethod(IMethodSymbol method)
+    {
+        if (
+            method.Name is not "any" and not "message" and not "modal" ||
+            method.ContainingType is null or not { Name: "cx" } ||
+            method.Parameters.Length is not 3
+        ) return false;
+
+        return
+            method.Parameters[0] is { Type.Name: "CXSyntax" } &&
+            method.Parameters[1] is { Name: "autoRows" } &&
+            method.Parameters[2] is { Name: "autoTextDisplays" };
+    }
+
+    public static bool IsComponentDesignerEntryPoint(SyntaxNode node, CancellationToken cancellationToken)
+    {
+        if (node is not InvocationExpressionSyntax invocationSyntax) return false;
+
+        return invocationSyntax.Expression
+            is MemberAccessExpressionSyntax { Name.Identifier.Value: "any" or "message" or "modal" }
+            or IdentifierNameSyntax { Identifier.ValueText: "any" or "message" or "modal" };
+    }
 }
