@@ -14,6 +14,36 @@ internal static class Symbols
 
     extension(ICompilationProvider compilation)
     {
+        public Result<ICSharpTypeSymbol> CheckboxGroupBuilder<T>(
+            T source,
+            CancellationToken cancellationToken = default
+        ) where T : ISourceLocatable =>
+            compilation.GetSymbol("Discord.CheckboxGroupBuilder", source.TextSpan, cancellationToken);
+        
+        public Result<ICSharpTypeSymbol> CheckboxGroupOptionProperties<T>(
+            T source,
+            CancellationToken cancellationToken = default
+        ) where T : ISourceLocatable =>
+            compilation.GetSymbol("Discord.CheckboxGroupOptionProperties", source.TextSpan, cancellationToken);
+        
+        public Result<ICSharpTypeSymbol> CheckboxBuilder<T>(
+            T source,
+            CancellationToken cancellationToken = default
+        ) where T : ISourceLocatable =>
+            compilation.GetSymbol("Discord.CheckboxBuilder", source.TextSpan, cancellationToken);
+        
+        public Result<ICSharpTypeSymbol> RadioGroupBuilder<T>(
+            T source,
+            CancellationToken cancellationToken = default
+        ) where T : ISourceLocatable =>
+            compilation.GetSymbol("Discord.RadioGroupBuilder", source.TextSpan, cancellationToken);
+        
+        public Result<ICSharpTypeSymbol> RadioGroupOptionProperties<T>(
+            T source,
+            CancellationToken cancellationToken = default
+        ) where T : ISourceLocatable =>
+            compilation.GetSymbol<ICSharpTypeSymbol>("Discord.RadioGroupOptionProperties", source.TextSpan, cancellationToken);
+        
         public Result<ICSharpTypeSymbol> RefBox<T>(
             T source,
             CancellationToken cancellationToken = default
