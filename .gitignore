@@ -1,3 +1,6 @@
+ide-ext/vs-code/discord-preview
+*.woff2
+dist
 bin/
 obj/
 /packages/

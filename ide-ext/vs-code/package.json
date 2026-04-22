@@ -22,6 +22,10 @@
       {
         "command": "cx.openPreview",
         "title": "Show JSON Preview"
+      },
+      {
+        "command": "cx.discordPreview",
+        "title": "Show Discord Preview"
       }
     ],
     "languages": [

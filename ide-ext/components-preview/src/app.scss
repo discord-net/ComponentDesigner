@@ -1,0 +1,186 @@
+:root {
+    --font-code: "gg mono", "Source Code Pro", Consolas, "Andale Mono WT", "Andale Mono", "Lucida Console", "Lucida Sans Typewriter", "DejaVu Sans Mono", "Bitstream Vera Sans Mono", "Liberation Mono", "Nimbus Mono L", Monaco, "Courier New", Courier, monospace;
+    --font-primary: "gg sans","Noto Sans","Helvetica Neue",Helvetica,Arial,sans-serif;
+    --font-display: "gg sans","Noto Sans","Helvetica Neue",Helvetica,Arial,sans-serif;
+
+}
+
+a,
+abbr,
+acronym,
+address,
+applet,
+big,
+blockquote,
+body,
+caption,
+cite,
+code,
+dd,
+del,
+dfn,
+div,
+dl,
+dt,
+em,
+fieldset,
+form,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+html,
+iframe,
+img,
+ins,
+kbd,
+label,
+legend,
+li,
+object,
+ol,
+p,
+pre,
+q,
+s,
+samp,
+small,
+span,
+strike,
+strong,
+table,
+tbody,
+td,
+tfoot,
+th,
+thead,
+tr,
+tt,
+ul,
+var {
+    border: 0;
+    font-family: inherit;
+    font-size: 100%;
+    font-style: inherit;
+    font-weight: inherit;
+    margin: 0;
+    padding: 0;
+    vertical-align: baseline;
+}
+
+a,
+button,
+div,
+input,
+label,
+select,
+span,
+strong,
+textarea {
+    outline: 0;
+}
+
+
+.main {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    color: white;
+    font-family: "gg sans", "Noto Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    background-color: oklab(0.219511 0.00211037 -0.00744569);
+    padding: none;
+
+}
+
+.preview-container {
+    max-width: min(600px, 100%);
+    align-items: stretch;
+    width: fit-content;
+    row-gap: 8px;
+}
+
+@font-face {
+    font-family: gg sans;
+    font-style: normal;
+    font-weight: 400;
+    src: url(../public/fonts/ggsans.woff2) format("woff2")
+}
+
+@font-face {
+    font-family: gg sans;
+    font-style: italic;
+    font-weight: 400;
+    src: url(../public/fonts/ggsansitalic.woff2) format("woff2")
+}
+
+@font-face {
+    font-family: gg sans;
+    font-style: normal;
+    font-weight: 500;
+    src: url(../public/fonts/ggsansmedium.woff2) format("woff2")
+}
+
+@font-face {
+    font-family: gg sans;
+    font-style: italic;
+    font-weight: 500;
+    src: url(../public/fonts/ggsansmediumitalic.woff2) format("woff2")
+}
+
+@font-face {
+    font-family: gg sans;
+    font-style: normal;
+    font-weight: 600;
+    src: url(../public/fonts/ggsanssemibold.woff2) format("woff2")
+}
+
+@font-face {
+    font-family: gg sans;
+    font-style: italic;
+    font-weight: 600;
+    src: url(../public/fonts/ggsanssemibolditalic.woff2) format("woff2")
+}
+
+@font-face {
+    font-family: gg sans;
+    font-style: normal;
+    font-weight: 700;
+    src: url(../public/fonts/ggsansbold.woff2) format("woff2")
+}
+
+@font-face {
+    font-family: gg sans;
+    font-style: italic;
+    font-weight: 700;
+    src: url(../public/fonts/ggsansbolditalic.woff2) format("woff2")
+}
+
+@font-face {
+    font-family: gg sans;
+    font-style: normal;
+    font-weight: 800;
+    src: url(../public/fonts/ggsansextrabold.woff2) format("woff2")
+}
+
+@font-face {
+    font-family: gg sans;
+    font-style: italic;
+    font-weight: 800;
+    src: url(../public/fonts/ggsansextrabolditalic.woff2) format("woff2")
+}
+
+@font-face {
+    font-family: gg mono;
+    font-style: normal;
+    font-weight: 400;
+    src: url(../public/fonts/ggsansmono.woff2) format("woff2")
+}
+
+@font-face {
+    font-family: gg mono;
+    font-style: normal;
+    font-weight: 700;
+    src: url(../public/fonts/ggsansmonobold.woff2) format("woff2")
+}

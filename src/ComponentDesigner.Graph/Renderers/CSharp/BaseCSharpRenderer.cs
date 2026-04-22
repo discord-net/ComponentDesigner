@@ -107,10 +107,10 @@ public abstract partial class BaseCSharpRenderer : IComponentRenderer
             int interpolationDollarCount
         )
         {
-            var quoteCount = (GetSequentialQuoteCount(control.Value) + 1) switch
+            var quoteCount = GetSequentialQuoteCount(control.Value) switch
             {
-                2 => 3,
-                var r => r
+                1 or 2 => 3,
+                var r => r + 1
             };
 
             var isMultiline = control.ContainsNewLines || quoteCount > 1;

@@ -79,7 +79,8 @@ public sealed class DocumentHandler : TextDocumentSyncHandlerBase
         _server.SendNotification("cx/preview-json", new
         {
             json = preview,
-            uri = document.Uri
+            uri = document.Uri,
+            success = result.HasValue
         });
     }
 

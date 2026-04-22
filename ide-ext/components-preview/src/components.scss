@@ -1,0 +1,124 @@
+.emoji {
+    margin-right: 4px;
+}
+
+.action-row {
+    display: flex;
+    flex-direction: row;
+    row-gap: 6px;
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.button {
+    cursor: pointer;
+    height: 32px;
+    line-height: 18px;
+    min-height: 30px;
+    min-width: 60px;
+    padding: 3px 11px;
+
+    align-items: center;
+    background: none;
+    border-radius: 8px;
+    box-sizing: border-box;
+    display: flex;
+    font-size: 14px;
+    font-weight: 500;
+    justify-content: center;
+    position: relative;
+    user-select: none;
+}
+
+.button-primary {
+    background-color: rgb(88, 101, 242);
+}
+
+.button-secondary {
+    background-color: rgba(151, 151, 159, 0.08);
+}
+
+.button-success {
+    background-color: rgb(0, 133, 69);
+}
+
+.button-danger {
+    background-color: rgb(210, 45, 57);
+}
+
+.container {
+    position: relative;
+    border: 1px solid oklab(0.678923 0.00325415 -0.0111644 / 0.121569);
+    background-color: oklab(0.26239 0.00252313 -0.00890189);
+    border-radius: 8px;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+    padding: 16px;   
+    display: flex;
+}
+
+.container::before {
+    content: "";
+    height: 100%;
+    inset-inline-start: 0;
+    position: absolute;
+    top: 0;
+    width: 4px;
+    background-color: var(--__accentColor)
+}
+
+.separator-divider {
+    border-bottom:  1px solid rgba(151, 151, 159, 0.2);
+}
+
+.separator-spacing-large {
+    margin: 8px 0;
+}
+
+.text-display {
+    
+}
+
+.section {
+    display: flex;
+    flex-direction: row;
+    gap: 12px;
+    justify-content: space-between;
+}
+
+.section-children {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    row-gap: 4px;
+}
+
+.section-accessory {
+    align-items: flex-start;
+    display: flex;
+    min-width: 0;
+}
+
+.thumbnail-wrapper {
+    --__thumbnail-size: 85px;
+    border-radius: var(--radius-sm);
+    height: var(--__thumbnail-size);
+    max-height: var(--__thumbnail-size);
+    max-width: var(--__thumbnail-size);
+    overflow: auto;
+    width: var(--__thumbnail-size);
+
+    display: flex;
+    flex: auto;
+    flex-flow: column nowrap;
+}
+
+.thumbnail {
+    display: block;
+    object-fit: cover;
+    min-width: 100%;
+    min-height: 100%;
+    max-width: calc(100% + 1px);
+}

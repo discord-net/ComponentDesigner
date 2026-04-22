@@ -1,0 +1,30 @@
+{
+  "name": "components-preview",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "rsbuild build",
+    "dev": "rsbuild dev --open",
+    "preview": "rsbuild preview"
+  },
+  "dependencies": {
+    "@discord/markdown-react": "^0.1.10",
+    "@discord/markdown-types": "^0.1.4",
+    "@rsbuild/plugin-sass": "^1.5.1",
+    "classnames": "^2.5.1",
+    "discord-api-types": "^0.38.47",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "react-syntax-highlighter": "^16.1.1"
+  },
+  "devDependencies": {
+    "@rsbuild/core": "^1.7.1",
+    "@rsbuild/plugin-react": "^1.4.2",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "@types/react-syntax-highlighter": "^15.5.13",
+    "sass": "^1.99.0",
+    "typescript": "^5.9.3"
+  }
+}

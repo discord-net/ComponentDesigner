@@ -59,7 +59,9 @@ public sealed class AutoActionRowComponentNode : ActionRowComponentNode
         return true;
 
         static bool CanAddToParent(IComponentNode parent)
-            => parent is not ActionRowComponentNode and not LabelComponentNode;
+            => parent is not ActionRowComponentNode
+                and not LabelComponentNode
+                and not SectionComponentNode;
     }
     
     public override void Validate(

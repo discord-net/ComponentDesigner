@@ -18,6 +18,7 @@ const fs = require("fs");
 const jsonPreviewProvider_1 = require("./jsonPreviewProvider");
 const languageServerPath = "server/ComponentDesigner.LanguageServer.exe";
 let configuration = vscode.workspace.getConfiguration();
+const discordPreviewPanels = new Map();
 let outputChannel = vscode.window.createOutputChannel("Component Designer LSP");
 function activateLanguageServer(context) {
     return __awaiter(this, void 0, void 0, function* () {
@@ -49,8 +50,16 @@ function activateLanguageServer(context) {
         yield client.onReady();
         context.subscriptions.push(client.onNotification("cx/preview-json", (params) => {
             const uri = vscode.Uri.parse(params.uri);
-            outputChannel.appendLine(`${uri.path}\n${params.json}`);
+            outputChannel.appendLine(`Json for ${uri.path}\n${params.json}`);
             jsonPreviewProvider_1.default.updateContent(uri, params.json);
+            const discordPanel = discordPreviewPanels.get(uri.toString());
+            outputChannel.appendLine("discord preview panel exists: " + !!discordPanel);
+            if (params.success) {
+                discordPanel === null || discordPanel === void 0 ? void 0 : discordPanel.webview.postMessage({
+                    type: 'updateComponents',
+                    components: JSON.parse(params.json),
+                });
+            }
         }));
         return client;
     });
@@ -71,7 +80,50 @@ function activate(context) {
             const previewUri = vscode.Uri.parse(`cx-preview:${document.uri.path}`);
             const doc = yield vscode.workspace.openTextDocument(previewUri);
             vscode.languages.setTextDocumentLanguage(doc, "json");
-            yield vscode.window.showTextDocument(doc, { viewColumn: vscode.ViewColumn.Beside, preserveFocus: true });
+            yield vscode.window.showTextDocument(doc, {
+                viewColumn: vscode.ViewColumn.Beside,
+                preserveFocus: true,
+            });
+        })));
+        context.subscriptions.push(vscode.commands.registerCommand("cx.discordPreview", () => __awaiter(this, void 0, void 0, function* () {
+            if (!vscode.window.activeTextEditor) {
+                return; // no editor
+            }
+            let { document } = vscode.window.activeTextEditor;
+            if (document.languageId !== "cx")
+                return;
+            const panel = vscode.window.createWebviewPanel("cx-discord-preview", "Discord Preview", vscode.ViewColumn.Beside, {
+                localResourceRoots: [
+                    vscode.Uri.joinPath(context.extensionUri, "discord-preview"),
+                ],
+                enableScripts: true,
+            });
+            panel.onDidDispose(() => {
+                discordPreviewPanels.delete(document.uri.toString());
+            });
+            discordPreviewPanels.set(document.uri.toString(), panel);
+            const path = context.asAbsolutePath("discord-preview/index.html");
+            outputChannel.appendLine("Loading Discord preview HTML from: " + path);
+            fs.readFile(path, { encoding: "utf-8" }, (err, data) => {
+                if (err) {
+                    outputChannel.appendLine("Error loading Discord preview HTML: " + err.message);
+                    return;
+                }
+                const html = data.replaceAll("EXT_PATH_PREFIX", panel.webview
+                    .asWebviewUri(vscode.Uri.joinPath(context.extensionUri, "discord-preview"))
+                    .toString());
+                panel.webview.html = html;
+                outputChannel.appendLine("Discord preview opened for: " + document.uri.toString());
+            });
+            // context.subscriptions.push(
+            //   jsonPreviewProvider.onDidChange((uri) => {
+            //     const panel = discordPreviewPanels.get(uri);
+            //     if (!panel) return;
+            //     const json = jsonPreviewProvider.provideTextDocumentContent(uri);
+            //     outputChannel.appendLine("Updated panel json for: " + uri.toString());
+            //     outputChannel.appendLine(json);
+            //   }),
+            // );
         })));
         outputChannel.appendLine("CX extension has been activated");
     });
