@@ -8,43 +8,34 @@ partial class JsonRenderer
 {
     private const int TEXT_DISPLAY_TYPE = 10;
 
-    public Result<RenderedComponent> RenderTextDisplay(
-        IRendererContext context,
+    public Result<JsonNode> RenderTextDisplay(
+        IRenderContext<JsonNode> context,
         TextDisplayComponentNode textDisplay,
         TextDisplayState state,
-        RendererTypingContext? typingContext = null,
         CancellationToken cancellationToken = default
     )
     {
-        return Build(
+        return Spec(
             context,
             state,
             cancellationToken,
-            [("type", TEXT_DISPLAY_TYPE)],
+            ("type", TEXT_DISPLAY_TYPE),
             ("id", textDisplay.Id, Number),
             ("content", textDisplay.Content, RenderContent)
         );
 
         Result<JsonNode> RenderContent(
-            IRendererContext context,
+            IRenderContext<JsonNode> context,
             ComponentPropertyValue propertyValue,
             CancellationToken cancellationToken
         )
         {
             if (propertyValue.AsSingle is ComponentPropertyValue.Component component)
             {
-                return context
-                    .RenderGraphNode(component.GraphNode, cancellationToken: cancellationToken)
-                    .Map(render =>
-                    {
-                        if (render is not RenderedJsonComponent json)
-                            return JsonValue.Create(render.Source);
-
-                        return json.JsonNode;
-                    });
+                return component.GraphNode.Render(context, cancellationToken);
             }
 
-            return String(context, propertyValue, cancellationToken);
+            return String.GetJsonNode(context, propertyValue, cancellationToken);
         }
     }
 }

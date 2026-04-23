@@ -88,11 +88,4 @@ public class TextDisplayComponentNode : ComponentNode<TextDisplayState>
         IComponentContext context, TextDisplayState state, IDiagnosticBag bag,
         CancellationToken cancellationToken = default
     ) => Validators.ValidateTextDisplay(context, this, state, bag);
-
-    public override Result<RenderedComponent> Render(
-        ComponentEmitContext context,
-        TextDisplayState state,
-        ComponentOptions options,
-        CancellationToken cancellationToken = default
-    ) => context.Renderer.RenderTextDisplay(context, this, state, options.TypingContext, cancellationToken);
 }

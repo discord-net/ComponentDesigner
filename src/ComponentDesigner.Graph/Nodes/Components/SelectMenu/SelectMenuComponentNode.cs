@@ -284,11 +284,4 @@ public sealed class SelectMenuComponentNode : ComponentNode<SelectMenuState>
         IComponentContext context, SelectMenuState state, IDiagnosticBag bag,
         CancellationToken cancellationToken = default
     ) => Validators.ValidateSelectMenu(context, this, state, bag, cancellationToken);
-
-    public override Result<RenderedComponent> Render(
-        ComponentEmitContext context,
-        SelectMenuState state,
-        ComponentOptions options,
-        CancellationToken cancellationToken = default
-    ) => context.Renderer.RenderSelectMenu(context, this, state, options.TypingContext, cancellationToken);
 }

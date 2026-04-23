@@ -114,7 +114,7 @@ public sealed partial class CXComponentGraph : IEquatable<CXComponentGraph>
         if (ReferenceEquals(this, other)) return true;
 
         if (_tree.Count != other._tree.Count) return false;
-        
+
         for (var i = 0; i < _tree.Count; i++)
         {
             var left = _tree[i];
@@ -177,7 +177,7 @@ public sealed partial class CXComponentGraph : IEquatable<CXComponentGraph>
         {
             var node = _tree[i];
 
-            if(!node.ComponentInitializationProducedDiagnostics)
+            if (!node.ComponentInitializationProducedDiagnostics)
                 node.Component.Validate(context, node.State, bag, cancellationToken);
         }
 
@@ -185,19 +185,20 @@ public sealed partial class CXComponentGraph : IEquatable<CXComponentGraph>
         return _validationDiagnostics = bag.ToCollection();
     }
 
-    public Result<string> Emit(ICompilationProvider compilationProvider, CancellationToken cancellationToken = default)
+    public Result<TFinal> Emit<TFinal, TRender>(
+        ICompilationProvider compilationProvider,
+        IComponentRenderer<TFinal, TRender> renderer,
+        CancellationToken cancellationToken = default
+    )
     {
         var validation = Validate(compilationProvider, out var hasErrors, cancellationToken);
 
         if (hasErrors) return new(validation);
 
-        return Implementation
-            .Renderer
-            .RenderComponents(
-                this,
-                new ComponentEmitContext(this, compilationProvider),
-                cancellationToken
-            )
-            .PrefaceDiagnostics(validation);
+        return renderer.RenderGraph(
+            new ComponentRenderingContext<TFinal, TRender>(this, compilationProvider, renderer),
+            this,
+            cancellationToken
+        );
     }
 }

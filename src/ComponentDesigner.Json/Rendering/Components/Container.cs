@@ -8,19 +8,18 @@ partial class JsonRenderer
 {
     private const int CONTAINER_TYPE = 17;
 
-    public Result<RenderedComponent> RenderContainer(
-        IRendererContext context,
+    public Result<JsonNode> RenderContainer(
+        IRenderContext<JsonNode> context,
         ContainerComponentNode container,
         ComponentState state,
-        RendererTypingContext? typingContext = null,
         CancellationToken cancellationToken = default
-    ) => Build(
+    ) => Spec(
         context,
         state,
         cancellationToken,
-        [("type", CONTAINER_TYPE)],
+        ("type", CONTAINER_TYPE),
         ("id", container.Id, Number),
-        ("components", container.Components, Components),
+        ("components", container.Components, ComponentArray),
         ("accent_color", container.AccentColor, Color),
         ("spoiler", container.IsSpoiler, Bool)
     );

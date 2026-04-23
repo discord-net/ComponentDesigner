@@ -10,7 +10,7 @@ public sealed class InterpolationGenerator(ICSharpTypeSymbol symbol) : CSharpVal
         => WeakMemoize.Of(symbol, static (s) => new InterpolationGenerator(s));
 
     protected override Result<string> RenderInterpolation(
-        IRendererContext context,
+        IRenderContext context,
         ComponentPropertyValue.Interpolation interpolationValue,
         IInterpolationInfo interpolationInfo,
         CancellationToken cancellationToken = default

@@ -43,7 +43,7 @@ public sealed class EnumGenerator : CSharpValueGenerator
     );
 
     protected override Result<string> RenderInterpolation(
-        IRendererContext context,
+        IRenderContext context,
         ComponentPropertyValue.Interpolation interpolationValue,
         IInterpolationInfo interpolationInfo,
         CancellationToken cancellationToken = default
@@ -92,7 +92,7 @@ public sealed class EnumGenerator : CSharpValueGenerator
     }
 
     protected override Result<string> RenderLiteral(
-        IRendererContext context,
+        IRenderContext context,
         ComponentPropertyValue.Literal literalValue,
         string literal,
         CancellationToken cancellationToken = default

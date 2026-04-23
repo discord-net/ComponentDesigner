@@ -1,6 +1,6 @@
 ﻿namespace ComponentDesigner;
 
-public interface IComponentContext : IEquatable<IComponentContext>
+public interface IComponentContext
 {
     IComponentImplementation Implementation { get; }
     ICompilationProvider CompilationProvider { get; }

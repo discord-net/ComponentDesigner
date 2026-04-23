@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text.Json.Nodes;
 using System.Threading;
 using ComponentDesigner.Nodes;
 
@@ -9,48 +10,45 @@ partial class JsonRenderer
     public const int CHECKBOX_TYPE = 23;
     public const int CHECKBOX_GROUP_TYPE = 22;
 
-    public Result<RenderedComponent> RenderCheckbox(
-        IRendererContext context,
+    public Result<JsonNode> RenderCheckbox(
+        IRenderContext<JsonNode> context,
         CheckboxComponentNode checkbox,
         ComponentState state,
-        RendererTypingContext? typingContext = null,
         CancellationToken cancellationToken = default
-    ) => Build(
+    ) => Spec(
         context,
         state,
         cancellationToken,
-        [("type", CHECKBOX_TYPE)],
+        ("type", CHECKBOX_TYPE),
         ("id", checkbox.Id, Number),
         ("custom_id", checkbox.CustomId, String),
         ("default", checkbox.Default, Bool)
     );
 
-    public Result<RenderedComponent> RenderCheckboxGroup(
-        IRendererContext context,
+    public Result<JsonNode> RenderCheckboxGroup(
+        IRenderContext<JsonNode> context,
         CheckboxGroupComponentNode checkboxGroup,
         ComponentState state,
-        RendererTypingContext? typingContext = null,
         CancellationToken cancellationToken = default
-    ) => Build(
+    ) => Spec(
         context,
         state,
         cancellationToken,
-        [("type", CHECKBOX_GROUP_TYPE)],
+        ("type", CHECKBOX_GROUP_TYPE),
         ("id", checkboxGroup.Id, Number),
         ("custom_id", checkboxGroup.CustomId, String),
-        ("options", checkboxGroup.Options, Components),
+        ("options", checkboxGroup.Options, ComponentArray),
         ("min_values", checkboxGroup.MinValues, Number),
         ("max_values", checkboxGroup.MaxValues, Number),
         ("required", checkboxGroup.Required, Bool)
     );
 
-    public Result<RenderedComponent> RenderCheckboxGroupOption(
-        IRendererContext context,
+    public Result<JsonNode> RenderCheckboxGroupOption(
+        IRenderContext<JsonNode> context,
         CheckboxGroupOptionComponentNode checkboxGroupOption,
         ComponentState state,
-        RendererTypingContext? typingContext = null,
         CancellationToken cancellationToken = default
-    ) => Build(
+    ) => Spec(
         context,
         state,
         cancellationToken,

@@ -13,7 +13,7 @@ partial class TextControlElement
         public override string Name => "Spoiler";
 
         public override Result<TextControl> Render(
-            IRendererContext context,
+            IRenderContext context,
             TextControlOptions options,
             CancellationToken cancellationToken = default
         ) => Join(RenderChildren(context, options, cancellationToken))

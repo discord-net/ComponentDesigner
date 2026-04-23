@@ -5,3 +5,4 @@
 [assembly: InternalsVisibleTo("Discord.Net.ComponentDesigner.Generator")]
 [assembly: InternalsVisibleTo("Discord.Net.ComponentDesigner.Implementation")]
 [assembly: InternalsVisibleTo("ComponentDesigner.CSharp")]
+[assembly: InternalsVisibleTo("ComponentDesigner.Json")]

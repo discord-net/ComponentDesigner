@@ -46,11 +46,4 @@ public sealed class RadioGroupOptionComponentNode : ComponentNode
         IComponentContext context, ComponentState state, IDiagnosticBag bag,
         CancellationToken cancellationToken = default
     ) => Validators.ValidateRadioGroupOption(context, this, state, bag);
-
-    public override Result<RenderedComponent> Render(
-        ComponentEmitContext context,
-        ComponentState state,
-        ComponentOptions options,
-        CancellationToken cancellationToken = default
-    ) => context.Renderer.RenderRadioGroupOption(context, this, state, options.TypingContext, cancellationToken);
 }

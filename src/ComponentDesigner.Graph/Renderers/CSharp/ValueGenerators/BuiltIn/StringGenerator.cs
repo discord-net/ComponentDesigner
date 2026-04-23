@@ -30,7 +30,7 @@ public sealed class StringGenerator : CSharpValueGenerator
         => WeakMemoize.Of(stringMode, static a => new StringGenerator(a));
 
     public override Result<string> Render(
-        IRendererContext context,
+        IRenderContext context,
         ComponentPropertyValue value,
         CancellationToken cancellationToken = default
     )

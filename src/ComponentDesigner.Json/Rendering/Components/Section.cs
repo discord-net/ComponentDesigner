@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using System.Text.Json.Nodes;
+using System.Threading;
 using ComponentDesigner.Nodes;
 
 namespace ComponentDesigner.Json;
@@ -7,19 +8,18 @@ partial class JsonRenderer
 {
     private const int SECTION_TYPE = 9;
 
-    public Result<RenderedComponent> RenderSection(
-        IRendererContext context,
+    public Result<JsonNode> RenderSection(
+        IRenderContext<JsonNode> context,
         SectionComponentNode section,
         ComponentState state,
-        RendererTypingContext? typingContext = null,
         CancellationToken cancellationToken = default
-    ) => Build(
+    ) => Spec(
         context,
         state,
         cancellationToken,
-        [("type", SECTION_TYPE)],
+        ("type", SECTION_TYPE),
         ("id", section.Id, Number),
-        ("components", section.Components, Components),
+        ("components", section.Components, ComponentArray),
         ("accessory", section.Accessory, Component)
     );
 }

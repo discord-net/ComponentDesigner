@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using System.Text.Json.Nodes;
+using System.Threading;
 using ComponentDesigner.Nodes;
 
 namespace ComponentDesigner.Json;
@@ -7,18 +8,17 @@ partial class JsonRenderer
 {
     private const int ACTION_ROW_TYPE = 1;
 
-    public Result<RenderedComponent> RenderActionRow(
-        IRendererContext context,
+    public Result<JsonNode> RenderActionRow(
+        IRenderContext<JsonNode> context,
         ActionRowComponentNode actionRow,
         ComponentState state,
-        RendererTypingContext? typingContext = null,
         CancellationToken cancellationToken = default
-    ) => Build(
+    ) => Spec(
         context,
         state,
         cancellationToken,
-        [("type", ACTION_ROW_TYPE)],
+        ("type", ACTION_ROW_TYPE),
         ("id", actionRow.Id, Number),
-        ("components", actionRow.Components, Components)
+        ("components", actionRow.Components, ComponentArray)
     );
 }

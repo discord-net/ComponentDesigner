@@ -21,7 +21,7 @@ partial class TextControlElement
         public override IReadOnlyList<TextControlElement> Children { get; } = children;
 
         public override Result<TextControl> Render(
-            IRendererContext context,
+            IRenderContext context,
             TextControlOptions options,
             CancellationToken cancellationToken = default
         ) => Join(RenderChildren(context, options, cancellationToken))
@@ -32,7 +32,7 @@ partial class TextControlElement
             });
 
         private new Result<EquatableArray<TextControl>> RenderChildren(
-            IRendererContext context,
+            IRenderContext context,
             TextControlOptions options,
             CancellationToken cancellationToken = default
         )

@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using System.Text.Json.Nodes;
+using System.Threading;
 using ComponentDesigner.Nodes;
 
 namespace ComponentDesigner.Json;
@@ -12,17 +13,16 @@ partial class JsonRenderer
         ("paragraph", 2)
     );
 
-    public Result<RenderedComponent> RenderTextInput(
-        IRendererContext context,
+    public Result<JsonNode> RenderTextInput(
+        IRenderContext<JsonNode> context,
         TextInputComponentNode textInput,
         ComponentState state,
-        RendererTypingContext? typingContext = null,
         CancellationToken cancellationToken = default
-    ) => Build(
+    ) => Spec(
         context,
         state,
         cancellationToken,
-        [("type", TEXT_INPUT_TYPE)],
+        ("type", TEXT_INPUT_TYPE),
         ("id", textInput.Id, Number),
         ("custom_id", textInput.CustomId, String),
         ("style", textInput.Style, TextInputStyle),

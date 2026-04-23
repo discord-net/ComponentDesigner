@@ -77,11 +77,4 @@ public sealed class SelectMenuDefaultValueComponentNode : ComponentNode<DefaultV
         IComponentContext context, DefaultValueState state, IDiagnosticBag bag,
         CancellationToken cancellationToken = default
     ) => Validators.ValidateSelectMenuDefaultValue(context, this, state, bag);
-
-    public override Result<RenderedComponent> Render(
-        ComponentEmitContext context,
-        DefaultValueState state,
-        ComponentOptions options,
-        CancellationToken cancellationToken = default
-    ) => context.Renderer.RenderSelectMenuDefaultValue(context, this, state, options.TypingContext, cancellationToken);
 }

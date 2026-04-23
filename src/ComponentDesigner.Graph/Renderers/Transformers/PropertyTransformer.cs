@@ -9,16 +9,16 @@ public static class PropertyTransformer
     public static readonly ComponentPropertyValueTransformer<uint> ColorCode = TransformToColorCode;
     public static readonly ComponentPropertyValueTransformer<PartialEmoji> PartialEmoji = TransformToPartialEmoji;
 
-    public static Result<T> Switch<T>(
-        IRendererContext context,
+    public static Result<TResult> Switch<TContext, TResult>(
+        TContext context,
         ComponentPropertyValue value,
         CancellationToken cancellationToken,
-        ComponentPropertyValueTransformer<T, ComponentPropertyValue.Literal>? literal = null,
-        ComponentPropertyValueTransformer<T, ComponentPropertyValue.Component>? component = null,
-        ComponentPropertyValueTransformer<T, ComponentPropertyValue.Interpolation>? interpolation = null,
-        ComponentPropertyValueTransformer<T, ComponentPropertyValue.Many>? many = null,
-        ComponentPropertyValueTransformer<T, ComponentPropertyValue.None>? none = null
-    )
+        ComponentPropertyValueTransformer<TContext, TResult, ComponentPropertyValue.Literal>? literal = null,
+        ComponentPropertyValueTransformer<TContext, TResult, ComponentPropertyValue.Component>? component = null,
+        ComponentPropertyValueTransformer<TContext, TResult, ComponentPropertyValue.Interpolation>? interpolation = null,
+        ComponentPropertyValueTransformer<TContext, TResult, ComponentPropertyValue.Many>? many = null,
+        ComponentPropertyValueTransformer<TContext, TResult, ComponentPropertyValue.None>? none = null
+    ) where TContext : IComponentContext
     {
         var handledKinds = ComponentPropertyValueKind.None;
 
@@ -36,7 +36,7 @@ public static class PropertyTransformer
 
         return Core(value);
 
-        Result<T> Core(ComponentPropertyValue value)
+        Result<TResult> Core(ComponentPropertyValue value)
         {
             switch (value)
             {
@@ -62,7 +62,7 @@ public static class PropertyTransformer
             }
         }
 
-        Result<T> DefaultManyHandler(
+        Result<TResult> DefaultManyHandler(
             ComponentPropertyValue.Many manyValue
         )
         {
@@ -74,7 +74,7 @@ public static class PropertyTransformer
 
 
     private static Result<string> TransformToString(
-        IRendererContext context,
+        IComponentContext context,
         ComponentPropertyValue value,
         CancellationToken cancellationToken = default
     )
@@ -88,7 +88,7 @@ public static class PropertyTransformer
         );
 
         static Result<string> TransformInterpolation(
-            IRendererContext context,
+            IComponentContext context,
             ComponentPropertyValue.Interpolation value,
             CancellationToken cancellationToken = default
         )
@@ -101,7 +101,7 @@ public static class PropertyTransformer
     }
 
     private static Result<uint> TransformToColorCode(
-        IRendererContext context,
+        IComponentContext context,
         ComponentPropertyValue value,
         CancellationToken cancellationToken = default
     ) => TransformToString(context, value, cancellationToken)
@@ -120,7 +120,7 @@ public static class PropertyTransformer
         });
 
     private static Result<PartialEmoji> TransformToPartialEmoji(
-        IRendererContext context,
+        IComponentContext context,
         ComponentPropertyValue value,
         CancellationToken cancellationToken = default
     ) => TransformToString(context, value, cancellationToken)

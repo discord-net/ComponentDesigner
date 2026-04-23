@@ -12,7 +12,7 @@ partial class TextControlElement
         public override string Name => "Line Break";
 
         public override Result<TextControl> Render(
-            IRendererContext context,
+            IRenderContext context,
             TextControlOptions options,
             CancellationToken cancellationToken = default
         )

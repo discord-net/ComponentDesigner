@@ -13,7 +13,7 @@ partial class TextControlElement
         public override string Name => "Code Block";
 
         public override Result<TextControl> Render(
-            IRendererContext context,
+            IRenderContext context,
             TextControlOptions options,
             CancellationToken cancellationToken = default
         ) => GetFormattingOptions(context, element, options)
@@ -51,7 +51,7 @@ partial class TextControlElement
         );
 
         private static Result<FormatOptions> GetFormattingOptions(
-            IRendererContext context,
+            IRenderContext context,
             CXElement element,
             TextControlOptions options
         )
@@ -107,7 +107,7 @@ partial class TextControlElement
                             continue;
                         }
 
-                        if (!TryGetTextBasedValue(attribute.Value, context, options, out language))
+                        if (!TryGetTextBasedValue(context, attribute.Value, options, out language))
                             builder.AddDiagnostic(
                                 Diagnostic
                                     .InvalidPropertyValue(

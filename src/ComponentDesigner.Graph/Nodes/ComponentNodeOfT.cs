@@ -3,21 +3,6 @@ using ComponentDesigner.Parser;
 
 namespace ComponentDesigner.Nodes;
 
-public delegate void ComponentValidator<in TSelf, in TState>(
-    IComponentContext context,
-    TSelf self,
-    TState state,
-    IDiagnosticBag bag
-) where TSelf : IComponentNode where TState : ComponentState;
-
-public delegate Result<RenderedComponent> ComponentRenderer<in TSelf, in TState>(
-    IRendererContext context,
-    TSelf self,
-    TState state,
-    RendererTypingContext? typingContext,
-    CancellationToken cancellationToken
-) where TSelf : IComponentNode where TState : ComponentState;
-
 public abstract class ComponentNode<TState> :
     IComponentNode,
     IEquatable<ComponentNode<TState>>
@@ -77,12 +62,11 @@ public abstract class ComponentNode<TState> :
         CancellationToken cancellationToken = default
     ) => Validators.ValidateGenericComponent(context, this, state, bag);
 
-    public abstract Result<RenderedComponent> Render(
-        ComponentEmitContext context,
+    public virtual Result<TRender> Render<TRender>(
+        IRenderContext<TRender> context,
         TState state,
-        ComponentOptions options,
         CancellationToken cancellationToken = default
-    );
+    ) => context.Renderer.RenderComponent(context, this, state, cancellationToken);
 
     public bool Equals(ComponentNode<TState>? other)
         => ReferenceEquals(this, other);
@@ -121,13 +105,15 @@ public abstract class ComponentNode<TState> :
         if (state is TState typedState) Validate(context, typedState, bag, cancellationToken);
     }
 
-    Result<RenderedComponent> IComponentNode.Render(
-        ComponentEmitContext context, ComponentState state, ComponentOptions options,
+    Result<TRender> IComponentNode.Render<TRender>(
+        IRenderContext<TRender> context,
+        ComponentState state,
         CancellationToken cancellationToken
     )
     {
-        if (state is TState typedState) return Render(context, typedState, options, cancellationToken);
+        if (state is TState typedState) 
+            return Render(context, typedState, cancellationToken);
 
-        return default;
+        return Diagnostic.StateTypeMismatch(typeof(TState), state).At(state);
     }
 }

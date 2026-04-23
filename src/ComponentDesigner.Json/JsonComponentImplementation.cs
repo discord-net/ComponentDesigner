@@ -10,15 +10,9 @@ public sealed class JsonComponentImplementation : IComponentImplementation
 {
     public string Name => "Json";
 
-    public IComponentRenderer Renderer { get; }
     public ITextControlProvider TextControlProvider => DefaultTextControlProvider.Instance;
     public IComponentTypingProvider? ComponentTypingProvider => null;
     public IComponentExtensionProvider? ComponentExtensionProvider => null;
-
-    public JsonComponentImplementation(JsonSerializerOptions? options = null)
-    {
-        Renderer = new JsonRenderer(options);
-    }
 
     public bool TryAnalyzeNumberOfValues(
         IComponentContext context,

@@ -20,19 +20,18 @@ partial class JsonRenderer
         ("premium", BUTTON_PREMIUM_STYLE)
     );
     
-    public Result<RenderedComponent> RenderButton(
-        IRendererContext context, 
+    public Result<JsonNode> RenderButton(
+        IRenderContext<JsonNode> context, 
         ButtonComponentNode button,
         ButtonState state,
-        RendererTypingContext? typingContext = null, 
         CancellationToken cancellationToken = default
     )
     {
-        return Build(
+        return Spec(
             context,
             state,
             cancellationToken,
-            [("type", BUTTON_TYPE)],
+            ("type", BUTTON_TYPE),
             ("id", button.Id, Number),
             ("style", button.Style, RenderStyle),
             ("label", button.Label, String),
@@ -44,7 +43,7 @@ partial class JsonRenderer
         );
 
         Result<JsonNode> RenderStyle(
-            IRendererContext context,
+            IRenderContext<JsonNode> context,
             ComponentPropertyValue propertyValue,
             CancellationToken cancellationToken
         )

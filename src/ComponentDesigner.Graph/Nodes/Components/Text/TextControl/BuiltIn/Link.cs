@@ -14,7 +14,7 @@ partial class TextControlElement
         public override string Name => "Link";
 
         public override Result<TextControl> Render(
-            IRendererContext context,
+            IRenderContext context,
             TextControlOptions options,
             CancellationToken cancellationToken = default
         ) => ExtractLink(context, options)
@@ -28,7 +28,7 @@ partial class TextControlElement
             );
 
         private Result<string> ExtractLink(
-            IRendererContext context,
+            IRenderContext context,
             TextControlOptions options
         )
         {
@@ -53,7 +53,7 @@ partial class TextControlElement
                     .RequiredPropertyNotSpecified(element.Identifier, "href")
                     .At(element.IdentifierTextSpanOrElementTextSpan);
 
-            if(!TryGetTextBasedValue(href.Value, context, options, out var value))
+            if(!TryGetTextBasedValue(context, href.Value, options, out var value))
                 return Diagnostic
                     .InvalidPropertyValue(href.Identifier, href.Value?.GetType().Name ?? "null")
                     .At(href.Value?.TextSpan ?? href.TextSpan);

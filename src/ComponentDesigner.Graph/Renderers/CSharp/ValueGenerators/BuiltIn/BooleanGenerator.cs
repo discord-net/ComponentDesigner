@@ -18,7 +18,7 @@ public sealed class BooleanGenerator : CSharpValueGenerator
         => WeakMemoize.Of(allowNullable, static a => new BooleanGenerator(a));
 
     protected override Result<string> RenderInterpolation(
-        IRendererContext context,
+        IRenderContext context,
         ComponentPropertyValue.Interpolation interpolationValue,
         IInterpolationInfo interpolationInfo,
         CancellationToken cancellationToken = default
@@ -57,14 +57,14 @@ public sealed class BooleanGenerator : CSharpValueGenerator
     }
 
     protected override Result<string> RenderLiteral(
-        IRendererContext context,
+        IRenderContext context,
         ComponentPropertyValue.Literal literalValue,
         string literal,
         CancellationToken cancellationToken = default
     ) => FromText(literal.SourcedAt(literalValue));
 
     protected override Result<string> RenderNone(
-        IRendererContext context,
+        IRenderContext context,
         ComponentPropertyValue.None noneValue,
         CancellationToken cancellationToken = default
     )

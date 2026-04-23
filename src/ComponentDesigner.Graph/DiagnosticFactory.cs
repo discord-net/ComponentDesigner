@@ -52,7 +52,9 @@ public static class DiagnosticFactory
         TypedComponentsAreNotSupported,
         NotAColor,
         NotAnEmoji,
-        ComponentTargetIsNotAllowed
+        ComponentTargetIsNotAllowed,
+        StateTypeMismatch,
+        UnimplementedRendererForComponent
     }
 
     private enum DiagnosticSource
@@ -805,9 +807,29 @@ public static class DiagnosticFactory
             ComponentTargetType allowed
         ) => Create(
             DiagnosticSource.Graph,
-            DiagnosticCode.NotAnEmoji,
+            DiagnosticCode.ComponentTargetIsNotAllowed,
             DiagnosticSeverity.Error,
             $"'{component.Name}' is not allowed in the current component context '{allowed}'"
+        );
+        
+        public static DiagnosticDescriptor StateTypeMismatch(
+            Type expected,
+            ComponentState actual
+        ) => Create(
+            DiagnosticSource.Graph,
+            DiagnosticCode.StateTypeMismatch,
+            DiagnosticSeverity.Error,
+            $"Expected a state type of '{expected}', but got {actual.GetType()}"
+        );
+        
+        public static DiagnosticDescriptor UnimplementedRendererForComponent(
+            string rendererName,
+            IComponentNode node
+        ) => Create(
+            DiagnosticSource.Graph,
+            DiagnosticCode.UnimplementedRendererForComponent,
+            DiagnosticSeverity.Error,
+            $"'{rendererName}' doesn't implement a render function for component '{node.Name}'"
         );
     }
 }

@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using System.Text.Json.Nodes;
+using System.Threading;
 using ComponentDesigner.Nodes;
 
 namespace ComponentDesigner.Json;
@@ -7,17 +8,16 @@ partial class JsonRenderer
 {
     private const int LABEL_TYPE = 18;
 
-    public Result<RenderedComponent> RenderLabel(
-        IRendererContext context,
+    public Result<JsonNode> RenderLabel(
+        IRenderContext<JsonNode> context,
         LabelComponentNode label,
         ComponentState state,
-        RendererTypingContext? typingContext = null,
         CancellationToken cancellationToken = default
-    ) => Build(
+    ) => Spec(
         context,
         state,
         cancellationToken,
-        [("type", LABEL_TYPE)],
+        ("type", LABEL_TYPE),
         ("id", label.Id, Number),
         ("label", label.Label, String),
         ("description", label.Description, String),

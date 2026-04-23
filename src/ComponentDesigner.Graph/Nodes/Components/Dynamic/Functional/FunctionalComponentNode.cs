@@ -45,21 +45,7 @@ public sealed class FunctionalComponentNode : ComponentNode<FunctionalState>, ID
     )
     {
         // todo
-
         return state;
-        // SearchForTargetMethod(state.CXNode, context, cancellationToken)
-        //     .Map(symbol => FunctionalState
-        //         .CreateFromSymbol(
-        //             initializationContext: null,
-        //             context,
-        //             symbol,
-        //             state.GraphNode,
-        //             state.CXNode,
-        //             diagnostics,
-        //             cancellationToken
-        //         )
-        //     )
-        //     .Unwrap(diagnostics, state);
     }
 
     #region Search
@@ -159,12 +145,4 @@ public sealed class FunctionalComponentNode : ComponentNode<FunctionalState>, ID
         IComponentContext context, FunctionalState state, IDiagnosticBag bag,
         CancellationToken cancellationToken = default
     ) => Validators.ValidateFunctionalComponent(context, this, state, bag);
-
-    public override Result<RenderedComponent> Render(
-        ComponentEmitContext context,
-        FunctionalState state,
-        ComponentOptions options,
-        CancellationToken cancellationToken = default
-    ) => context.Renderer.RenderFunctionalComponent(context, this, state, options.TypingContext, cancellationToken);
-    
 }

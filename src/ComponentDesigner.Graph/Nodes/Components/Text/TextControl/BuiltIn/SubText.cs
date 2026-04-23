@@ -12,7 +12,7 @@ partial class TextControlElement
         public override string Name => "Sub Text";
 
         public override Result<TextControl> Render(
-            IRendererContext context,
+            IRenderContext context,
             TextControlOptions options,
             CancellationToken cancellationToken = default
         ) => RenderChildrenWithoutNewLines(context, options, cancellationToken)

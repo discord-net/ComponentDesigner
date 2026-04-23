@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "rsbuild build",
+    "build": "rsbuild build -c rsbuild.config.ts",
+    "build-vscode": "rsbuild build -c vscode.config.ts",
     "dev": "rsbuild dev --open",
     "preview": "rsbuild preview"
   },

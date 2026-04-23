@@ -48,11 +48,4 @@ public class CheckboxGroupOptionComponentNode : ComponentNode
         IDiagnosticBag bag,
         CancellationToken cancellationToken = default
     ) => Validators.ValidateCheckboxGroupOption(context, this, state, bag);
-
-    public override Result<RenderedComponent> Render(
-        ComponentEmitContext context,
-        ComponentState state,
-        ComponentOptions options,
-        CancellationToken cancellationToken = default
-    ) => context.Renderer.RenderCheckboxGroupOption(context, this, state, options.TypingContext, cancellationToken);
 }

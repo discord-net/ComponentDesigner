@@ -76,16 +76,4 @@ public sealed class TextControlNode : ComponentNode<TextControlState>
     {
         // no validation
     }
-
-    public override Result<RenderedComponent> Render(
-        ComponentEmitContext context, TextControlState state, ComponentOptions options,
-        CancellationToken cancellationToken = default
-    ) => context
-        .Renderer
-        .RenderTextControls(
-            context,
-            state.TextControlGraph,
-            options.TypingContext,
-            cancellationToken
-        );
 }

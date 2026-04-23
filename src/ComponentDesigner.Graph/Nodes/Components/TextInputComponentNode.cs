@@ -67,12 +67,4 @@ public sealed class TextInputComponentNode : ComponentNode
         IComponentContext context, ComponentState state, IDiagnosticBag bag,
         CancellationToken cancellationToken = default
     ) => Validators.ValidateTextInput(context, this, state, bag);
-
-    public override Result<RenderedComponent> Render(
-        ComponentEmitContext context,
-        ComponentState state,
-        ComponentOptions options,
-        CancellationToken cancellationToken = default
-    ) => context.Renderer
-        .RenderTextInput(context, this, state, options.TypingContext, cancellationToken);
 }

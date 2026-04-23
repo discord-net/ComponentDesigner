@@ -28,7 +28,7 @@ public sealed class NumericGenerator<TNumber> : CSharpValueGenerator
         a => new NumericGenerator<TNumber>(a, parser)
     );
 
-    private static ICSharpTypeSymbol? GetSymbol(IRendererContext context)
+    private static ICSharpTypeSymbol? GetSymbol(IRenderContext context)
     {
         if (typeof(TNumber) == typeof(byte)) return context.CompilationProvider.UInt8;
         if (typeof(TNumber) == typeof(sbyte)) return context.CompilationProvider.Int8;
@@ -43,14 +43,14 @@ public sealed class NumericGenerator<TNumber> : CSharpValueGenerator
     }
     
     protected override Result<string> RenderLiteral(
-        IRendererContext context,
+        IRenderContext context,
         ComponentPropertyValue.Literal literalValue,
         string literal,
         CancellationToken cancellationToken = default
     ) => FromText(literal.SourcedAt(literalValue));
 
     protected override Result<string> RenderInterpolation(
-        IRendererContext context,
+        IRenderContext context,
         ComponentPropertyValue.Interpolation interpolationValue,
         IInterpolationInfo interpolationInfo,
         CancellationToken cancellationToken = default

@@ -9,42 +9,35 @@ partial class TextControlElement
         public override string Name => token.Kind.ToString();
 
         public override Result<TextControl> Render(
-            IRendererContext context,
+            IRenderContext context,
             TextControlOptions options,
             CancellationToken cancellationToken = default
-        ) => new TextControl(
-            token.LeadingTrivia,
-            token.TrailingTrivia,
-            Value: RenderToken(context, token, options, out var valueContainsNewLines),
-            ValueContainsNewLines: valueContainsNewLines
-        );
+        ) => RenderToken(context, token, options, out var valueContainsNewLines)
+            .Map(str => new TextControl(
+                token,
+                str,
+                valueContainsNewLines
+            ));
 
-        private static string RenderToken(
-            IRendererContext context,
+        private static Result<string> RenderToken(
+            IRenderContext context,
             CXToken token,
             TextControlOptions options,
             out bool containsNewLines
         )
         {
-            if (token.InterpolationIndex is { } index)
+            if (token.InterpolationIndex is not {} index)
             {
-                var info = context.GetInterpolationInfo(index);
-
-                if (info.ConstantValue.IsSpecified)
-                {
-                    var value = info.ConstantValue.Value?.ToString() ?? string.Empty;
-                    containsNewLines = value.Contains('\n');
-                    return value;
-                }
-
-                containsNewLines = false;
-                return $"{options.StartInterpolationMarker}{
-                    context.GetReferenceToDesignerValue(info)
-                }{options.EndInterpolationMarker}";
+                // simple token
+                containsNewLines = token.Value.Contains('\n');
+                return token.Value;
             }
 
-            containsNewLines = token.Value.Contains('\n');
-            return token.Value;
+            return options.InterpolationRenderer(
+                context,
+                context.GetInterpolationInfo(index),
+                out containsNewLines
+            );
         }
     }
 }

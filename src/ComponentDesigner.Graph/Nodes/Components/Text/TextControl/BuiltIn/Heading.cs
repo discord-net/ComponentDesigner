@@ -20,7 +20,7 @@ partial class TextControlElement
         public override string Name => variant.ToString();
 
         public override Result<TextControl> Render(
-            IRendererContext context,
+            IRenderContext context,
             TextControlOptions options,
             CancellationToken cancellationToken = default
         ) => GetHeadingPrefix()

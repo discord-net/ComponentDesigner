@@ -242,11 +242,4 @@ public sealed class ButtonComponentNode : ComponentNode<ButtonState>
         IComponentContext context, ButtonState state, IDiagnosticBag bag,
         CancellationToken cancellationToken = default
     ) => Validators.ValidateButton(context, this, state, bag);
-
-    public override Result<RenderedComponent> Render(
-        ComponentEmitContext context,
-        ButtonState state,
-        ComponentOptions options,
-        CancellationToken cancellationToken = default
-    ) => context.Renderer.RenderButton(context, this, state, options.TypingContext, cancellationToken);
 }

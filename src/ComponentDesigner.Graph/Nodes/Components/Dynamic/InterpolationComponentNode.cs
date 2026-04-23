@@ -113,18 +113,4 @@ public sealed class InterpolationComponentNode : ComponentNode<InterpolationStat
     {
         // no validation
     }
-
-    public override Result<RenderedComponent> Render(
-        ComponentEmitContext context,
-        InterpolationState state,
-        ComponentOptions options,
-        CancellationToken cancellationToken = default
-    ) => context
-        .Renderer
-        .RenderInterpolation(
-            context,
-            context.GetInterpolationInfo(state.InterpolationId),
-            options.TypingContext,
-            cancellationToken
-        );
 }

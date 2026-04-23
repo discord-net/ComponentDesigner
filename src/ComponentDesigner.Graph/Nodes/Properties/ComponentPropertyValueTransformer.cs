@@ -1,13 +1,19 @@
 ﻿namespace ComponentDesigner.Nodes;
 
-public delegate Result<T> ComponentPropertyValueTransformer<T>(
-    IRendererContext context,
+public delegate Result<TResult> ComponentPropertyValueTransformer<TResult>(
+    IComponentContext context,
     ComponentPropertyValue value,
     CancellationToken cancellationToken = default
 );
 
-public delegate Result<TResult> ComponentPropertyValueTransformer<TResult, in TValue>(
-    IRendererContext context,
+public delegate Result<TResult> ComponentPropertyValueTransformer<in TContext, TResult>(
+    TContext context,
+    ComponentPropertyValue value,
+    CancellationToken cancellationToken = default
+) where TContext : IComponentContext;
+
+public delegate Result<TResult> ComponentPropertyValueTransformer<in TContext, TResult, in TValue>(
+    TContext context,
     TValue value,
     CancellationToken cancellationToken = default
-) where TValue : ComponentPropertyValue;
+) where TContext : IComponentContext where TValue : ComponentPropertyValue;

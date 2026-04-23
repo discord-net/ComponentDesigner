@@ -125,11 +125,4 @@ public sealed class LabelComponentNode : ComponentNode
         IComponentContext context, ComponentState state, IDiagnosticBag bag,
         CancellationToken cancellationToken = default
     ) => Validators.ValidateLabel(context, this, state, bag);
-
-    public override Result<RenderedComponent> Render(
-        ComponentEmitContext context,
-        ComponentState state,
-        ComponentOptions options,
-        CancellationToken cancellationToken = default
-    ) => context.Renderer.RenderLabel(context, this, state, options.TypingContext, cancellationToken);
 }

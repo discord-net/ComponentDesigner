@@ -2,13 +2,12 @@
 
 namespace ComponentDesigner;
 
-public interface IRendererContext : IComponentContext
+public interface IRenderContext : IComponentContext
 {
-    string CreateVariable(string hint = "local_");
+    CXComponentGraph Graph { get; }
+}
 
-    Result<RenderedComponent> RenderGraphNode(
-        GraphNode node,
-        ComponentOptions options = default,
-        CancellationToken cancellationToken = default
-    );
+public interface IRenderContext<TRender> : IRenderContext
+{
+    IComponentRenderer<TRender> Renderer { get; }
 }

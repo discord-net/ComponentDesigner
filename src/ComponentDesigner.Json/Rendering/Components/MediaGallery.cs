@@ -7,13 +7,12 @@ namespace ComponentDesigner.Json;
 partial class JsonRenderer
 {
     public const int MEDIA_GALLERY_TYPE = 12;
-    public Result<RenderedComponent> RenderMediaGalleryItem(
-        IRendererContext context,
+    public Result<JsonNode> RenderMediaGalleryItem(
+        IRenderContext<JsonNode> context,
         MediaGalleryItemComponentNode mediaGalleryItem,
         ComponentState state,
-        RendererTypingContext? typingContext = null,
         CancellationToken cancellationToken = default
-    ) => Build(
+    ) => Spec(
         context,
         state,
         cancellationToken,
@@ -22,18 +21,17 @@ partial class JsonRenderer
         ("spoiler", mediaGalleryItem.IsSpoiler, Bool)
     );
 
-    public Result<RenderedComponent> RenderMediaGallery(
-        IRendererContext context,
+    public Result<JsonNode> RenderMediaGallery(
+        IRenderContext<JsonNode> context,
         MediaGalleryComponentNode mediaGallery,
         ComponentState state,
-        RendererTypingContext? typingContext = null,
         CancellationToken cancellationToken = default
-    ) => Build(
+    ) => Spec(
         context,
         state,
         cancellationToken,
-        [("type", MEDIA_GALLERY_TYPE)],
+        ("type", MEDIA_GALLERY_TYPE),
         ("id", mediaGallery.Id, Number),
-        ("items", mediaGallery.Items, Components)
+        ("items", mediaGallery.Items, ComponentArray)
     );
 }

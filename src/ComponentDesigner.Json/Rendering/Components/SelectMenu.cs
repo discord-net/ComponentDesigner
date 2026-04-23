@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using System.Text.Json.Nodes;
+using System.Threading;
 using ComponentDesigner.Nodes;
 
 namespace ComponentDesigner.Json;
@@ -11,11 +12,10 @@ partial class JsonRenderer
     public const int MENTIONABLE_SELECT_TYPE = 7;
     public const int CHANNEL_SELECT_TYPE = 8;
 
-    public Result<RenderedComponent> RenderSelectMenu(
-        IRendererContext context,
+    public Result<JsonNode> RenderSelectMenu(
+        IRenderContext<JsonNode> context,
         SelectMenuComponentNode selectMenu,
         SelectMenuState state,
-        RendererTypingContext? typingContext = null,
         CancellationToken cancellationToken = default
     )
     {
@@ -25,22 +25,23 @@ partial class JsonRenderer
             SelectMenuKind.Mentionable => MENTIONABLE_SELECT_TYPE,
             SelectMenuKind.Role => ROLE_SELECT_TYPE,
             SelectMenuKind.String => STRING_SELECT_TYPE,
+            SelectMenuKind.User => USER_SELECT_TYPE,
             _ => null
         };
 
         if (type is null) return Diagnostic.TypelessSelectMenu.At(state.ElementIdentifierTextSpanOrBetter);
 
-        return Build(
+        return Spec(
             context,
             state,
             cancellationToken,
-            [("type", type.Value)],
+            ("type", type.Value),
             ("id", selectMenu.Id, Number),
             ("custom_id", selectMenu.CustomId, String),
-            ("options", selectMenu.Options, Components),
-            ("channel_types", selectMenu.ChannelTypes, Components),
+            ("options", selectMenu.Options, ComponentArray),
+            ("channel_types", selectMenu.ChannelTypes, ComponentArray),
             ("placeholder", selectMenu.Placeholder, String),
-            ("default_values", selectMenu.DefaultValues, Components),
+            ("default_values", selectMenu.DefaultValues, ComponentArray),
             ("min_values", selectMenu.MinValues, Number),
             ("max_values", selectMenu.MaxValues, Number),
             ("required", selectMenu.Required, Bool),
@@ -48,13 +49,12 @@ partial class JsonRenderer
         );
     }
 
-    public Result<RenderedComponent> RenderSelectMenuOption(
-        IRendererContext context,
+    public Result<JsonNode> RenderSelectMenuOption(
+        IRenderContext<JsonNode> context,
         SelectMenuOptionComponentNode option,
         ComponentState state,
-        RendererTypingContext? typingContext = null,
         CancellationToken cancellationToken = default
-    ) => Build(
+    ) => Spec(
         context,
         state,
         cancellationToken,
@@ -65,11 +65,10 @@ partial class JsonRenderer
         ("default", option.IsDefault, Bool)
     );
 
-    public Result<RenderedComponent> RenderSelectMenuDefaultValue(
-        IRendererContext context,
+    public Result<JsonNode> RenderSelectMenuDefaultValue(
+        IRenderContext<JsonNode> context,
         SelectMenuDefaultValueComponentNode option,
         DefaultValueState state,
-        RendererTypingContext? typingContext = null,
         CancellationToken cancellationToken = default
     )
     {
@@ -81,13 +80,13 @@ partial class JsonRenderer
             _ => null
         };
         
-        if(type is null) return Result<RenderedComponent>.Empty;
+        if(type is null) return Result<JsonNode>.Empty;
 
-        return Build(
+        return Spec(
             context,
             state,
             cancellationToken,
-            [("type", type)],
+            ("type", type),
             ("id", option.Id, String)
         );
     }

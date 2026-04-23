@@ -14,7 +14,7 @@ partial class TextControlElement
         public override string Name => "Bold";
 
         public override Result<TextControl> Render(
-            IRendererContext context,
+            IRenderContext context,
             TextControlOptions options,
             CancellationToken token = default
         ) => Join(RenderChildren(context, options, token))

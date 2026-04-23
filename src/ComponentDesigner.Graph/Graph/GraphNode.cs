@@ -105,11 +105,10 @@ public sealed class GraphNode : IEquatable<GraphNode>, ISourceLocatable
         Flags
     );
 
-    public Result<RenderedComponent> Render(
-        ComponentEmitContext context,
-        ComponentOptions options = default,
+    public Result<TRender> Render<TRender>(
+        IRenderContext<TRender> context,
         CancellationToken cancellationToken = default
-    ) => _result ??= Component.Render(context, State, options, cancellationToken);
+    ) => Component.Render(context, State, cancellationToken);
 
     public bool Equals(GraphNode? other)
     {

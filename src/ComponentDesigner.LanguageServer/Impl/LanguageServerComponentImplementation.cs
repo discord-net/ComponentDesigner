@@ -10,9 +10,6 @@ public sealed class LanguageServerComponentImplementation : IComponentImplementa
     public static readonly LanguageServerComponentImplementation Instance = new();
 
     public string Name => "LSP";
-
-    public IComponentRenderer Renderer { get; }
-
     public ITextControlProvider TextControlProvider  { get; }
 
     public IComponentTypingProvider? ComponentTypingProvider  { get; }
@@ -21,13 +18,6 @@ public sealed class LanguageServerComponentImplementation : IComponentImplementa
 
     public LanguageServerComponentImplementation()
     {
-        Renderer = new JsonRenderer(
-            new()
-            {
-                IndentSize = 4,
-                WriteIndented = true
-            }
-        );
         TextControlProvider = DefaultTextControlProvider.Instance;
         ComponentTypingProvider = null;
         ComponentExtensionProvider = null;

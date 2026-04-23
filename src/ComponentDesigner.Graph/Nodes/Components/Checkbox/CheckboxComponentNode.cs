@@ -36,11 +36,4 @@ public sealed class CheckboxComponentNode : ComponentNode
         IComponentContext context, ComponentState state, IDiagnosticBag bag,
         CancellationToken cancellationToken = default
     ) => Validators.ValidateCheckbox(context, this, state, bag);
-
-    public override Result<RenderedComponent> Render(
-        ComponentEmitContext context,
-        ComponentState state,
-        ComponentOptions options,
-        CancellationToken cancellationToken = default
-    ) => context.Renderer.RenderCheckbox(context, this, state, options.TypingContext, cancellationToken);
 }

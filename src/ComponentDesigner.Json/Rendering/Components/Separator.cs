@@ -13,17 +13,16 @@ partial class JsonRenderer
         ("large", 2)
     );
 
-    public Result<RenderedComponent> RenderSeparator(
-        IRendererContext context,
+    public Result<JsonNode> RenderSeparator(
+        IRenderContext<JsonNode> context,
         SeparatorComponentNode separator,
         ComponentState state,
-        RendererTypingContext? typingContext = null,
         CancellationToken cancellationToken = default
-    ) => Build(
+    ) => Spec(
         context,
         state,
         cancellationToken,
-        [("type", SEPARATOR_TYPE)],
+        ("type", SEPARATOR_TYPE),
         ("id", separator.Id, Number),
         ("divider", separator.Divider, Bool),
         ("spacing", separator.Spacing, SeparatorSpacingEnum)

@@ -1,4 +1,6 @@
-﻿using ComponentDesigner;
+﻿using System.Text.Json;
+using ComponentDesigner;
+using ComponentDesigner.Json;
 using ComponentDesigner.Parser;
 using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
@@ -12,8 +14,6 @@ namespace Discord.ComponentDesigner.LanguageServer.CX;
 
 public sealed class ComponentDocument
 {
-    //public const bool FORCE_NO_INCREMENTAL = true;
-
     public DocumentUri Uri { get; }
 
     public int? Version { get; }
@@ -84,9 +84,19 @@ public sealed class ComponentDocument
             );
     }
 
+    private static readonly JsonSerializerOptions JsonSerializerOptions = new()
+    {
+        WriteIndented = true,
+        IndentSize = 4
+    };
+
     public Result<string> GetJson(
         CancellationToken cancellationToken
-    ) => GetGraph(cancellationToken).Emit(LSPCompilationProvider.Instance, cancellationToken);
+    ) => GetGraph(cancellationToken).Emit(
+        LSPCompilationProvider.Instance,
+        JsonRenderer.Instance,
+        cancellationToken
+    ).Map(json => json.ToJsonString(JsonSerializerOptions));
 
     public CXComponentGraph GetGraph(CancellationToken cancellationToken)
     {
@@ -132,7 +142,7 @@ public sealed class ComponentDocument
 
         return [..diagnostics.Distinct().Select(ConvertDiagnostic)];
     }
-    
+
     public LSPDiagnostic ConvertDiagnostic(Diagnostic diagnostic)
         => new()
         {

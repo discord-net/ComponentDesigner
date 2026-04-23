@@ -22,7 +22,7 @@ public abstract partial class TextControlElement(
     }
 
     public abstract Result<TextControl> Render(
-        IRendererContext context,
+        IRenderContext context,
         TextControlOptions options,
         CancellationToken cancellationToken = default
     );
@@ -114,10 +114,10 @@ public abstract partial class TextControlElement(
                     if (!context.TextControlProvider.TryGetTextControlFactory(element, out var factory))
                     {
                         if (!isRoot) bag.Add(Diagnostic.UnknownTextControlElement(element).At(element));
-                        
+
                         return;
                     }
-                    
+
                     results.Add(factory(element, CreateChildren(element)));
                     break;
 
@@ -198,7 +198,7 @@ public abstract partial class TextControlElement(
                         continue;
                     }
                 }
-                
+
                 if (count > 0)
                 {
                     result = Math.Max(result, count);
@@ -206,14 +206,14 @@ public abstract partial class TextControlElement(
                     count = 0;
                 }
             }
-            
+
             return Math.Max(result, count);
         }
     }
 
     protected static bool TryGetTextBasedValue(
+        IRenderContext context,
         CXValue? value,
-        IComponentContext context,
         TextControlOptions options,
         [MaybeNullWhen(false)] out string result
     )
@@ -225,11 +225,17 @@ public abstract partial class TextControlElement(
                 return true;
 
             case CXValue.Interpolation interpolation:
-                result =
-                    $"{options.StartInterpolationMarker}{
-                        context.GetReferenceToDesignerValue(interpolation)
-                    }{options.StartInterpolationMarker}";
-                return true;
+            {
+                result = options
+                    .InterpolationRenderer(
+                        context,
+                        context.GetInterpolationInfo(interpolation),
+                        out _
+                    )
+                    .GetValueOrDefault();
+
+                return result is not null;
+            }
 
             case CXValue.Multipart multipart:
             {
@@ -244,9 +250,21 @@ public abstract partial class TextControlElement(
                             break;
 
                         case CXTokenKind.Interpolation when part.InterpolationIndex is { } index:
-                            sb.Append(options.StartInterpolationMarker)
-                                .Append(context.GetReferenceToDesignerValue(index))
-                                .Append(options.EndInterpolationMarker);
+                            var render = options
+                                .InterpolationRenderer(
+                                    context,
+                                    context.GetInterpolationInfo(index),
+                                    out var _
+                                )
+                                .GetValueOrDefault();
+
+                            if (render is null)
+                            {
+                                result = null;
+                                return false;
+                            }
+
+                            sb.Append(render);
                             break;
 
                         default:
@@ -307,13 +325,13 @@ public abstract partial class TextControlElement(
     }
 
     protected Result<string> RenderChildrenWithoutNewLines(
-        IRendererContext context,
+        IRenderContext context,
         TextControlOptions options,
         CancellationToken cancellationToken = default
     ) => RenderChildren(context, options, cancellationToken).Map(RenderChildrenWithoutNewLines);
 
     protected Result<EquatableArray<TextControl>> RenderChildren(
-        IRendererContext context,
+        IRenderContext context,
         TextControlOptions options,
         CancellationToken cancellationToken = default
     )
