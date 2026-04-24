@@ -91,9 +91,9 @@ public sealed class ContainerTests(ITestOutputHelper output) : BaseDiscordNetCom
             Emits(
                 """
                 new global::Discord.ContainerBuilder(
-                    id: designer.GetValue<int>(0),
-                    accentColor: designer.GetValue<global::Discord.Color>(1),
-                    isSpoiler: designer.GetValue<bool>(2),
+                    id: syntax.GetValue<int>(0),
+                    accentColor: syntax.GetValue<global::Discord.Color>(1),
+                    isSpoiler: syntax.GetValue<bool>(2),
                     components: 
                     [
                         new global::Discord.SeparatorBuilder()
@@ -167,6 +167,7 @@ public sealed class ContainerTests(ITestOutputHelper output) : BaseDiscordNetCom
                             components: 
                             [
                                 new global::Discord.ButtonBuilder(
+                                    style: global::Discord.ButtonStyle.Primary,
                                     label: "label",
                                     customId: "b1"
                                 )

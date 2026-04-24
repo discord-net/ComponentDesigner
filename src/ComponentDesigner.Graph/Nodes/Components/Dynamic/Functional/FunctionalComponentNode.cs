@@ -28,7 +28,6 @@ public sealed class FunctionalComponentNode : ComponentNode<FunctionalState>, ID
                 .CreateFromSymbol(
                     context,
                     symbol,
-                    context.GraphNode,
                     element,
                     diagnostics,
                     cancellationToken

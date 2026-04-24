@@ -18,7 +18,7 @@ partial class JsonRenderer
         cancellationToken,
         ("media", mediaGalleryItem.Media, UnfurledMediaItem),
         ("description", mediaGalleryItem.Description, String),
-        ("spoiler", mediaGalleryItem.IsSpoiler, Bool)
+        ("spoiler", mediaGalleryItem.Spoiler, Bool)
     );
 
     public Result<JsonNode> RenderMediaGallery(

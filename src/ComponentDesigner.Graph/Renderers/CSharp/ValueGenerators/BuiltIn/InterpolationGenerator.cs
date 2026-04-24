@@ -2,14 +2,14 @@
 using ComponentDesigner.Parser;
 using ComponentDesigner.Util;
 
-namespace ComponentDesigner;
+namespace ComponentDesigner.CSharp;
 
 public sealed class InterpolationGenerator(ICSharpTypeSymbol symbol) : CSharpValueGenerator
 {
     public static InterpolationGenerator Get(ICSharpTypeSymbol symbol)
         => WeakMemoize.Of(symbol, static (s) => new InterpolationGenerator(s));
 
-    protected override Result<string> RenderInterpolation(
+    protected override Result<CSharpRender> RenderInterpolation(
         IRenderContext context,
         ComponentPropertyValue.Interpolation interpolationValue,
         IInterpolationInfo interpolationInfo,
@@ -32,6 +32,10 @@ public sealed class InterpolationGenerator(ICSharpTypeSymbol symbol) : CSharpVal
                 .At(interpolationValue);
         }
 
-        return context.GetReferenceToDesignerValue(interpolationInfo, interpolationInfo.Symbol);
+        return new CSharpRender(
+            interpolationInfo.TextSpan,
+            context.GetReferenceToDesignerValue(interpolationInfo, interpolationInfo.Symbol),
+            interpolationInfo.Symbol
+        );
     }
 }

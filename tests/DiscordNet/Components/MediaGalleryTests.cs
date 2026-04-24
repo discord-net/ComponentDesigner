@@ -166,10 +166,10 @@ public sealed class MediaGalleryTests(ITestOutputHelper output) : BaseDiscordNet
                     [
                         new global::Discord.MediaGalleryItemProperties(
                             media: new global::Discord.UnfurledMediaItemProperties(
-                                designer.GetValue<global::System.Uri>(0).ToString()
+                                syntax.GetValue<global::System.Uri>(0).ToString()
                             )
                         ),
-                        designer.GetValue<global::Discord.MediaGalleryItemProperties>(1)
+                        syntax.GetValue<global::Discord.MediaGalleryItemProperties>(1)
                     ]
                 )
                 """
@@ -214,7 +214,7 @@ public sealed class MediaGalleryTests(ITestOutputHelper output) : BaseDiscordNet
                         ),
                         new global::Discord.MediaGalleryItemProperties(
                             media: new global::Discord.UnfurledMediaItemProperties(
-                                designer.GetValue<global::System.Uri>(0).ToString()
+                                syntax.GetValue<global::System.Uri>(0).ToString()
                             )
                         ),
                         new global::Discord.MediaGalleryItemProperties(
@@ -224,7 +224,7 @@ public sealed class MediaGalleryTests(ITestOutputHelper output) : BaseDiscordNet
                         ),
                         new global::Discord.MediaGalleryItemProperties(
                             media: new global::Discord.UnfurledMediaItemProperties(
-                                designer.GetValue<global::System.Uri>(1).ToString()
+                                syntax.GetValue<global::System.Uri>(1).ToString()
                             )
                         )
                     ]

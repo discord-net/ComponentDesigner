@@ -10,7 +10,7 @@ public sealed class FileComponentNode : ComponentNode
 
     public ComponentProperty Id { get; }
     public ComponentProperty File { get; }
-    public ComponentProperty IsSpoiler { get; }
+    public ComponentProperty Spoiler { get; }
 
     public FileComponentNode()
     {
@@ -22,7 +22,7 @@ public sealed class FileComponentNode : ComponentNode
                 aliases: ["url", "media"],
                 kind: ComponentPropertyValueKind.SyntaxValue
             ),
-            IsSpoiler = new(
+            Spoiler = new(
                 "spoiler",
                 isOptional: true,
                 requiresValue: false,

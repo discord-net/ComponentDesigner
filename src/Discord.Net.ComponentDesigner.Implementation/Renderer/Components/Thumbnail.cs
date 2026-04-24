@@ -1,32 +1,24 @@
 ﻿using ComponentDesigner;
+using ComponentDesigner.CSharp;
 using ComponentDesigner.Nodes;
 
 namespace Discord;
 
 partial class DiscordNetRenderer
 {
-    public override Result<RenderedComponent> RenderThumbnail(
-        IRendererContext context,
+    public static Result<CSharpRender> RenderThumbnail(
+        IRenderContext<CSharpRender> context,
         ThumbnailComponentNode thumbnail,
         ComponentState state,
-        RendererTypingContext? typingContext = null,
-        CancellationToken cancellationToken = default
-    ) => context
-        .CompilationProvider
-        .ThumbnailBuilder(state.TextSpan, cancellationToken)
-        .Combine(
-            RenderPropertiesAsParameters(
-                context, state, cancellationToken,
-                ("id", thumbnail.Id, CSharpValueGenerator.NullableInt32),
-                ("media", thumbnail.Media, CSharpValueGenerator.UnfurledMediaItemProperties),
-                ("description", thumbnail.Description, CSharpValueGenerator.NullableString),
-                ("isSpoiler", thumbnail.IsSpoiler, CSharpValueGenerator.Boolean)
-            ),
-            (symbol, parameters) => new RenderedComponent(
-                $"new {symbol.ToQualifiedName()}({parameters})",
-                symbol
-            )
-        )
-        .Map(ApplyRefParameter(context, state, cancellationToken))
-        .Map(GetConverterFromOptions(context, state, typingContext, cancellationToken));
+        CancellationToken cancellationToken
+    ) => Construct(
+        context,
+        state,
+        context.CompilationProvider.ThumbnailBuilder,
+        cancellationToken,
+        ("id", thumbnail.Id, CSharpValueGenerator.NullableInt32),
+        ("media", thumbnail.Media, CSharpValueGenerator.UnfurledMediaItemProperties),
+        ("description", thumbnail.Description, CSharpValueGenerator.NullableString),
+        ("isSpoiler", thumbnail.Spoiler, CSharpValueGenerator.NullableBoolean)
+    );
 }

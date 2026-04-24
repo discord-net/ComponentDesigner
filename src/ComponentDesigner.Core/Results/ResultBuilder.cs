@@ -69,4 +69,7 @@ public sealed class ResultBuilder<T> : IDisposable, IDiagnosticBag
     IReadOnlyList<Diagnostic> IDiagnosticBag.ToCollection() => _diagnostics?.ToArray() ?? [];
     int IDiagnosticBag.Count => _diagnostics?.Count ?? 0;
 
+    int IDiagnosticBag.Remove(DiagnosticDescriptor descriptor)
+        => _diagnostics?.RemoveAll(x => x.Descriptor == descriptor) ?? 0;
+
 }

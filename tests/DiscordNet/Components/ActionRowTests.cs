@@ -45,6 +45,7 @@ public sealed class ActionRowTests(ITestOutputHelper output) : BaseDiscordNetCom
                     components: 
                     [
                         new global::Discord.ButtonBuilder(
+                            style: global::Discord.ButtonStyle.Primary,
                             label: "foo",
                             customId: "foo"
                         )

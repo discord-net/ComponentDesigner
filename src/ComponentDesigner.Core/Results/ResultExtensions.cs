@@ -10,7 +10,7 @@ public static class ResultExtensions
 
     extension<T>(IEnumerable<Result<T>> collection)
     {
-        public Result<IReadOnlyList<T>> FlattenAll()
+        public Result<IReadOnlyList<T>> Flatten()
         {
             var isAny = false;
             var isAll = true;
@@ -28,20 +28,6 @@ public static class ResultExtensions
             if (!isAny) return Result<IReadOnlyList<T>>.FromValue([]);
 
             return isAll ? new Result<IReadOnlyList<T>>([..parts], diag) : new(diag);
-        }
-
-        public Result<IReadOnlyList<T>> Flatten()
-        {
-            var parts = new List<T>();
-            var diag = new List<Diagnostic>();
-
-            foreach (var result in collection)
-            {
-                if (result.HasValue) parts.Add(result.Value);
-                diag.AddRange(result.Diagnostics);
-            }
-
-            return new Result<IReadOnlyList<T>>([..parts], diag);
         }
     }
 
@@ -112,6 +98,35 @@ public static class ResultExtensions
             }
 
             return new Result<V>([..self.Diagnostics, ..other.Diagnostics]);
+        }
+        
+        public Result<V> Combine<U, V>(Func<T, Result<U>> otherFactory, Func<T, U, Result<V>> mapper)
+        {
+            if (!self.HasValue)
+                return new(self.Diagnostics);
+
+            var other = otherFactory(self.Value);
+
+            if (!other.HasValue)
+                return new([..self.Diagnostics, ..other.Diagnostics]);
+
+            return mapper(self.Value, other.Value).PrefaceDiagnostics([..self.Diagnostics, ..other.Diagnostics]);
+        }
+        
+        public Result<V> Combine<U, V>(Func<T, Result<U>> otherFactory, Func<T, U, V> mapper)
+        {
+            if (!self.HasValue)
+                return new(self.Diagnostics);
+
+            var other = otherFactory(self.Value);
+
+            if (!other.HasValue)
+                return new([..self.Diagnostics, ..other.Diagnostics]);
+
+            return new(
+                mapper(self.Value, other.Value),
+                [..self.Diagnostics, ..other.Diagnostics]
+            );
         }
 
         public static Result<T> FromValue(T value)

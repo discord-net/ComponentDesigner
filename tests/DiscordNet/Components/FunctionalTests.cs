@@ -24,7 +24,7 @@ public sealed class FunctionalTests(ITestOutputHelper output) : BaseDiscordNetCo
         {
             Component<FunctionalComponentNode>();
 
-            Emits("designer.GetValue<global::TestClass.TestInstanceComponent>(0).MyFunc()");
+            Emits("syntax.GetValue<global::TestClass.TestInstanceComponent>(0).MyFunc()");
         }
     }
 
@@ -234,7 +234,7 @@ public sealed class FunctionalTests(ITestOutputHelper output) : BaseDiscordNetCo
             Emits(
                 """
                 global::TestClass.MyFunc(
-                    foo: designer.GetValue<global::Discord.IMessageComponentBuilder>(0)
+                    foo: syntax.GetValue<global::Discord.IMessageComponentBuilder>(0)
                 )
                 """
             );

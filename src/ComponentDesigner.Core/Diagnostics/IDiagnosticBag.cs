@@ -10,6 +10,8 @@ public interface IDiagnosticBag
     void Add(Diagnostic diagnostic);
     void Add(params IEnumerable<Diagnostic> diagnostics);
 
+    int Remove(DiagnosticDescriptor diagnostic);
+
     IReadOnlyList<Diagnostic> ToCollection();
 }
 
@@ -60,6 +62,13 @@ public sealed class PooledDiagnosticBag : IDiagnosticBag, IDisposable
         {
             Add(diagnostic);
         }
+    }
+
+    public int Remove(DiagnosticDescriptor descriptor)
+    {
+        if (_diagnostics is null) return 0;
+
+        return _diagnostics.RemoveAll(x => x.Descriptor == descriptor);
     }
 
     public void Dispose()

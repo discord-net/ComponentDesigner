@@ -17,4 +17,18 @@ public abstract class BaseDiscordNetComponentTest(ITestOutputHelper output) : Ba
         cxModel,
         options ?? GeneratorGraphOptions.Default
     );
+
+    protected override Result<string> EmitGraph(
+        CXComponentGraph graph,
+        ICompilationProvider compilationProvider,
+        CancellationToken cancellationToken = default
+    ) => graph
+        .Emit(
+            compilationProvider,
+            DiscordNetRenderer.Instance,
+            cancellationToken
+        )
+        .Map(renders =>
+            string.Join($",{Environment.NewLine}", renders.Select(x => x.Source))
+        );
 }

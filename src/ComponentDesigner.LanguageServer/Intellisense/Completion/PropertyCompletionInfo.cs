@@ -70,12 +70,12 @@ public sealed record PropertyCompletionInfo(
                     return true;
                 
                 case ButtonComponentNode button when property == button.Disabled:
-                case ContainerComponentNode container when property == container.IsSpoiler:
-                case FileComponentNode file when property == file.IsSpoiler:
+                case ContainerComponentNode container when property == container.Spoiler:
+                case FileComponentNode file when property == file.Spoiler:
                 case FileUploadComponentNode fileUpload when property == fileUpload.Required:
                 case SeparatorComponentNode separator when property == separator.Divider:
                 case TextInputComponentNode textInput when property == textInput.Required:
-                case ThumbnailComponentNode thumbnail when property == thumbnail.IsSpoiler:
+                case ThumbnailComponentNode thumbnail when property == thumbnail.Spoiler:
                     autoFill = Choices("true", "false");
                     kind = AutoFillKind.Choices;
                     return true;

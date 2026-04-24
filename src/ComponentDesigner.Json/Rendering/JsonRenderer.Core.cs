@@ -53,7 +53,7 @@ partial class JsonRenderer
         
         public static implicit operator PropertySpec(
             (string, ComponentProperty, PropertySpecRenderer) tuple
-        ) => new(tuple.Item1, tuple.Item2, new(tuple.Item3));
+        ) => new(tuple.Item1, tuple.Item2, tuple.Item3);
 
         public static implicit operator PropertySpec(
             (string, ComponentProperty, string) tuple
@@ -183,7 +183,7 @@ partial class JsonRenderer
     ) => propertyValue
         .AsFlattened
         .Select(x => RenderSingleComponent(context, x, cancellationToken))
-        .FlattenAll()
+        .Flatten()
         .Map(JsonNode (components) =>
         {
             var arr = new JsonArray();

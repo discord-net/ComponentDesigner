@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using ComponentDesigner.CSharp;
 using ComponentDesigner.Nodes;
 using ComponentDesigner.Parser;
 
@@ -683,6 +684,16 @@ public static class DiagnosticFactory
             DiagnosticSeverity.Error,
             $"'{valueKind}' is not a valid value for property '{property}'"
         );
+        
+        public static DiagnosticDescriptor InvalidPropertyValueKind(
+            string actual,
+            string expected
+        ) => Create(
+            DiagnosticSource.Graph,
+            DiagnosticCode.InvalidPropertyValue,
+            DiagnosticSeverity.Error,
+            $"'{actual}' doesn't match the expected property value of '{expected}'"
+        );
 
         public static DiagnosticDescriptor InvalidPropertyValue(
             ComponentPropertyValue propertyValue
@@ -692,16 +703,16 @@ public static class DiagnosticFactory
             ComponentPropertyValue propertyValue,
             ComponentPropertyValueKind expected
         ) => InvalidPropertyValue(propertyValue, expected.ReadableName);
+        
+        public static DiagnosticDescriptor InvalidPropertyValue(
+            ComponentPropertyValueKind actual,
+            ComponentPropertyValueKind expected
+        ) => InvalidPropertyValueKind(actual.ReadableName, expected.ReadableName);
 
         public static DiagnosticDescriptor InvalidPropertyValue(
             ComponentPropertyValue propertyValue,
             string expected
-        ) => Create(
-            DiagnosticSource.Graph,
-            DiagnosticCode.InvalidPropertyValue,
-            DiagnosticSeverity.Error,
-            $"'{propertyValue.Kind.ReadableName}' doesn't match the expected property value of '{expected}'"
-        );
+        ) => InvalidPropertyValueKind(propertyValue.Kind.ReadableName, expected);
 
         public static DiagnosticDescriptor TooManyPropertyValues(
             ComponentProperty property

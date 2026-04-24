@@ -1,6 +1,7 @@
 ﻿using System.Text.Json;
 using ComponentDesigner;
 using ComponentDesigner.Json;
+using Microsoft.CodeAnalysis;
 using UnitTests.Graph.Components;
 using Xunit.Abstractions;
 
@@ -13,15 +14,29 @@ public abstract class BaseJsonComponentTest(ITestOutputHelper output) : BaseComp
         ICXModel cxModel,
         IGraphOptions? options
     ) => new(
-        new JsonComponentImplementation(
-            new JsonSerializerOptions()
-            {
-                WriteIndented = true,
-                IndentSize = 4
-            }
-        ),
+        JsonComponentImplementation.Instance,
         compilationProvider,
         cxModel,
         options ?? GeneratorGraphOptions.Default
     );
+
+    protected override Result<string> EmitGraph(
+        CXComponentGraph graph,
+        ICompilationProvider compilationProvider,
+        CancellationToken cancellationToken = default
+    ) => graph
+        .Emit(
+            compilationProvider,
+            JsonRenderer.Instance,
+            cancellationToken
+        )
+        .Map(node => node
+            .ToJsonString(
+                new JsonSerializerOptions()
+                {
+                    WriteIndented = true,
+                    IndentSize = 4
+                }
+            )
+        );
 }

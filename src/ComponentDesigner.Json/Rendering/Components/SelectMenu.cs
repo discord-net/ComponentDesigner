@@ -62,7 +62,7 @@ partial class JsonRenderer
         ("value", option.Value, String),
         ("description", option.Description, String),
         ("emoji", option.Emoji, Emoji),
-        ("default", option.IsDefault, Bool)
+        ("default", option.Default, Bool)
     );
 
     public Result<JsonNode> RenderSelectMenuDefaultValue(

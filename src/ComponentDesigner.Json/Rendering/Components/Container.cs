@@ -21,6 +21,6 @@ partial class JsonRenderer
         ("id", container.Id, Number),
         ("components", container.Components, ComponentArray),
         ("accent_color", container.AccentColor, Color),
-        ("spoiler", container.IsSpoiler, Bool)
+        ("spoiler", container.Spoiler, Bool)
     );
 }

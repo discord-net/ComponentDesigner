@@ -55,7 +55,7 @@ public sealed class TextDisplayTests(ITestOutputHelper output) : BaseDiscordNetC
             Emits(
                 """
                 new global::Discord.TextDisplayBuilder(
-                    content: $"hello {designer.GetValueAsString(0)}"
+                    content: $"hello {syntax.GetValueAsString(0)}"
                 )
                 """
             );
@@ -245,8 +245,8 @@ public sealed class TextDisplayTests(ITestOutputHelper output) : BaseDiscordNetC
                 new global::Discord.TextDisplayBuilder(
                     content: 
                     $"""
-                     {designer.GetValueAsString(0)}
-                     {designer.GetValueAsString(1)}
+                     {syntax.GetValueAsString(0)}
+                     {syntax.GetValueAsString(1)}
                      """
                 )
                 """"

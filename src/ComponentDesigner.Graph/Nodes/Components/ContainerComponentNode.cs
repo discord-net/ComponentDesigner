@@ -12,7 +12,7 @@ public sealed class ContainerComponentNode : ComponentNode
 
     public ComponentProperty Id { get; }
     public ComponentProperty AccentColor { get; }
-    public ComponentProperty IsSpoiler { get; }
+    public ComponentProperty Spoiler { get; }
     public ComponentProperty Components { get; }
 
     public ContainerComponentNode()
@@ -26,7 +26,7 @@ public sealed class ContainerComponentNode : ComponentNode
                 aliases: ["color", "accent"],
                 kind: ComponentPropertyValueKind.SyntaxValue
             ),
-            IsSpoiler = new(
+            Spoiler = new(
                 name: "spoiler",
                 isOptional: true,
                 requiresValue: false,

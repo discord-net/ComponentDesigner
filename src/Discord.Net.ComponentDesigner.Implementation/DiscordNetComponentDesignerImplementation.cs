@@ -11,13 +11,9 @@ public sealed partial class DiscordNetComponentDesignerImplementation :
     
     public string Name => "Discord.Net";
 
-    public IComponentRenderer Renderer { get; } = new DiscordNetRenderer();
-
     public ITextControlProvider TextControlProvider => DefaultTextControlProvider.Instance;
 
     public IComponentTypingProvider ComponentTypingProvider { get; } = new ComponentTyping();
 
     public IComponentExtensionProvider? ComponentExtensionProvider => ComponentExtensions.Instance;
-
-
 }

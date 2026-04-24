@@ -1,7 +1,7 @@
 ﻿using ComponentDesigner.Nodes;
 using ComponentDesigner.Util;
 
-namespace ComponentDesigner;
+namespace ComponentDesigner.CSharp;
 
 public sealed class NumericGenerator<TNumber> : CSharpValueGenerator
     where TNumber : struct
@@ -10,6 +10,7 @@ public sealed class NumericGenerator<TNumber> : CSharpValueGenerator
 
     private readonly bool _allowNullable;
     private readonly Parser _parser;
+    private readonly StaticTypeSymbolFactory<CXTextSpan> _symbolFactory;
 
     private NumericGenerator(
         bool allowNullable,
@@ -18,8 +19,25 @@ public sealed class NumericGenerator<TNumber> : CSharpValueGenerator
     {
         _allowNullable = allowNullable;
         _parser = parser;
+
+        _symbolFactory = GetSymbolFactory() ??
+                         throw new InvalidOperationException($"{typeof(TNumber)} is not a valid numeric type");
     }
-    
+
+    private static StaticTypeSymbolFactory<CXTextSpan>? GetSymbolFactory()
+    {
+        if (typeof(TNumber) == typeof(byte)) return CompilationProviderExtension.UInt8;
+        if (typeof(TNumber) == typeof(sbyte)) return CompilationProviderExtension.Int8;
+        if (typeof(TNumber) == typeof(ushort)) return CompilationProviderExtension.UInt16;
+        if (typeof(TNumber) == typeof(short)) return CompilationProviderExtension.Int16;
+        if (typeof(TNumber) == typeof(uint)) return CompilationProviderExtension.UInt32;
+        if (typeof(TNumber) == typeof(int)) return CompilationProviderExtension.Int32;
+        if (typeof(TNumber) == typeof(ulong)) return CompilationProviderExtension.UInt64;
+        if (typeof(TNumber) == typeof(long)) return CompilationProviderExtension.Int64;
+
+        return null;
+    }
+
     public static NumericGenerator<TNumber> Get(
         bool allowNullable,
         Parser parser
@@ -28,73 +46,73 @@ public sealed class NumericGenerator<TNumber> : CSharpValueGenerator
         a => new NumericGenerator<TNumber>(a, parser)
     );
 
-    private static ICSharpTypeSymbol? GetSymbol(IRenderContext context)
-    {
-        if (typeof(TNumber) == typeof(byte)) return context.CompilationProvider.UInt8;
-        if (typeof(TNumber) == typeof(sbyte)) return context.CompilationProvider.Int8;
-        if (typeof(TNumber) == typeof(ushort)) return context.CompilationProvider.UInt16;
-        if (typeof(TNumber) == typeof(short)) return context.CompilationProvider.Int16;
-        if (typeof(TNumber) == typeof(uint)) return context.CompilationProvider.UInt32;
-        if (typeof(TNumber) == typeof(int)) return context.CompilationProvider.Int32;
-        if (typeof(TNumber) == typeof(ulong)) return context.CompilationProvider.UInt64;
-        if (typeof(TNumber) == typeof(long)) return context.CompilationProvider.Int64;
-
-        return null;
-    }
-    
-    protected override Result<string> RenderLiteral(
+    protected override Result<CSharpRender> RenderLiteral(
         IRenderContext context,
         ComponentPropertyValue.Literal literalValue,
         string literal,
         CancellationToken cancellationToken = default
-    ) => FromText(literal.SourcedAt(literalValue));
+    ) => _symbolFactory(context.CompilationProvider, literalValue.TextSpan, cancellationToken)
+        .Map(symbol => FromText(symbol, literal.SourcedAt(literalValue)));
 
-    protected override Result<string> RenderInterpolation(
+    protected override Result<CSharpRender> RenderInterpolation(
         IRenderContext context,
         ComponentPropertyValue.Interpolation interpolationValue,
         IInterpolationInfo interpolationInfo,
         CancellationToken cancellationToken = default
-    )
-    {
-        if (
-            interpolationInfo.ConstantValue is { IsSpecified: true, Value: { } constant } &&
-            _parser(constant.ToString(), out var number)
-        )
+    ) => _symbolFactory(context.CompilationProvider, interpolationInfo.TextSpan, cancellationToken)
+        .Map(Result<CSharpRender> (symbol) =>
         {
-            return number.ToString();
-        }
-
-        var symbol = GetSymbol(context);
-        
-        if (
-            context.CompilationProvider.HasImplicitConversionBetween(
-                interpolationInfo.Symbol,
-                symbol,
-                cancellationToken
+            if (
+                interpolationInfo.ConstantValue is { IsSpecified: true, Value: { } constant } &&
+                _parser(constant.ToString(), out var number)
             )
-            ||
-            (
-                _allowNullable &&
-                interpolationInfo.Symbol.IsNullableTypeOf(symbol)
-            )
-        )
-        {
-            return context.GetReferenceToDesignerValue(interpolationInfo, interpolationInfo.Symbol);
-        }
+            {
+                return new CSharpRender(
+                    interpolationInfo.TextSpan,
+                    number.ToString(),
+                    symbol
+                );
+            }
 
-        return Diagnostic
-            .TypeMismatch(
-                symbol?.Name ?? typeof(TNumber).Name,
-                interpolationInfo.Symbol!
+            if (
+                context.CompilationProvider.HasImplicitConversionBetween(
+                    interpolationInfo.Symbol,
+                    symbol,
+                    cancellationToken
+                )
+                ||
+                (
+                    _allowNullable &&
+                    interpolationInfo.Symbol.IsNullableTypeOf(symbol)
+                )
             )
-            .At(interpolationValue);
-    }
+            {
+                return new CSharpRender(
+                    interpolationInfo.TextSpan,
+                    context.GetReferenceToDesignerValue(interpolationInfo, interpolationInfo.Symbol),
+                    interpolationInfo.Symbol
+                );
+            }
 
-    private Result<string> FromText(
+            return Diagnostic
+                .TypeMismatch(
+                    symbol?.Name ?? typeof(TNumber).Name,
+                    interpolationInfo.Symbol!
+                )
+                .At(interpolationValue);
+        });
+
+    private Result<CSharpRender> FromText(
+        ICSharpTypeSymbol symbol,
         SourcedValue<string> text
     )
     {
-        if (_parser(text, out var number)) return number.ToString();
+        if (_parser(text, out var number))
+            return new CSharpRender(
+                text.TextSpan,
+                number.ToString(),
+                symbol
+            );
 
         return Diagnostic
             .TypeMismatch(typeof(TNumber).Name, "string")

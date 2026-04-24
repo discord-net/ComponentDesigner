@@ -12,7 +12,7 @@ public sealed class ContainerTests(ITestOutputHelper output) : BaseJsonComponent
             """
             <container
                 id='123'
-                accentColor='red'
+                accentColor='#00ff00'
                 spoiler
             >
                 <separator />
@@ -36,6 +36,7 @@ public sealed class ContainerTests(ITestOutputHelper output) : BaseJsonComponent
                                 "type": 14
                             }
                         ],
+                        "accent_color": 65280,
                         "spoiler": true
                     }
                 ]

@@ -20,7 +20,7 @@ public sealed partial class JsonRenderer : IComponentRenderer<JsonArray, JsonNod
         CancellationToken cancellationToken = default
     ) => graph.RootNodes
         .Select(x => x.Render(context, cancellationToken))
-        .FlattenAll()
+        .Flatten()
         .Map(x =>
         {
             var arr = new JsonArray();

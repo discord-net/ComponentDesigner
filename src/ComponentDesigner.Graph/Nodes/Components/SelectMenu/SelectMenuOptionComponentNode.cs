@@ -12,7 +12,7 @@ public sealed class SelectMenuOptionComponentNode : ComponentNode
     public ComponentProperty Value { get; }
     public ComponentProperty Description { get; }
     public ComponentProperty Emoji { get; }
-    public ComponentProperty IsDefault { get; }
+    public ComponentProperty Default { get; }
 
     public SelectMenuOptionComponentNode()
     {
@@ -37,7 +37,7 @@ public sealed class SelectMenuOptionComponentNode : ComponentNode
                 isOptional: true,
                 kind: ComponentPropertyValueKind.SyntaxValue
             ),
-            IsDefault = new(
+            Default = new(
                 "default",
                 isOptional: true,
                 requiresValue: false,

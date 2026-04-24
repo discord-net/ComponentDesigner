@@ -20,6 +20,6 @@ partial class JsonRenderer
         ("type", FILE_TYPE),
         ("id", file.Id, Number),
         ("file", file.File, UnfurledMediaItem),
-        ("spoiler", file.IsSpoiler, Bool)
+        ("spoiler", file.Spoiler, Bool)
     );
 }

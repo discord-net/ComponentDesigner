@@ -34,4 +34,10 @@ public static partial class cx
         bool? autoRows = null,
         bool? autoTextDisplays = null
     ) => Failed<CXModalComponent>();
+
+    public static RefBox<T> CreateRef<T>(out T value)
+        => RefBox<T>.Create(out value);
+
+    public static RefBox<IMessageComponentBuilder> CreateRef(out IMessageComponentBuilder value)
+        => CreateRef<IMessageComponentBuilder>(out value);
 }

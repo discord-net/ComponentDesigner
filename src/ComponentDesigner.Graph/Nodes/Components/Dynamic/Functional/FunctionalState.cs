@@ -36,7 +36,6 @@ public sealed record FunctionalState : ComponentState
     public static Result<FunctionalState> CreateFromSymbol(
         ComponentNodeInitializationContext initializationContext,
         ICSharpMethodSymbol symbol,
-        GraphNode graphNode,
         CXElement element,
         IDiagnosticBag diagnostics,
         CancellationToken cancellationToken

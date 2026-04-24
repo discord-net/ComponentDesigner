@@ -10,7 +10,7 @@ public sealed class MediaGalleryItemComponentNode : ComponentNode
 
     public ComponentProperty Media { get; }
     public ComponentProperty Description { get; }
-    public ComponentProperty IsSpoiler { get; }
+    public ComponentProperty Spoiler { get; }
 
     public MediaGalleryItemComponentNode()
     {
@@ -26,7 +26,7 @@ public sealed class MediaGalleryItemComponentNode : ComponentNode
                 isOptional: true,
                 kind: ComponentPropertyValueKind.SyntaxValue
             ),
-            IsSpoiler = new(
+            Spoiler = new(
                 "spoiler",
                 isOptional: true,
                 requiresValue: false,

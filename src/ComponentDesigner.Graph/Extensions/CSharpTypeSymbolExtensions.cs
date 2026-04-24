@@ -42,6 +42,13 @@ public static class CSharpTypeSymbolExtensions
 
     extension(ICSharpTypeSymbol? symbol)
     {
+
+        public bool Equals(TypeSymbolFactory<CXTextSpan> factory, CancellationToken cancellationToken = default)
+        {
+            var target = factory(default, cancellationToken).GetValueOrDefault();
+
+            return target is not null && symbol is not null && symbol.Equals(target);
+        }
         
         public bool IsNullableTypeOf(ICSharpTypeSymbol? inner)
             => symbol is not null && (

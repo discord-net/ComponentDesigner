@@ -11,7 +11,7 @@ public sealed class ThumbnailComponentNode : ComponentNode
     public ComponentProperty Id { get; }
     public ComponentProperty Media { get; }
     public ComponentProperty Description { get; }
-    public ComponentProperty IsSpoiler { get; }
+    public ComponentProperty Spoiler { get; }
 
     public ThumbnailComponentNode()
     {
@@ -28,7 +28,7 @@ public sealed class ThumbnailComponentNode : ComponentNode
                 isOptional: true,
                 kind: ComponentPropertyValueKind.SyntaxValue
             ),
-            IsSpoiler = new(
+            Spoiler = new(
                 "spoiler",
                 isOptional: true,
                 requiresValue: false,

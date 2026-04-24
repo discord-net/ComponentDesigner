@@ -184,7 +184,7 @@ public sealed class SelectMenuTests(ITestOutputHelper output) : BaseDiscordNetCo
                             label: "1",
                             value: "1"
                         ),
-                        ..designer.GetValue<global::System.Collections.Generic.IEnumerable<global::Discord.SelectMenuOptionBuilder>>(0),
+                        ..syntax.GetValue<global::System.Collections.Generic.IEnumerable<global::Discord.SelectMenuOptionBuilder>>(0),
                         new global::Discord.SelectMenuOptionBuilder(
                             label: "2",
                             value: "2"

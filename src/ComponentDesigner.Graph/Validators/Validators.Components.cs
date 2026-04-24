@@ -79,15 +79,25 @@ public static partial class Validators
         }
     }
 
+    private ref struct PropertyValidationState
+    {
+        public bool HasReportedRequiresChildren
+            => RequiresOneChild || RequiresAtLeastOneChild;
+        
+        public bool RequiresOneChild;
+        public bool RequiresAtLeastOneChild;
+    }
+    
     public static void ValidateProperties(
         IComponentNode component,
         ComponentState state,
         IDiagnosticBag bag
     )
     {
+        PropertyValidationState validationState = default;
         foreach (var property in state.PropertyInfo.Properties)
         {
-            ValidateProperty(component, state.GetPropertyValue(property), bag);
+            ValidateProperty(component, state.GetPropertyValue(property), bag, ref validationState);
         }
     }
 
@@ -95,6 +105,26 @@ public static partial class Validators
         IComponentNode component,
         ComponentPropertyValue propertyValue,
         IDiagnosticBag bag,
+        bool? isOptionalOverload = null,
+        bool? requiresValueOverload = null
+    )
+    {
+        PropertyValidationState state = default;
+        ValidateProperty(
+            component,
+            propertyValue,
+            bag,
+            ref state,
+            isOptionalOverload,
+            requiresValueOverload
+        );
+    }
+
+    private static void ValidateProperty(
+        IComponentNode component,
+        ComponentPropertyValue propertyValue,
+        IDiagnosticBag bag,
+        ref PropertyValidationState state,
         bool? isOptionalOverload = null,
         bool? requiresValueOverload = null
     )
@@ -126,9 +156,24 @@ public static partial class Validators
 
             if (propertyValue.Property.IsFromChildren)
             {
-                diagnostic = propertyValue.Property.ValueCardinalityOfMany
-                    ? Diagnostic.ComponentRequiresAtLeastOneChild(component)
-                    : Diagnostic.ComponentRequiresOneChild(component);
+                if (propertyValue.Property.ValueCardinalityOfMany)
+                {
+                    if (state.RequiresOneChild)
+                    {
+                        bag.Remove(Diagnostic.ComponentRequiresOneChild(component));
+                        state.RequiresOneChild = false;
+                    }
+
+                    diagnostic = Diagnostic.ComponentRequiresAtLeastOneChild(component);
+                    state.RequiresAtLeastOneChild = true;
+                }
+                else
+                {
+                    if (state.HasReportedRequiresChildren) return;
+
+                    diagnostic = Diagnostic.ComponentRequiresOneChild(component);
+                    state.RequiresOneChild = true;
+                }
             }
             else
             {

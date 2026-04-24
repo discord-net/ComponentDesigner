@@ -58,15 +58,7 @@ partial class Validators
         {
             var components = state.GetPropertyValue(section.Components);
 
-            if (components.IsNone)
-            {
-                bag.Add(
-                    Diagnostic
-                        .ComponentRequiresAtLeastOneChild(section)
-                        .At(state.TextSpan)
-                );
-                return;
-            }
+            if (components.IsNone) return;
 
             if (components is not ComponentPropertyValue.Many many)
             {

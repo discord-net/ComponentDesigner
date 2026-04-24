@@ -75,14 +75,17 @@ public sealed class AutoActionRowTests(ITestOutputHelper output) : BaseDiscordNe
                             components: 
                             [
                                 new global::Discord.ButtonBuilder(
+                                    style: global::Discord.ButtonStyle.Primary,
                                     label: "2",
                                     customId: "2"
                                 ),
                                 new global::Discord.ButtonBuilder(
+                                    style: global::Discord.ButtonStyle.Primary,
                                     label: "3",
                                     customId: "3"
                                 ),
                                 new global::Discord.ButtonBuilder(
+                                    style: global::Discord.ButtonStyle.Primary,
                                     label: "4",
                                     customId: "4"
                                 )
@@ -110,10 +113,12 @@ public sealed class AutoActionRowTests(ITestOutputHelper output) : BaseDiscordNe
                             components: 
                             [
                                 new global::Discord.ButtonBuilder(
+                                    style: global::Discord.ButtonStyle.Primary,
                                     label: "7",
                                     customId: "7"
                                 ),
                                 new global::Discord.ButtonBuilder(
+                                    style: global::Discord.ButtonStyle.Primary,
                                     label: "8",
                                     customId: "8"
                                 )
@@ -268,6 +273,7 @@ public sealed class AutoActionRowTests(ITestOutputHelper output) : BaseDiscordNe
                             components: 
                             [
                                 new global::Discord.ButtonBuilder(
+                                    style: global::Discord.ButtonStyle.Primary,
                                     label: "abc",
                                     customId: "abc"
                                 )
@@ -322,14 +328,17 @@ public sealed class AutoActionRowTests(ITestOutputHelper output) : BaseDiscordNe
                             components: 
                             [
                                 new global::Discord.ButtonBuilder(
+                                    style: global::Discord.ButtonStyle.Primary,
                                     label: "1",
                                     customId: "1"
                                 ),
                                 new global::Discord.ButtonBuilder(
+                                    style: global::Discord.ButtonStyle.Primary,
                                     label: "2",
                                     customId: "2"
                                 ),
                                 new global::Discord.ButtonBuilder(
+                                    style: global::Discord.ButtonStyle.Primary,
                                     label: "3",
                                     customId: "3"
                                 )
@@ -408,22 +417,27 @@ public sealed class AutoActionRowTests(ITestOutputHelper output) : BaseDiscordNe
                             components: 
                             [
                                 new global::Discord.ButtonBuilder(
+                                    style: global::Discord.ButtonStyle.Primary,
                                     label: "1",
                                     customId: "1"
                                 ),
                                 new global::Discord.ButtonBuilder(
+                                    style: global::Discord.ButtonStyle.Primary,
                                     label: "2",
                                     customId: "2"
                                 ),
                                 new global::Discord.ButtonBuilder(
+                                    style: global::Discord.ButtonStyle.Primary,
                                     label: "3",
                                     customId: "3"
                                 ),
                                 new global::Discord.ButtonBuilder(
+                                    style: global::Discord.ButtonStyle.Primary,
                                     label: "4",
                                     customId: "4"
                                 ),
                                 new global::Discord.ButtonBuilder(
+                                    style: global::Discord.ButtonStyle.Primary,
                                     label: "5",
                                     customId: "5"
                                 )
@@ -433,10 +447,12 @@ public sealed class AutoActionRowTests(ITestOutputHelper output) : BaseDiscordNe
                             components: 
                             [
                                 new global::Discord.ButtonBuilder(
+                                    style: global::Discord.ButtonStyle.Primary,
                                     label: "6",
                                     customId: "6"
                                 ),
                                 new global::Discord.ButtonBuilder(
+                                    style: global::Discord.ButtonStyle.Primary,
                                     label: "7",
                                     customId: "7"
                                 )

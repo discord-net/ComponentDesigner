@@ -166,9 +166,10 @@ public abstract class BaseGeneratorTest : TestWithDiagnostics
             .TrackedSteps[TrackingNames.EMIT_GRAPH][0]
             .Outputs[0].Value as EmittedGraph;
 
-        Assert.NotNull(rendered?.Source);
+        Assert.NotNull(rendered);
+        Assert.NotEmpty(rendered.Renders);
 
-        Assert.Equal(expected, rendered.Source);
+        Assert.Equal(expected, string.Join(",\n", rendered.Renders.Select(x => x.Source)));
     }
 
     protected T GetStepValue<T>(GeneratorDriverRunResult result, string name)

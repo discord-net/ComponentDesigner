@@ -1,38 +1,22 @@
 ﻿using ComponentDesigner;
+using ComponentDesigner.CSharp;
 using ComponentDesigner.Nodes;
 
 namespace Discord;
 
 partial class DiscordNetRenderer
 {
-    public override Result<RenderedComponent> RenderActionRow(
-        IRendererContext context,
+    public static Result<CSharpRender> RenderActionRow(
+        IRenderContext<CSharpRender> context,
         ActionRowComponentNode actionRow,
         ComponentState state,
-        RendererTypingContext? typingContext = null,
         CancellationToken cancellationToken = default
-    ) => context.CompilationProvider
-        .ActionRowBuilder(state.TextSpan, cancellationToken)
-        .Combine(
-            RenderPropertiesAsParameters(
-                context, state, cancellationToken,
-                ("id", actionRow.Id, CSharpValueGenerator.NullableInt32),
-                ("components", actionRow.Components, new(RenderActionRowComponents))
-            ),
-            (symbol, parameters) => new RenderedComponent(
-                $"new {symbol.ToQualifiedName()}({parameters})",
-                symbol
-            )
-        )
-        .Map(ApplyRefParameter(context, state, cancellationToken))
-        .Map(GetConverterFromOptions(context, state, typingContext, cancellationToken));
-
-    private static Result<string> RenderActionRowComponents(
-        IRendererContext context,
-        ComponentPropertyValue value,
-        CancellationToken cancellationToken
-    ) => context
-        .CompilationProvider
-        .IEnumerableOfIMessageComponentBuilder(value, cancellationToken)
-        .Map(symbol => RenderAsChildComponents(context, value, symbol, cancellationToken, true));
+    ) => Construct(
+        context,
+        state,
+        context.CompilationProvider.ActionRowBuilder,
+        cancellationToken,
+        ("id", actionRow.Id, CSharpValueGenerator.NullableInt32),
+        ("components", actionRow.Components, CollectionOfIMessageComponentBuilders)
+    );
 }

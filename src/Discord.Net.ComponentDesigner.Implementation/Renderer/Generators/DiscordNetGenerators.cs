@@ -1,4 +1,6 @@
 ﻿using ComponentDesigner;
+using ComponentDesigner.CSharp;
+using ComponentDesigner.Nodes;
 
 namespace Discord;
 
@@ -12,37 +14,35 @@ public static class DiscordNetGenerators
         public static CSharpValueGenerator Emoji => EmojiGenerator.Get(allowNullable: false);
         public static CSharpValueGenerator NullableEmoji => EmojiGenerator.Get(allowNullable: true);
 
-        public static Result<CSharpValueGenerator> SeparatorSpacingSize(
-            ICompilationProvider compilationProvider,
-            CXTextSpan textSpan,
-            CancellationToken cancellationToken = default,
-            bool allowNullable = false
-        ) => compilationProvider
-            .SeparatorSpacingSize(textSpan, cancellationToken)
-            .Map(CSharpValueGenerator (symbol) =>
-                EnumGenerator.Get(symbol, renderAsSymbolReference: true, allowNullable)
-            );
-        
-        public static Result<CSharpValueGenerator> ButtonStyle(
-            ICompilationProvider compilationProvider,
-            CXTextSpan textSpan,
-            CancellationToken cancellationToken = default,
-            bool allowNullable = false
-        ) => compilationProvider
-            .ButtonStyle(textSpan, cancellationToken)
-            .Map(CSharpValueGenerator (symbol) =>
-                EnumGenerator.Get(symbol, renderAsSymbolReference: true, allowNullable)
-            );
-        
-        public static Result<CSharpValueGenerator> TextInputStyle(
-            ICompilationProvider compilationProvider,
-            CXTextSpan textSpan,
-            CancellationToken cancellationToken = default,
-            bool allowNullable = false
-        ) => compilationProvider
-            .TextInputStyle(textSpan, cancellationToken)
-            .Map(CSharpValueGenerator (symbol) =>
-                EnumGenerator.Get(symbol, renderAsSymbolReference: true, allowNullable)
-            );
+        public static Result<CSharpRender> ButtonStyle(
+            IRenderContext context,
+            ComponentPropertyValue value,
+            CancellationToken cancellationToken = default
+        ) => context
+            .CompilationProvider
+            .ButtonStyle(value.TextSpan, cancellationToken)
+            .Map(symbol => EnumGenerator.Get(symbol, renderAsSymbolReference: true, allowNullable: false))
+            .Map(generator => generator.Render(context, value, cancellationToken));
+
+        public static Result<CSharpRender> SeparatorSpacingSize(
+            IRenderContext context,
+            ComponentPropertyValue value,
+            CancellationToken cancellationToken = default
+        ) => context
+            .CompilationProvider
+            .SeparatorSpacingSize(value.TextSpan, cancellationToken)
+            .Map(symbol => EnumGenerator.Get(symbol, renderAsSymbolReference: true, allowNullable: false))
+            .Map(generator => generator.Render(context, value, cancellationToken));
+
+
+        public static Result<CSharpRender> TextInputStyle(
+            IRenderContext context,
+            ComponentPropertyValue value,
+            CancellationToken cancellationToken = default
+        ) => context
+            .CompilationProvider
+            .TextInputStyle(value.TextSpan, cancellationToken)
+            .Map(symbol => EnumGenerator.Get(symbol, renderAsSymbolReference: true, allowNullable: false))
+            .Map(generator => generator.Render(context, value, cancellationToken));
     }
 }

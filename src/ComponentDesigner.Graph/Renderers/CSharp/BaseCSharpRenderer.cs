@@ -6,14 +6,32 @@ using ComponentDesigner.Util;
 
 namespace ComponentDesigner.CSharp;
 
-public interface ICSharpRenderedComponent
+public interface ICSharpRender : ISourceLocatable
 {
-    string Source { get; }
-    ICSharpTypeSymbol? Symbol { get; }
+    string Source { get; init; }
+    ICSharpTypeSymbol? Symbol { get; init; }
 }
 
-public abstract partial class BaseCSharpRenderer<TGraph, TRender> : IComponentRenderer<TGraph, TRender>
-    where TRender : ICSharpRenderedComponent
+public readonly record struct CSharpRender(
+    CXTextSpan TextSpan,
+    string Source,
+    ICSharpTypeSymbol? Symbol = null
+) : ICSharpRender
+{
+    public bool IsEmpty => TextSpan == default && string.IsNullOrEmpty(Source);
+}
+
+public abstract class BaseCSharpRenderer<TGraph> : BaseCSharpRenderer<TGraph, CSharpRender>
+{
+    protected override CSharpRender CreateFromSource(
+        CXTextSpan textSpan,
+        string source,
+        ICSharpTypeSymbol? symbol
+    ) => new(textSpan, source, symbol);
+}
+
+public abstract class BaseCSharpRenderer<TGraph, TRender> : IComponentRenderer<TGraph, TRender>
+    where TRender : struct, ICSharpRender
 {
     protected virtual CSharpValueGenerator? GetCustomGeneratorForSymbol(
         ICompilationProvider compilationProvider,
@@ -22,42 +40,38 @@ public abstract partial class BaseCSharpRenderer<TGraph, TRender> : IComponentRe
 
     private CSharpValueGenerator GetGeneratorForSymbol(
         ICompilationProvider compilationProvider,
-        ICSharpTypeSymbol symbol
+        ICSharpTypeSymbol symbol,
+        CancellationToken cancellationToken = default
     ) => GetCustomGeneratorForSymbol(compilationProvider, symbol) ??
-         CSharpValueGenerator.FromSymbol(compilationProvider, symbol);
+         CSharpValueGenerator.FromSymbol(compilationProvider, symbol, cancellationToken);
 
-    protected static Func<RenderedComponent, Result<RenderedComponent>> GetConverterFromOptions<T>(
-        IComponentContext context,
-        T source,
-        RendererTypingContext? typingContext,
+    protected static Result<TRender> Convert(
+        IRenderContext<TRender> context,
+        TRender render,
+        ICSharpTypeSymbol? symbol,
         CancellationToken cancellationToken
-    ) where T : ISourceLocatable
+    )
     {
-        if (context.ComponentTypingProvider is null || typingContext is null)
-            return static x => x;
+        if (context.ComponentTypingProvider is null || render.Symbol is null || symbol is null) return render;
 
-        var targetSymbol = typingContext.Value.ConformingType;
-
-        return render =>
-        {
-            if (render.Type is null) return render;
-
-            return context.ComponentTypingProvider
-                .Convert(
-                    context,
-                    render.Source.SourcedAt(source),
-                    render.Type,
-                    targetSymbol,
-                    cancellationToken
-                )
-                .Map(x => new RenderedComponent(
-                    x,
-                    targetSymbol
-                ));
-        };
+        return context
+            .ComponentTypingProvider
+            .Convert(
+                context,
+                render.Source.SourcedAt(render),
+                render.Symbol,
+                symbol,
+                cancellationToken
+            )
+            .Map(newSource => render with
+            {
+                Source = newSource,
+                Symbol = symbol
+            });
     }
 
     protected abstract TRender CreateFromSource(
+        CXTextSpan textSpan,
         string source,
         ICSharpTypeSymbol? symbol
     );
@@ -118,6 +132,7 @@ public abstract partial class BaseCSharpRenderer<TGraph, TRender> : IComponentRe
 
         return (
             CreateFromSource(
+                state.TextSpan,
                 $"{MakeMethodReference(state.CXNode, context, state.Symbol)}({parameters})",
                 state.Symbol.ReturnType
             ),
@@ -144,9 +159,6 @@ public abstract partial class BaseCSharpRenderer<TGraph, TRender> : IComponentRe
             using var _ = StringBuilder.Pooled(out var sb);
             using var bag = PooledDiagnosticBag.Get();
             var valueCount = 0;
-            var componentOptions = new ComponentOptions(
-                new RendererTypingContext(typeSymbol)
-            );
 
             foreach (var value in propertyValue.AsFlattened)
             {
@@ -160,7 +172,7 @@ public abstract partial class BaseCSharpRenderer<TGraph, TRender> : IComponentRe
                                     context, cancellationToken
                                 )
                                 .Unwrap(bag)
-                                ?.Source
+                                .Source
                         );
                         break;
                     case ComponentPropertyValue.Literal
@@ -170,6 +182,7 @@ public abstract partial class BaseCSharpRenderer<TGraph, TRender> : IComponentRe
                             GetGeneratorForSymbol(context.CompilationProvider, innerSymbol)
                                 .Render(context, value, cancellationToken)
                                 .Unwrap(bag)
+                                .Source
                         );
                         break;
                 }
@@ -272,7 +285,11 @@ public abstract partial class BaseCSharpRenderer<TGraph, TRender> : IComponentRe
 
         return Collect(renders)
             .Map(control => ToCSharpString(control, state.TextControlGraph))
-            .Map(str => CreateFromSource(str, context.CompilationProvider.String));
+            .Map(str => CreateFromSource(
+                state.TextSpan,
+                str,
+                context.CompilationProvider.String(CXTextSpan.Empty).GetValueOrDefault())
+            );
 
         static string ToCSharpString(
             TextControl control,
@@ -315,7 +332,7 @@ public abstract partial class BaseCSharpRenderer<TGraph, TRender> : IComponentRe
             if (asMultilineString)
                 sb.AppendLine();
 
-            var value = control.ToString().NormalizeIndentation().Trim(['\r', '\n']);
+            var value = control.ToString().NormalizeIndentation();
 
             if (asMultilineInterpolation)
                 value = value.Indent(graph.InterpolationDollarSignRequirement);
@@ -400,7 +417,7 @@ public abstract partial class BaseCSharpRenderer<TGraph, TRender> : IComponentRe
                 .WithValue(
                     new TextControl(
                         LeadingTrivia: first?.LeadingTrivia ?? LexedCXTrivia.Empty,
-                        TrailingTrivia: last?.TrailingTrivia ?? LexedCXTrivia.Empty,
+                        TrailingTrivia: last?.TrailingTrivia.TrimTrailingSyntaxIndentation() ?? LexedCXTrivia.Empty,
                         Value: sb.ToString(),
                         ValueContainsNewLines: containsNewLines
                     )
@@ -467,6 +484,7 @@ public abstract partial class BaseCSharpRenderer<TGraph, TRender> : IComponentRe
         InterpolationState state,
         CancellationToken cancellationToken = default
     ) => CreateFromSource(
+        state.TextSpan,
         context.GetReferenceToDesignerValue(state.InterpolationId, state.Symbol),
         state.Symbol
     );

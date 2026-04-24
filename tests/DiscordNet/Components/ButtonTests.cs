@@ -228,6 +228,7 @@ public sealed class ButtonTests(ITestOutputHelper output) : BaseDiscordNetCompon
             Emits(
                 """
                 new global::Discord.ButtonBuilder(
+                    style: global::Discord.ButtonStyle.Primary,
                     label: "My Label",
                     customId: "abc"
                 )

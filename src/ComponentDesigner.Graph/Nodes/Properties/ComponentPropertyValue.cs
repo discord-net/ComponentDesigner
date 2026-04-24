@@ -10,7 +10,15 @@ public abstract record ComponentPropertyValueSource
 
     public sealed record Child(GraphNode Parent) : ComponentPropertyValueSource;
 
-    public sealed record Unknown : ComponentPropertyValueSource;
+    public sealed record Synthetic : ComponentPropertyValueSource
+    {
+        public static readonly Synthetic Instance = new();
+    }
+
+    public sealed record Unknown : ComponentPropertyValueSource
+    {
+        public static readonly Unknown Instance = new();
+    }
 }
 
 public readonly record struct ComponentPropertyLocationInfo(

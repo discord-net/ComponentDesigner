@@ -1,30 +1,23 @@
 ﻿using ComponentDesigner;
+using ComponentDesigner.CSharp;
 using ComponentDesigner.Nodes;
 
 namespace Discord;
 
 partial class DiscordNetRenderer
 {
-    public override Result<RenderedComponent> RenderFile(
-        IRendererContext context,
+    public static Result<CSharpRender> RenderFile(
+        IRenderContext<CSharpRender> context,
         FileComponentNode file,
         ComponentState state,
-        RendererTypingContext? typingContext = null,
-        CancellationToken cancellationToken = default
-    ) => context.CompilationProvider
-        .FileBuilder(state.TextSpan, cancellationToken)
-        .Combine(
-            RenderPropertiesAsParameters(
-                context, state, cancellationToken,
-                ("id", file.Id, CSharpValueGenerator.NullableInt32),
-                ("media", file.File, CSharpValueGenerator.UnfurledMediaItemProperties),
-                ("isSpoiler", file.IsSpoiler, CSharpValueGenerator.Boolean)
-            ),
-            (symbol, parameters) => new RenderedComponent(
-                $"new {symbol.ToQualifiedName()}({parameters})",
-                symbol
-            )
-        )
-        .Map(ApplyRefParameter(context, state, cancellationToken))
-        .Map(GetConverterFromOptions(context, state, typingContext, cancellationToken));
+        CancellationToken cancellationToken
+    ) => Construct(
+        context,
+        state,
+        context.CompilationProvider.FileBuilder,
+        cancellationToken,
+        ("id", file.Id, CSharpValueGenerator.NullableInt32),
+        ("media", file.File, CSharpValueGenerator.UnfurledMediaItemProperties),
+        ("isSpoiler", file.Spoiler, CSharpValueGenerator.NullableBoolean)
+    );
 }

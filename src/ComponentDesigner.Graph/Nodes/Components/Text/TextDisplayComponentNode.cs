@@ -36,7 +36,6 @@ public class TextDisplayComponentNode : ComponentNode<TextDisplayState>
             Id = ComponentProperty.Id,
             Content = new(
                 name: "content",
-                isOptional: true,
                 kind: ComponentPropertyValueKind.SyntaxValue | ComponentPropertyValueKind.Component
             )
         ];

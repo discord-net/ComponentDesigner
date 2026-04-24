@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using ComponentDesigner;
+using ComponentDesigner.CSharp;
 using ComponentDesigner.Nodes;
 using ComponentDesigner.Parser;
 using ComponentDesigner.Util;
@@ -21,75 +22,91 @@ public sealed class ColorGenerator : CSharpValueGenerator
     public static ColorGenerator Get(bool allowNullable)
         => WeakMemoize.Of(allowNullable, static a => new ColorGenerator(a));
 
-    protected override Result<string> RenderLiteral(
-        IRendererContext context,
+    protected override Result<CSharpRender> RenderLiteral(
+        IRenderContext context,
         ComponentPropertyValue.Literal literalValue,
         string literal,
         CancellationToken cancellationToken = default
     ) => FromText(context, literalValue, cancellationToken);
 
-    protected override Result<string> RenderInterpolation(
-        IRendererContext context,
+    protected override Result<CSharpRender> RenderInterpolation(
+        IRenderContext context,
         ComponentPropertyValue.Interpolation interpolationValue,
         IInterpolationInfo interpolationInfo,
         CancellationToken cancellationToken = default
-    )
-    {
-        if (interpolationInfo.ConstantValue.IsSpecified)
+    ) => context
+        .CompilationProvider
+        .Color(interpolationInfo.TextSpan, cancellationToken)
+        .Map(symbol =>
         {
-            if (interpolationInfo.ConstantValue.Value is { } value)
-                return FromText(context, value.ToString().SourcedAt(interpolationValue), cancellationToken);
+            if (interpolationInfo.ConstantValue.IsSpecified)
+            {
+                if (interpolationInfo.ConstantValue.Value is { } value)
+                    return FromText(context, value.ToString().SourcedAt(interpolationValue), cancellationToken);
 
-            if (_allowNullable) return "null";
+                if (_allowNullable)
+                    return new CSharpRender(
+                        interpolationInfo.TextSpan,
+                        "null",
+                        symbol
+                    );
 
-            return Diagnostic
-                .NullValueNotAllowed
-                .At(interpolationValue);
-        }
-
-        var colorSymbol = context.CompilationProvider.GetTypeFromQualifiedName(DiscordColorTypeName, cancellationToken);
-
-        if (
-            colorSymbol is not null &&
-            (
+                return Diagnostic
+                    .NullValueNotAllowed
+                    .At(interpolationValue);
+            }
+            
+            if (
                 context.CompilationProvider.HasImplicitConversionBetween(
                     interpolationInfo.Symbol,
-                    colorSymbol
+                    symbol
                 )
                 ||
                 (
                     _allowNullable &&
-                    interpolationInfo.Symbol.IsNullableTypeOf(colorSymbol)
+                    interpolationInfo.Symbol.IsNullableTypeOf(symbol)
                 )
             )
-        )
-        {
-            return context.GetReferenceToDesignerValue(interpolationInfo, interpolationInfo.Symbol);
-        }
+            {
+                return new CSharpRender(
+                    interpolationInfo.TextSpan,
+                    context.GetReferenceToDesignerValue(interpolationInfo, interpolationInfo.Symbol),
+                    interpolationInfo.Symbol
+                );
+            }
 
-        return Diagnostic
-            .TypeMismatch(
-                DiscordColorTypeName,
-                interpolationInfo.Symbol!
-            )
-            .At(interpolationValue);
-    }
+            return Diagnostic
+                .TypeMismatch(
+                    DiscordColorTypeName,
+                    interpolationInfo.Symbol!
+                )
+                .At(interpolationValue);
+        });
 
-    private Result<string> FromText(
-        IRendererContext context,
+    private Result<CSharpRender> FromText(
+        IRenderContext context,
         SourcedValue<string> text,
         CancellationToken cancellationToken
-    )
-    {
-        if (TryGetColorPreset(context, text, out var preset, cancellationToken)) return preset;
+    ) => context
+        .CompilationProvider
+        .Color(text.TextSpan, cancellationToken)
+        .Combine(symbol =>
+            {
+                if (TryGetColorPreset(symbol, text.Value, out var preset)) return preset;
 
-        if (TryGetHexColor(text, out var hex)) return hex;
+                if (TryGetHexColor(text, out var hex)) return hex;
 
-        return UseLibraryParseFunc(context, text);
-    }
+                return UseLibraryParseFunc(context, text);
+            },
+            (symbol, source) => new CSharpRender(
+                text.TextSpan,
+                source,
+                symbol
+            )
+        );
 
     private Result<string> UseLibraryParseFunc(
-        IRendererContext context,
+        IRenderContext context,
         SourcedValue<string> text
     )
     {
@@ -143,10 +160,9 @@ public sealed class ColorGenerator : CSharpValueGenerator
     }
 
     private static bool TryGetColorPreset(
-        IRendererContext context,
+        ICSharpTypeSymbol symbol,
         string presetName,
-        [MaybeNullWhen(false)] out string preset,
-        CancellationToken cancellationToken
+        [MaybeNullWhen(false)] out string preset
     )
     {
         if (string.IsNullOrWhiteSpace(presetName))
@@ -155,10 +171,8 @@ public sealed class ColorGenerator : CSharpValueGenerator
             return false;
         }
 
-        var symbol = context.CompilationProvider.GetTypeFromQualifiedName(DiscordColorTypeName, cancellationToken);
-
         preset = symbol
-            ?.Fields
+            .Fields
             .FirstOrDefault(x =>
                 IsColorPresetField(x) &&
                 x.Name.Equals(presetName, StringComparison.InvariantCultureIgnoreCase)

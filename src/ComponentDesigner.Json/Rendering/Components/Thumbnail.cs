@@ -21,6 +21,6 @@ partial class JsonRenderer
         ("id", thumbnail.Id, Number),
         ("media", thumbnail.Media, UnfurledMediaItem),
         ("description", thumbnail.Description, String),
-        ("spoiler", thumbnail.IsSpoiler, Bool)
+        ("spoiler", thumbnail.Spoiler, Bool)
     );
 }

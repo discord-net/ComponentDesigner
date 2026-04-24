@@ -195,10 +195,12 @@ public sealed partial class CXComponentGraph : IEquatable<CXComponentGraph>
 
         if (hasErrors) return new(validation);
 
-        return renderer.RenderGraph(
-            new ComponentRenderingContext<TFinal, TRender>(this, compilationProvider, renderer),
-            this,
-            cancellationToken
-        );
+        return renderer
+            .RenderGraph(
+                new ComponentRenderingContext<TFinal, TRender>(this, compilationProvider, renderer),
+                this,
+                cancellationToken
+            )
+            .PrefaceDiagnostics(validation);
     }
 }

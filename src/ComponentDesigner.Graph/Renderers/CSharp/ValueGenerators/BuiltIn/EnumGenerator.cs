@@ -3,7 +3,7 @@ using ComponentDesigner.Nodes;
 using ComponentDesigner.Parser;
 using ComponentDesigner.Util;
 
-namespace ComponentDesigner;
+namespace ComponentDesigner.CSharp;
 
 public sealed class EnumGenerator : CSharpValueGenerator
 {
@@ -42,7 +42,7 @@ public sealed class EnumGenerator : CSharpValueGenerator
         static (a, b, c) => new EnumGenerator(a, b, c)
     );
 
-    protected override Result<string> RenderInterpolation(
+    protected override Result<CSharpRender> RenderInterpolation(
         IRenderContext context,
         ComponentPropertyValue.Interpolation interpolationValue,
         IInterpolationInfo interpolationInfo,
@@ -54,7 +54,12 @@ public sealed class EnumGenerator : CSharpValueGenerator
             switch (interpolationInfo.ConstantValue.Value)
             {
                 case null:
-                    if (_allowNullable) return "null";
+                    if (_allowNullable)
+                        return new CSharpRender(
+                            interpolationInfo.TextSpan,
+                            "null",
+                            _enumSymbol
+                        );
 
                     return Diagnostic
                         .NullValueNotAllowed
@@ -80,7 +85,11 @@ public sealed class EnumGenerator : CSharpValueGenerator
             )
         )
         {
-            return context.GetReferenceToDesignerValue(interpolationInfo, interpolationInfo.Symbol);
+            return new CSharpRender(
+                interpolationInfo.TextSpan,
+                context.GetReferenceToDesignerValue(interpolationInfo, interpolationInfo.Symbol),
+                interpolationInfo.Symbol
+            );
         }
 
         return Diagnostic
@@ -91,38 +100,59 @@ public sealed class EnumGenerator : CSharpValueGenerator
             .At(interpolationValue);
     }
 
-    protected override Result<string> RenderLiteral(
+    protected override Result<CSharpRender> RenderLiteral(
         IRenderContext context,
         ComponentPropertyValue.Literal literalValue,
         string literal,
         CancellationToken cancellationToken = default
     ) => FromText(literal.SourcedAt(literalValue));
 
-    private Result<string> FromText(SourcedValue<string> text)
+    private Result<CSharpRender> FromText(SourcedValue<string> text)
     {
         if (_fields.TryGetValue(text.Value.ToLowerInvariant(), out var field))
-            return RenderField(field);
+            return RenderField(field, text.TextSpan);
 
         return Diagnostic
             .NotAValidEnumVariant(_enumSymbol.ToString(), text)
             .At(text);
     }
 
-    private string RenderField(ICSharpFieldSymbol field)
+    private CSharpRender RenderField(ICSharpFieldSymbol field, CXTextSpan textSpan)
     {
-        if (_renderAsSymbolReference) return field.ToQualifiedName();
+        if (_renderAsSymbolReference)
+            return new(
+                textSpan,
+                field.ToQualifiedName(),
+                field.Type
+            );
 
         if (field.ConstantValue.IsSpecified)
         {
             if (field.Type.BaseType is not null)
-                return $"({field.Type.BaseType.ToQualifiedName()}){field.ConstantValue.Value}";
+                return new(
+                    textSpan,
+                    $"({field.Type.BaseType.ToQualifiedName()}){field.ConstantValue.Value}",
+                    field.Type.BaseType
+                );
 
-            return field.ConstantValue.Value.ToString()!;
+            return new(
+                textSpan,
+                field.ConstantValue.Value.ToString()!,
+                field.Type
+            );
         }
 
         if (field.Type.BaseType is not null)
-            return $"({field.Type.BaseType.ToQualifiedName()}){field.ToQualifiedName()}";
+            return new(
+                textSpan,
+                $"({field.Type.BaseType.ToQualifiedName()}){field.ToQualifiedName()}",
+                field.Type.BaseType
+            );
 
-        return field.ToQualifiedName();
+        return new(
+            textSpan,
+            field.ToQualifiedName(),
+            field.Type
+        );
     }
 }

@@ -8,6 +8,8 @@ namespace ComponentDesigner.Json;
 
 public sealed class JsonComponentImplementation : IComponentImplementation
 {
+    public static readonly JsonComponentImplementation Instance = new();
+    
     public string Name => "Json";
 
     public ITextControlProvider TextControlProvider => DefaultTextControlProvider.Instance;

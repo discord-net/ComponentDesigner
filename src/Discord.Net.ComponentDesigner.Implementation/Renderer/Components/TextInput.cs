@@ -1,40 +1,28 @@
 ﻿using ComponentDesigner;
+using ComponentDesigner.CSharp;
 using ComponentDesigner.Nodes;
 
 namespace Discord;
 
 partial class DiscordNetRenderer
 {
-    public override Result<RenderedComponent> RenderTextInput(
-        IRendererContext context,
+    public static Result<CSharpRender> RenderTextInput(
+        IRenderContext<CSharpRender> context,
         TextInputComponentNode textInput,
         ComponentState state,
-        RendererTypingContext? typingContext = null,
-        CancellationToken cancellationToken = default
-    ) => context.CompilationProvider
-        .TextInputBuilder(state.TextSpan, cancellationToken)
-        .Combine(
-            RenderPropertiesAsParameters(
-                context, state, cancellationToken,
-                ("id", textInput.Id, CSharpValueGenerator.NullableInt32),
-                ("customId", textInput.CustomId, CSharpValueGenerator.String),
-                ("style", textInput.Style,
-                    CSharpValueGenerator.TextInputStyle(
-                        context.CompilationProvider,
-                        state.TextSpan,
-                        cancellationToken
-                    )
-                ),
-                ("minLength", textInput.MinLength, CSharpValueGenerator.NullableInt32),
-                ("maxLength", textInput.MaxLength, CSharpValueGenerator.NullableInt32),
-                ("required", textInput.Required, CSharpValueGenerator.NullableBoolean),
-                ("value", textInput.Value, CSharpValueGenerator.NullableString),
-                ("placeholder", textInput.Placeholder, CSharpValueGenerator.NullableString)
-            ),
-            (symbol, parameters) => new RenderedComponent(
-                $"new {symbol.ToQualifiedName()}({parameters})"
-            )
-        )
-        .Map(ApplyRefParameter(context, state, cancellationToken))
-        .Map(GetConverterFromOptions(context, state, typingContext, cancellationToken));
+        CancellationToken cancellationToken
+    ) => Construct(
+        context,
+        state,
+        context.CompilationProvider.TextInputBuilder,
+        cancellationToken,
+        ("id", textInput.Id, CSharpValueGenerator.NullableInt32),
+        ("customId", textInput.CustomId, CSharpValueGenerator.String),
+        ("style", textInput.Style, CSharpValueGenerator.TextInputStyle),
+        ("minLength", textInput.MinLength, CSharpValueGenerator.NullableInt32),
+        ("maxLength", textInput.MaxLength, CSharpValueGenerator.NullableInt32),
+        ("required", textInput.Required, CSharpValueGenerator.NullableBoolean),
+        ("value", textInput.Value, CSharpValueGenerator.NullableString),
+        ("placeholder", textInput.Placeholder, CSharpValueGenerator.NullableString)
+    );
 }

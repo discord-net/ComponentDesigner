@@ -1,61 +1,33 @@
 ﻿using ComponentDesigner;
+using ComponentDesigner.CSharp;
 using ComponentDesigner.Nodes;
 
 namespace Discord;
 
 partial class DiscordNetRenderer
 {
-    public override Result<RenderedComponent> RenderTextDisplay(
-        IRendererContext context,
+    public static Result<CSharpRender> RenderTextDisplay(
+        IRenderContext<CSharpRender> context,
         TextDisplayComponentNode textDisplay,
         TextDisplayState state,
-        RendererTypingContext? typingContext = null,
-        CancellationToken cancellationToken = default
-    ) => context.CompilationProvider
-        .TextDisplayBuilder(state.TextSpan, cancellationToken)
-        .Combine(
-            RenderPropertiesAsParameters(
-                context, state, cancellationToken,
-                ("id", textDisplay.Id, CSharpValueGenerator.NullableInt32),
-                ("content", textDisplay.Content, new(RenderTextDisplayContent))
-            ),
-            (symbol, parameters) => new RenderedComponent(
-                $"new {symbol.ToQualifiedName()}({parameters})",
-                symbol
-            )
-        )
-        .Map(ApplyRefParameter(context, state, cancellationToken))
-        .Map(GetConverterFromOptions(context, state, typingContext, cancellationToken));
-
-    private static Result<string> RenderTextDisplayContent(
-        IRendererContext context,
-        ComponentPropertyValue value,
         CancellationToken cancellationToken
-    )
-    {
-        if (value is ComponentPropertyValue.Component { GraphNode: var graphNode })
-        {
-            if (graphNode.Component is not TextControlNode)
-            {
-                return Diagnostic
-                    .InvalidPropertyValue(value, "<text control>")
-                    .At(value);
-            }
+    ) => Construct(
+        context,
+        state,
+        context.CompilationProvider.TextDisplayBuilder,
+        cancellationToken,
+        ("id", textDisplay.Id, CSharpValueGenerator.NullableInt32),
+        ("content", textDisplay.Content, TextDisplayContent)
+    );
 
-            return context
-                .RenderGraphNode(
-                    graphNode,
-                    cancellationToken: cancellationToken
-                )
-                .AsSource;
-        }
-        
-        return CSharpValueGenerator
-            .String
-            .Render(
-                context,
-                value,
-                cancellationToken
-            );
-    }
+    private static Result<CSharpRender> TextDisplayContent(
+        IRenderContext<CSharpRender> context,
+        ComponentPropertyValue propertyValue,
+        CancellationToken cancellationToken
+    ) => propertyValue.AsSingle switch
+    {
+        ComponentPropertyValue.Component component
+            => component.GraphNode.Render(context, cancellationToken),
+        _ => CSharpValueGenerator.String.Render(context, propertyValue, cancellationToken)
+    };
 }

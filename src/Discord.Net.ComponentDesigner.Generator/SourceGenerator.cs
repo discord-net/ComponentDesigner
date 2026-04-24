@@ -140,7 +140,7 @@ public sealed class SourceGenerator : IIncrementalGenerator
                 );
             }
 
-            if (string.IsNullOrEmpty(emitted.Source)) continue;
+            if (emitted.Renders.Count is 0) continue;
 
             var bucketName = target.CX.Location.FilePath ?? string.Empty;
 
@@ -149,7 +149,7 @@ public sealed class SourceGenerator : IIncrementalGenerator
 
             bucket.Add(
                 RenderInterceptor(
-                    emitted.Source!,
+                    emitted.Source,
                     target.InterceptableMethodInfo.Location,
                     target.InterceptableMethodInfo.ReturnType,
                     target.InterceptableMethodInfo.Parameters
@@ -306,11 +306,17 @@ public sealed class SourceGenerator : IIncrementalGenerator
         CancellationToken cancellationToken
     )
     {
-        var result = parameters.Graph.Emit(parameters.CompilationProvider, cancellationToken);
+        var result = parameters
+            .Graph
+            .Emit(
+                parameters.CompilationProvider,
+                DiscordNetRenderer.Instance,
+                cancellationToken
+            );
 
         return new(
             parameters.Graph,
-            result.GetValueOrDefault(),
+            result.GetValueOrDefault([]),
             [..parameters.Graph.Diagnostics, ..result.Diagnostics],
             parameters.CompilationProvider
         );
@@ -465,7 +471,7 @@ public sealed class SourceGenerator : IIncrementalGenerator
             "any" => ComponentTargetType.Any,
             _ => ComponentTargetType.None
         }) is not ComponentTargetType.None;
-        
+
         static GraphOptionsOverloads GetOptionOverloads(
             IInvocationOperation operation,
             SemanticModel semanticModel,
@@ -688,7 +694,7 @@ public sealed class SourceGenerator : IIncrementalGenerator
         }
 
         if (!IsValidCXMethod(operation.TargetMethod)) return false;
-        
+
         if (syntaxNode is not InvocationExpressionSyntax syntax) return false;
 
         invocationSyntax = syntax;

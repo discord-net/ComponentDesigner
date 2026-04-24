@@ -1,8 +1,9 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using ComponentDesigner.CSharp;
 using ComponentDesigner.Nodes;
 using ComponentDesigner.Parser;
 
-namespace ComponentDesigner;
+namespace ComponentDesigner.CSharp;
 
 public abstract class CSharpValueGenerator
 {
@@ -32,18 +33,19 @@ public abstract class CSharpValueGenerator
 
     public static CSharpValueGenerator FromSymbol(
         ICompilationProvider compilationProvider,
-        ICSharpTypeSymbol symbol
+        ICSharpTypeSymbol symbol,
+        CancellationToken cancellationToken
     )
     {
         CSharpValueGenerator? result;
         
         if (symbol.TryUnwrapNullableValueType(out var inner))
         {
-            TryGetCommonValueType(compilationProvider, inner, true, out result);
+            TryGetCommonValueType(compilationProvider, inner, true, cancellationToken, out result);
         }
-        else if(!TryGetCommonValueType(compilationProvider, symbol, false, out result))
+        else if(!TryGetCommonValueType(compilationProvider, symbol, false, cancellationToken, out result))
         {
-            if (symbol.Equals(compilationProvider.String!))
+            if (symbol.Equals(compilationProvider.String, cancellationToken))
                 result = StringGenerator.Get(StringNullMode.TreatNullAsEmptyString);
         }
         
@@ -53,28 +55,29 @@ public abstract class CSharpValueGenerator
             ICompilationProvider compilation,
             ICSharpTypeSymbol symbol,
             bool nullable,
+            CancellationToken cancellationToken,
             [MaybeNullWhen(false)] out CSharpValueGenerator result
         )
         {
             if (symbol.IsEnum)
                 result = EnumGenerator.Get(symbol, renderAsSymbolReference: true, allowNullable: nullable);
-            else if (symbol.Equals(compilation.Int8!))
+            else if (symbol.Equals(compilation.Int8, cancellationToken))
                 result = nullable ? NullableInt8 : Int8;
-            else if (symbol.Equals(compilation.Int16!))
+            else if (symbol.Equals(compilation.Int16, cancellationToken))
                 result = nullable ? NullableInt16 : Int16;
-            else if (symbol.Equals(compilation.Int32!))
+            else if (symbol.Equals(compilation.Int32, cancellationToken))
                 result = nullable ? NullableInt32 : Int32;
-            else if (symbol.Equals(compilation.Int64!))
+            else if (symbol.Equals(compilation.Int64, cancellationToken))
                 result = nullable ? NullableInt64 : Int64;
-            else if (symbol.Equals(compilation.UInt8!))
+            else if (symbol.Equals(compilation.UInt8, cancellationToken))
                 result = nullable ? NullableUInt8 : UInt8;
-            else if (symbol.Equals(compilation.UInt16!))
+            else if (symbol.Equals(compilation.UInt16, cancellationToken))
                 result = nullable ? NullableUInt16 : UInt16;
-            else if (symbol.Equals(compilation.UInt32!))
+            else if (symbol.Equals(compilation.UInt32, cancellationToken))
                 result = nullable ? NullableUInt32 : UInt32;
-            else if (symbol.Equals(compilation.UInt64!))
+            else if (symbol.Equals(compilation.UInt64, cancellationToken))
                 result = nullable ? NullableUInt64 : UInt64;
-            else if (symbol.Equals(compilation.Boolean!))
+            else if (symbol.Equals(compilation.Boolean, cancellationToken))
                 result = BooleanGenerator.Get(allowNullable: nullable);
             else result = null;
 
@@ -82,7 +85,7 @@ public abstract class CSharpValueGenerator
         }
     }
     
-    public virtual Result<string> Render(
+    public virtual Result<CSharpRender> Render(
         IRenderContext context,
         ComponentPropertyValue value,
         CancellationToken cancellationToken = default
@@ -96,7 +99,7 @@ public abstract class CSharpValueGenerator
         _ => throw new ArgumentOutOfRangeException(nameof(value))
     };
 
-    protected Result<string> RenderComponent(
+    protected Result<CSharpRender> RenderComponent(
         IRenderContext context,
         ComponentPropertyValue.Component componentValue,
         CancellationToken cancellationToken = default
@@ -109,7 +112,7 @@ public abstract class CSharpValueGenerator
         cancellationToken
     );
 
-    protected virtual Result<string> RenderComponent(
+    protected virtual Result<CSharpRender> RenderComponent(
         IRenderContext context,
         ComponentPropertyValue.Component componentValue,
         GraphNode graphNode,
@@ -120,13 +123,13 @@ public abstract class CSharpValueGenerator
         .ValueVariantCannotBeGenerated(componentValue, this)
         .At(componentValue);
 
-    protected Result<string> RenderInterpolation(
+    protected Result<CSharpRender> RenderInterpolation(
         IRenderContext context,
         ComponentPropertyValue.Interpolation interpolationValue,
         CancellationToken cancellationToken = default
     ) => RenderInterpolation(context, interpolationValue, interpolationValue.Info, cancellationToken);
     
-    protected virtual Result<string> RenderInterpolation(
+    protected virtual Result<CSharpRender> RenderInterpolation(
         IRenderContext context,
         ComponentPropertyValue.Interpolation interpolationValue,
         IInterpolationInfo interpolationInfo,
@@ -135,13 +138,13 @@ public abstract class CSharpValueGenerator
         .ValueVariantCannotBeGenerated(interpolationValue, this)
         .At(interpolationValue);
 
-    protected Result<string> RenderLiteral(
+    protected Result<CSharpRender> RenderLiteral(
         IRenderContext context,
         ComponentPropertyValue.Literal literalValue,
         CancellationToken cancellationToken = default
     ) => RenderLiteral(context, literalValue, literalValue.Value, cancellationToken);
     
-    protected virtual Result<string> RenderLiteral(
+    protected virtual Result<CSharpRender> RenderLiteral(
         IRenderContext context,
         ComponentPropertyValue.Literal literalValue,
         string literal,
@@ -150,13 +153,13 @@ public abstract class CSharpValueGenerator
         .ValueVariantCannotBeGenerated(literalValue, this)
         .At(literalValue);
 
-    protected Result<string> RenderMany(
+    protected Result<CSharpRender> RenderMany(
         IRenderContext context,
         ComponentPropertyValue.Many manyValue,
         CancellationToken cancellationToken = default
     ) => RenderMany(context, manyValue, manyValue.Values, cancellationToken);
 
-    protected virtual Result<string> RenderMany(
+    protected virtual Result<CSharpRender> RenderMany(
         IRenderContext context,
         ComponentPropertyValue.Many manyValue,
         IReadOnlyList<ComponentPropertyValue> values,
@@ -170,7 +173,7 @@ public abstract class CSharpValueGenerator
             .At(manyValue);
     }
     
-    protected virtual Result<string> RenderNone(
+    protected virtual Result<CSharpRender> RenderNone(
         IRenderContext context,
         ComponentPropertyValue.None noneValue,
         CancellationToken cancellationToken = default

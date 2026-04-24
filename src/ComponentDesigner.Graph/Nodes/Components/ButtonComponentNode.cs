@@ -13,7 +13,7 @@ public enum ButtonKind
 public sealed record ButtonState : ComponentState
 {
     public new CXElement CXNode { get; init; }
-    
+
     public ButtonKind? InferredKind { get; init; }
 
     public ButtonState(
@@ -48,7 +48,7 @@ public sealed class ButtonComponentNode : ComponentNode<ButtonState>
         "link-button",
         "premium-button"
     ];
-    
+
     public override ComponentTargetType Target => ComponentTargetType.Message;
 
     public override IReadOnlyList<ComponentProperty> Properties { get; }
@@ -154,6 +154,27 @@ public sealed class ButtonComponentNode : ComponentNode<ButtonState>
                     .At(childSyntax)
             );
         }
+
+        var inferredKind = InferButtonKindFromUsage(element, state);
+
+        if (inferredKind is null) return state;
+
+        if (state.GetPropertyValue(Style).IsNone)
+            state.SetPropertyValue(
+                Style,
+                new ComponentPropertyValue.Literal(
+                    ComponentPropertyValueSource.Synthetic.Instance,
+                    Style,
+                    state.TextSpan,
+                    inferredKind switch
+                    {
+                        ButtonKind.Default => "primary",
+                        ButtonKind.Link => "link",
+                        ButtonKind.Premium => "premium",
+                        _ => throw new NotImplementedException($"No case for {inferredKind}")
+                    }
+                )
+            );
 
         return state with
         {

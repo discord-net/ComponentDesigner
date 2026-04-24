@@ -4,7 +4,7 @@ using ComponentDesigner.Parser;
 using ComponentDesigner.Parser.Util;
 using ComponentDesigner.Util;
 
-namespace ComponentDesigner;
+namespace ComponentDesigner.CSharp;
 
 public enum StringNullMode
 {
@@ -29,23 +29,29 @@ public sealed class StringGenerator : CSharpValueGenerator
     public static StringGenerator Get(StringNullMode stringMode)
         => WeakMemoize.Of(stringMode, static a => new StringGenerator(a));
 
-    public override Result<string> Render(
+    public override Result<CSharpRender> Render(
         IRenderContext context,
         ComponentPropertyValue value,
         CancellationToken cancellationToken = default
-    )
-    {
-        if (
-            value is ComponentPropertyValue.Many
-            or ComponentPropertyValue.Literal
-            or ComponentPropertyValue.Interpolation
-        )
+    ) => context.CompilationProvider.String(value, cancellationToken)
+        .Map(symbol =>
         {
-            return ToCSharpString(context, value);
-        }
+            if (
+                value is ComponentPropertyValue.Many
+                or ComponentPropertyValue.Literal
+                or ComponentPropertyValue.Interpolation
+            )
+            {
+                return ToCSharpString(context, value)
+                    .Map(source => new CSharpRender(
+                        value.TextSpan,
+                        source,
+                        symbol
+                    ));
+            }
 
-        return base.Render(context, value, cancellationToken);
-    }
+            return base.Render(context, value, cancellationToken);
+        });
 
     private readonly ref struct PartsBuilder : IDisposable
     {
@@ -251,7 +257,7 @@ public sealed class StringGenerator : CSharpValueGenerator
         if (parts.Count is 0) return "string.Empty";
 
         TrimLeadingAndTrailingTrivia(in parts);
-        
+
         GetStringParameters(
             in parts,
             out var quoteCount,
@@ -283,7 +289,7 @@ public sealed class StringGenerator : CSharpValueGenerator
                 trailingTrivia = literal.TrailingTrivia.WhitespaceOnly();
                 part = literal.Value;
             }
-            
+
             sb.Append(leadingTrivia);
 
             switch (part)
@@ -326,7 +332,7 @@ public sealed class StringGenerator : CSharpValueGenerator
         if (isMultiline)
         {
             sb.AppendLine();
-            
+
             if (parts.HasInterpolations)
                 sb.Append(' ', dollarCount);
         }
@@ -335,7 +341,7 @@ public sealed class StringGenerator : CSharpValueGenerator
 
         return sb.ToString();
 
-        
+
         static void TrimLeadingAndTrailingTrivia(
             scoped ref readonly PartsBuilder parts
         )
@@ -354,7 +360,7 @@ public sealed class StringGenerator : CSharpValueGenerator
                 TrimLeading(ref leading);
                 parts.Literals[0] = leading;
             }
-            
+
             if (parts.IsInterpolationAt(parts.Count - 1))
             {
                 var trailing = parts.Interpolations[parts.Interpolations.Count - 1];
@@ -387,7 +393,7 @@ public sealed class StringGenerator : CSharpValueGenerator
                     break;
                 }
             }
-            
+
             static void TrimTrailing<T>(ref ContainsTrivia<T> containsTrivia)
             {
                 // try to remove trivia after the last newline

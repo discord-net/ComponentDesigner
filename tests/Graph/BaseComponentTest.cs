@@ -34,6 +34,12 @@ public abstract class BaseComponentTest(ITestOutputHelper output) : TestWithDiag
         IGraphOptions? options
     );
 
+    protected abstract Result<string> EmitGraph(
+        CXComponentGraph graph,
+        ICompilationProvider compilationProvider,
+        CancellationToken cancellationToken = default
+    );
+
     public void Graph(
         string cx,
         [StringSyntax("csharp")] string? pretext = null,
@@ -101,7 +107,7 @@ public abstract class BaseComponentTest(ITestOutputHelper output) : TestWithDiag
         Assert.NotNull(_compilation);
         AssertEmptyDiagnostics();
 
-        var result = _graph.Emit(CSharpCompilationProvider.Get(_compilation));
+        var result = EmitGraph(_graph, CSharpCompilationProvider.Get(_compilation));
 
         PushDiagnostics(result.Diagnostics);
 
@@ -202,6 +208,7 @@ public abstract class BaseComponentTest(ITestOutputHelper output) : TestWithDiag
         return
             $$""""
               using Discord;
+              using ComponentDesigner;
               using System.Collections.Generic;
               using System.Linq;
 

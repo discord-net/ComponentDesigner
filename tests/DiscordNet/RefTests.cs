@@ -14,7 +14,7 @@ public class RefTests(ITestOutputHelper output) : BaseDiscordNetComponentTest(ou
     {
         Graph(
             """
-            <separator ref={ComponentDesigner.CreateRef(out var v)}/>
+            <separator ref={cx.CreateRef(out var v)}/>
             """
         );
         {
@@ -22,7 +22,7 @@ public class RefTests(ITestOutputHelper output) : BaseDiscordNetComponentTest(ou
 
             Emits(
                 """
-                designer.GetValue<global::Discord.RefBox<global::Discord.IMessageComponentBuilder>>(0).Set(
+                syntax.GetValue<global::ComponentDesigner.RefBox<global::Discord.IMessageComponentBuilder>>(0).Set(
                     new global::Discord.SeparatorBuilder()
                 )
                 """
@@ -35,7 +35,7 @@ public class RefTests(ITestOutputHelper output) : BaseDiscordNetComponentTest(ou
     {
         Graph(
             """
-            <separator ref={ComponentDesigner.CreateRef<ButtonBuilder>(out var v)}/>
+            <separator ref={cx.CreateRef<ButtonBuilder>(out var v)}/>
             """
         );
         {
@@ -53,7 +53,7 @@ public class RefTests(ITestOutputHelper output) : BaseDiscordNetComponentTest(ou
     {
         Graph(
             """
-            <separator ref={ComponentDesigner.CreateRef<SeparatorBuilder>(out var v)}/>
+            <separator ref={cx.CreateRef<SeparatorBuilder>(out var v)}/>
             """
         );
         {
@@ -61,7 +61,7 @@ public class RefTests(ITestOutputHelper output) : BaseDiscordNetComponentTest(ou
 
             Emits(
                 """
-                designer.GetValue<global::Discord.RefBox<global::Discord.SeparatorBuilder>>(0).Set(
+                syntax.GetValue<global::ComponentDesigner.RefBox<global::Discord.SeparatorBuilder>>(0).Set(
                     new global::Discord.SeparatorBuilder()
                 )
                 """

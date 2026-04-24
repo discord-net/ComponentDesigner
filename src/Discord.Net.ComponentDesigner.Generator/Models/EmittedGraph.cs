@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using ComponentDesigner.CSharp;
 using ComponentDesigner.Util;
 
 namespace ComponentDesigner;
@@ -8,30 +9,36 @@ namespace ComponentDesigner;
 public sealed class EmittedGraph : IEquatable<EmittedGraph>
 {
     public CXComponentGraph Graph { get; }
-    public string? Source { get; }
-    public IReadOnlyList<ComponentDesigner.Diagnostic> Diagnostics { get; }
-
+    public IReadOnlyList<CSharpRender> Renders { get; }
+    public IReadOnlyList<Diagnostic> Diagnostics { get; }
     public ICompilationProvider CompilationProvider { get; }
 
+    public string Source { get; }
+    
     public EmittedGraph(
         CXComponentGraph graph,
-        string? source,
+        IReadOnlyList<CSharpRender> renders,
         IReadOnlyList<Diagnostic> diagnostics,
         ICompilationProvider compilationProvider
     )
     {
         Graph = graph;
-        Source = source;
+        Renders = renders;
         Diagnostics = diagnostics;
         CompilationProvider = compilationProvider;
+        Source = string.Join($",{Environment.NewLine}", renders.Select(x => x.Source));
     }
 
     public bool Equals(EmittedGraph other)
-        => Source == other.Source && Diagnostics.SequenceEqual(other.Diagnostics);
+        => Renders.SequenceEqual(other.Renders) &&
+           Diagnostics.SequenceEqual(other.Diagnostics);
 
     public override bool Equals(object? obj)
         => obj is EmittedGraph other && Equals(other);
 
     public override int GetHashCode()
-        => Hash.Combine(Source, Diagnostics.Aggregate(0, Hash.Combine));
+        => Hash.Combine(
+            Renders.Aggregate(0, Hash.Combine),
+            Diagnostics.Aggregate(0, Hash.Combine)
+        );
 }
