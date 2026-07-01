@@ -7,6 +7,25 @@ namespace UnitTests.DiscordNet.Components;
 public sealed class SelectMenuTests(ITestOutputHelper output) : BaseDiscordNetComponentTest(output)
 {
     [Fact]
+    public void DisabledPropertyNotAllowedInModals()
+    {
+        Graph(
+            """
+            <user-select customId='foo' disabled />
+            """,
+            options: new(Target: ComponentTargetType.Modal)
+        );
+        {
+            Component<SelectMenuComponentNode>();
+            
+            Emits(null);
+            {
+                AssertDiagnostic(Diagnostic.PropertyNotAllowedForTarget("disabled", ComponentTargetType.Modal));
+            }
+        }
+    }
+    
+    [Fact]
     public void ChannelTypesAsArray()
     {
         Graph(

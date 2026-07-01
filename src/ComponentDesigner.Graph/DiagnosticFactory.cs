@@ -55,7 +55,8 @@ public static class DiagnosticFactory
         NotAnEmoji,
         ComponentTargetIsNotAllowed,
         StateTypeMismatch,
-        UnimplementedRendererForComponent
+        UnimplementedRendererForComponent,
+        PropertyNotAllowedForTarget
     }
 
     private enum DiagnosticSource
@@ -841,6 +842,16 @@ public static class DiagnosticFactory
             DiagnosticCode.UnimplementedRendererForComponent,
             DiagnosticSeverity.Error,
             $"'{rendererName}' doesn't implement a render function for component '{node.Name}'"
+        );
+        
+        public static DiagnosticDescriptor PropertyNotAllowedForTarget(
+            string name,
+            ComponentTargetType target
+        ) => Create(
+            DiagnosticSource.Graph,
+            DiagnosticCode.PropertyNotAllowedForTarget,
+            DiagnosticSeverity.Error,
+            $"'{name}' is not allowed for {target} components"
         );
     }
 }

@@ -27,6 +27,7 @@ partial class Validators
         ValidateGenericComponent(context, selectMenu, state, bag);
 
         ValidateKindOfSelectMenu();
+        ReportDisabledInModal();
 
         // placeholder.length <= 150
         StringNotEmptyAndRange(
@@ -85,6 +86,23 @@ partial class Validators
         ValidateStringSelectOptions();
         ValidateEntitySelectDefaultValues();
 
+        void ReportDisabledInModal()
+        {
+            if (context.Options.Target is not ComponentTargetType.Modal)
+                return;
+            
+            var disabledPropertyValue = state.GetPropertyValue(selectMenu.Disabled);
+
+            if (disabledPropertyValue.IsSpecified)
+            {
+                bag.Add(
+                    Diagnostic
+                        .PropertyNotAllowedForTarget(disabledPropertyValue.Name, context.Options.Target)
+                        .At(disabledPropertyValue)
+                );
+            }
+        }
+        
         void ValidateStringSelectOptions()
         {
             if (state.Kind is not SelectMenuKind.String) return;
