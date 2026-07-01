@@ -5,7 +5,7 @@ public sealed class FileUploadComponentNode : ComponentNode
     public override string Name => "file-upload";
 
     public override ComponentTargetType Target => ComponentTargetType.Modal;
-    
+
     public override IReadOnlyList<ComponentProperty> Properties { get; }
 
     public ComponentProperty Id { get; }
@@ -13,6 +13,7 @@ public sealed class FileUploadComponentNode : ComponentNode
     public ComponentProperty MinValues { get; }
     public ComponentProperty MaxValues { get; }
     public ComponentProperty Required { get; }
+    public ComponentProperty FileTypes { get; }
 
     public FileUploadComponentNode()
     {
@@ -39,6 +40,13 @@ public sealed class FileUploadComponentNode : ComponentNode
                 "required",
                 isOptional: true,
                 requiresValue: false,
+                kind: ComponentPropertyValueKind.SyntaxValue
+            ),
+            FileTypes = new(
+                "fileTypes",
+                aliases: ["types"],
+                isOptional: true,
+                requiresValue: true,
                 kind: ComponentPropertyValueKind.SyntaxValue
             )
         ];

@@ -20,6 +20,7 @@ partial class DiscordNetRenderer
         ("customId", fileUpload.CustomId, CSharpValueGenerator.String),
         ("minValues", fileUpload.MinValues, CSharpValueGenerator.NullableInt32),
         ("maxValues", fileUpload.MaxValues, CSharpValueGenerator.NullableInt32),
-        ("required", fileUpload.Required, CSharpValueGenerator.NullableBoolean)
+        ("required", fileUpload.Required, CSharpValueGenerator.NullableBoolean),
+        ("fileTypes", fileUpload.FileTypes, CollectionOf(CompilationProviderExtension.String, transformer: CSharpValueGenerator.String.Render))
     );
 }

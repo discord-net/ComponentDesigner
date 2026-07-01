@@ -187,7 +187,7 @@ partial class DiscordNetRenderer
             var propertyValue = state.GetPropertyValue(refProperty);
 
             if (!propertyValue.IsSpecified) return render;
-            
+
             if (propertyValue.AsSingle is not ComponentPropertyValue.Interpolation interpolation)
                 return Diagnostic
                     .InvalidPropertyValue(propertyValue, ComponentPropertyValueKind.Interpolation)
@@ -272,7 +272,8 @@ partial class DiscordNetRenderer
     private static CSharpValueTransformer CollectionOf(
         StaticTypeSymbolFactory<CXTextSpan> symbolFactory,
         ConverterPipeline? converter = null,
-        CollectionElementRenderer? elementRenderer = null
+        CollectionElementRenderer? elementRenderer = null,
+        CSharpValueTransformer? transformer = null
     )
     {
         return (context, value, cancellationToken) =>
@@ -287,12 +288,15 @@ partial class DiscordNetRenderer
                 value,
                 converter,
                 cancellationToken,
-                elementRenderer is null
-                    ? RenderSingleValue
-                    : (context, propertyValue, cancellationToken) =>
-                        elementRenderer(context, propertyValue, cancellationToken, out var render)
-                            ? render
-                            : RenderSingleValue(context, value, cancellationToken));
+                transformer ?? (
+                    elementRenderer is null
+                        ? RenderSingleValue
+                        : (CSharpValueTransformer)((context, propertyValue, cancellationToken) =>
+                            elementRenderer(context, propertyValue, cancellationToken, out var render)
+                                ? render
+                                : RenderSingleValue(context, value, cancellationToken))
+                )
+            );
         };
 
         static Result<CSharpRender> BuildCollectionExpression(
