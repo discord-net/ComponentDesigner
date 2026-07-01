@@ -7,6 +7,162 @@ namespace UnitTests.Parser;
 public class SyntaxTests(ITestOutputHelper output) : BaseParserTest(output)
 {
     [Fact]
+    public void AllPossibleArrayValues()
+    {
+        var sb = new SourceBuilder()
+            .AddSource("<foo arr=[")
+            .AddSource("'str',")
+            .AddInterpolation("interp").AddSource(",")
+            .AddSource("(<bar />),")
+            .AddSource("['baz']")
+            .AddSource("]/>");
+        
+        Parses(sb);
+        {
+            Element();
+            {
+                Token(CXTokenKind.LessThan);
+                SimpleIdentifier("foo");
+
+                Attribute();
+                {
+                    Identifier("arr");
+                    Token(CXTokenKind.Equals);
+                    
+                    Node<CXValue.Array>();
+                    Token(CXTokenKind.ArrayStart);
+                    {
+                        // str
+                        Node<CXValue.ArrayElement>();
+                        {
+                            StringLiteral();
+                            {
+                                Token(CXTokenKind.StringLiteralStart);
+                                Token(CXTokenKind.Text, "str");
+                                Token(CXTokenKind.StringLiteralEnd);
+                            }
+                        }
+                        Token(CXTokenKind.Comma);
+                        
+                        // interp
+                        Node<CXValue.ArrayElement>();
+                        {
+                            Interpolation();
+                            InterpolationToken("{interp}");
+                        }
+                        Token(CXTokenKind.Comma);
+                        
+                        // element
+                        Node<CXValue.ArrayElement>();
+                        {
+                            Node<CXValue.Element>();
+                            {
+                                Token(CXTokenKind.OpenParenthesis);
+
+                                Element();
+                                {
+                                    Token(CXTokenKind.LessThan);
+                                    SimpleIdentifier("bar");
+                                    Token(CXTokenKind.ForwardSlashGreaterThan);
+                                }
+                                
+                                Token(CXTokenKind.CloseParenthesis);
+                            }
+                        }
+                        Token(CXTokenKind.Comma);
+                        
+                        // nested array
+                        Node<CXValue.ArrayElement>();
+                        {
+                            Node<CXValue.Array>();
+                            Token(CXTokenKind.ArrayStart);
+                            {
+                                Node<CXValue.ArrayElement>();
+                                {
+                                    StringLiteral();
+                                    {
+                                        Token(CXTokenKind.StringLiteralStart);
+                                        Token(CXTokenKind.Text, "baz");
+                                        Token(CXTokenKind.StringLiteralEnd);
+                                    }
+                                }
+                            }
+                            Token(CXTokenKind.ArrayEnd);
+                        }
+                    }
+                    Token(CXTokenKind.ArrayEnd);
+                }
+
+                Token(CXTokenKind.ForwardSlashGreaterThan);
+            }
+        }
+    }
+    
+    [Fact]
+    public void ArrayValueSyntax()
+    {
+        Parses(
+            """
+            <foo bar=["a", "b", "c"] />
+            """
+        );
+        {
+            Element();
+            {
+                Token(CXTokenKind.LessThan);
+                SimpleIdentifier("foo");
+                
+                Node<CXAttribute>();
+                {
+                    Token(CXTokenKind.Identifier, "bar");
+                    Token(CXTokenKind.Equals);
+
+                    Node<CXValue.Array>();
+                    {
+                        Token(CXTokenKind.ArrayStart, "[");
+
+                        Node<CXValue.ArrayElement>();
+                        {
+                            StringLiteral();
+                            {
+                                Token(CXTokenKind.StringLiteralStart);
+                                Token(CXTokenKind.Text, "a");
+                                Token(CXTokenKind.StringLiteralEnd);
+                            }
+                            Token(CXTokenKind.Comma);
+                        }
+                        
+                        Node<CXValue.ArrayElement>();
+                        {
+                            StringLiteral();
+                            {
+                                Token(CXTokenKind.StringLiteralStart);
+                                Token(CXTokenKind.Text, "b");
+                                Token(CXTokenKind.StringLiteralEnd);
+                            }
+                            Token(CXTokenKind.Comma);
+                        }
+                        
+                        Node<CXValue.ArrayElement>();
+                        {
+                            StringLiteral();
+                            {
+                                Token(CXTokenKind.StringLiteralStart);
+                                Token(CXTokenKind.Text, "c");
+                                Token(CXTokenKind.StringLiteralEnd);
+                            }
+                        }
+                        
+                        Token(CXTokenKind.ArrayEnd, "]");
+                    }
+                }
+
+                Token(CXTokenKind.ForwardSlashGreaterThan);
+            }
+        }
+    }   
+    
+    [Fact]
     public void ElementInterpolatedIdentifier()
     {
         var source = new SourceBuilder()

@@ -69,7 +69,22 @@ public enum CXTokenKind : byte
     ///     A single close parenthesis '<c>(</c>' token.
     /// </summary>
     CloseParenthesis,
+    
+    /// <summary>
+    ///     A token denoting the start of an array.
+    /// </summary>
+    ArrayStart,
+    
+    /// <summary>
+    ///     A token denoting the end of an array.
+    /// </summary>
+    ArrayEnd,
 
+    /// <summary>
+    ///     A single comma ',' token.
+    /// </summary>
+    Comma,
+    
     /// <summary>
     ///     A variable length identifier token.
     /// </summary>

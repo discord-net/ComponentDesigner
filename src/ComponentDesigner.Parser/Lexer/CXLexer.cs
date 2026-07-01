@@ -168,6 +168,21 @@ public sealed partial class CXLexer
     public const char CLOSE_PAREN_CHAR = ')';
 
     /// <summary>
+    ///     An open bracket character.
+    /// </summary>
+    public const char OPEN_BRACKET_CHAR = '[';
+    
+    /// <summary>
+    ///     A close bracket character.
+    /// </summary>
+    public const char CLOSE_BRACKET_CHAR = ']';
+    
+    /// <summary>
+    ///     A comma character.
+    /// </summary>
+    public const char COMMA_CHAR = ',';
+
+    /// <summary>
     ///     An ampersand character.
     /// </summary>
     public const char AMPERSAND_CHAR = '&';
@@ -471,6 +486,30 @@ public sealed partial class CXLexer
                 Reader.Advance();
                 info.Kind = CXTokenKind.Qualifier;
                 return;
+            
+            /*
+             * NOTE
+             * maybe a separate lexer state is a good idea for arrays, but as of right now the set of lexed tokens in
+             * this mode don't conflict.
+             */
+            
+            // '[' when in attribute mode is an array value.
+            case OPEN_BRACKET_CHAR when Mode is LexMode.Attribute:
+                Reader.Advance();
+                info.Kind = CXTokenKind.ArrayStart;
+                break;
+            
+            // ']' when in attribute mode is the end of an array.
+            case CLOSE_BRACKET_CHAR when Mode is LexMode.Attribute:
+                Reader.Advance();
+                info.Kind = CXTokenKind.ArrayEnd;
+                break;
+                
+            // ',' when in attribute mode is a separator of array elements
+            case COMMA_CHAR when Mode is LexMode.Attribute:
+                Reader.Advance();
+                info.Kind = CXTokenKind.Comma;
+                break;
             
             // open parenthesis are only valid in attributes, they represent the start of an inline element value
             case OPEN_PAREN_CHAR when Mode == LexMode.Attribute:

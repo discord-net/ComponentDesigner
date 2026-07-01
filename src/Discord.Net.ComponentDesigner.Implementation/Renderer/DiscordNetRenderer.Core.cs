@@ -186,6 +186,8 @@ partial class DiscordNetRenderer
 
             var propertyValue = state.GetPropertyValue(refProperty);
 
+            if (!propertyValue.IsSpecified) return render;
+            
             if (propertyValue.AsSingle is not ComponentPropertyValue.Interpolation interpolation)
                 return Diagnostic
                     .InvalidPropertyValue(propertyValue, ComponentPropertyValueKind.Interpolation)
@@ -260,9 +262,17 @@ partial class DiscordNetRenderer
                 .Map(render => Convert(context, render, symbol.Value, cancellationToken));
         };
 
+    private delegate bool CollectionElementRenderer(
+        IRenderContext<CSharpRender> context,
+        ComponentPropertyValue propertyValue,
+        CancellationToken cancellationToken,
+        out Result<CSharpRender> render
+    );
+
     private static CSharpValueTransformer CollectionOf(
         StaticTypeSymbolFactory<CXTextSpan> symbolFactory,
-        ConverterPipeline? converter = null
+        ConverterPipeline? converter = null,
+        CollectionElementRenderer? elementRenderer = null
     )
     {
         return (context, value, cancellationToken) =>
@@ -276,8 +286,13 @@ partial class DiscordNetRenderer
                 symbol.Value,
                 value,
                 converter,
-                cancellationToken
-            );
+                cancellationToken,
+                elementRenderer is null
+                    ? RenderSingleValue
+                    : (context, propertyValue, cancellationToken) =>
+                        elementRenderer(context, propertyValue, cancellationToken, out var render)
+                            ? render
+                            : RenderSingleValue(context, value, cancellationToken));
         };
 
         static Result<CSharpRender> BuildCollectionExpression(
@@ -285,7 +300,8 @@ partial class DiscordNetRenderer
             ICSharpTypeSymbol targetSymbol,
             ComponentPropertyValue propertyValue,
             ConverterPipeline? converter,
-            CancellationToken cancellationToken
+            CancellationToken cancellationToken,
+            CSharpValueTransformer transformer
         )
         {
             using var _ = StringBuilder.Pooled(out var sb);
@@ -293,7 +309,7 @@ partial class DiscordNetRenderer
 
             foreach (var innerValue in propertyValue.AsFlattened)
             {
-                var element = RenderSingleValue(context, innerValue, cancellationToken)
+                var element = transformer(context, innerValue, cancellationToken)
                     .Map(render =>
                         converter?.Invoke(
                             context,
@@ -400,6 +416,17 @@ partial class DiscordNetRenderer
                 interpolation.Info.Symbol
             ),
 
+        ComponentPropertyValue.Literal literal
+            => StringGenerator
+                .ToCSharpString(context, literal)
+                .Combine(
+                    context.CompilationProvider.String(literal, cancellationToken),
+                    (str, symbol) => new CSharpRender(
+                        literal.TextSpan,
+                        str,
+                        symbol
+                    )
+                ),
         _ => Diagnostic
             .InvalidPropertyValue(
                 value,

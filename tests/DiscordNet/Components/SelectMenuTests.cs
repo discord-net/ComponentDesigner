@@ -7,6 +7,36 @@ namespace UnitTests.DiscordNet.Components;
 public sealed class SelectMenuTests(ITestOutputHelper output) : BaseDiscordNetComponentTest(output)
 {
     [Fact]
+    public void ChannelTypesAsArray()
+    {
+        Graph(
+            """
+            <channel-select
+                customId='foo'
+                channelTypes=["Text", "Voice"]
+            />
+            """
+        );
+        {
+            Component<SelectMenuComponentNode>();
+
+            Emits(
+                """
+                new global::Discord.SelectMenuBuilder(
+                    type: global::Discord.ComponentType.ChannelSelect,
+                    customId: "foo",
+                    channelTypes: 
+                    [
+                        global::Discord.ChannelType.Text,
+                        global::Discord.ChannelType.Voice
+                    ]
+                )
+                """
+            );
+        }
+    }
+    
+    [Fact]
     public void EmptyMenu()
     {
         Graph("<select-menu />");

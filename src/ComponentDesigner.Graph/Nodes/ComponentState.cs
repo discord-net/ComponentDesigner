@@ -151,6 +151,23 @@ public record ComponentState : ISourceLocatable
     {
         switch (cxValue)
         {
+            case CXValue.Array array:
+                return new ComponentPropertyValue.Many(
+                    source,
+                    property,
+                    [
+                        ..array.Elements.Select(element =>
+                            BuildPropertyValueFromSyntax(
+                                context,
+                                property,
+                                source,
+                                element.Value,
+                                textSpan,
+                                cancellationToken
+                            )
+                        )
+                    ]
+                );
             case CXValue.Element:
             {
                 var graphNodes = GraphNode
@@ -218,6 +235,10 @@ public record ComponentState : ISourceLocatable
         CancellationToken cancellationToken
     )
     {
+        // unwrap array values
+        if (cxValue is CXValue.ArrayElement { Value: { } arrayElementValue })
+            cxValue = arrayElementValue;
+        
         switch (cxValue)
         {
             case CXValue.Scalar scalar:

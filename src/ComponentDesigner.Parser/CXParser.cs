@@ -548,7 +548,7 @@ public sealed partial class CXParser
             }
 
             // parse the attribute value
-            var value = ParseAttributeValue();
+            var value = ParseValue();
 
             var diagnostics = value is CXValue.Invalid
                 ? [CXDiagnosticDescriptor.MissingAttributeValue]
@@ -572,7 +572,7 @@ public sealed partial class CXParser
     ///     The parsed <see cref="CXValue"/>, with an invalid value being indicated by returning a
     ///     <see cref="CXValue.Invalid"/>.
     /// </returns>
-    internal CXValue ParseAttributeValue()
+    internal CXValue ParseValue()
     {
         // check for incremental node
         if (TryEatASTNode<CXValue>(out var node)) return node;
@@ -601,11 +601,58 @@ public sealed partial class CXParser
                 case CXTokenKind.StringLiteralStart:
                     return ParseStringLiteral();
 
+                // the start of an array.
+                case CXTokenKind.ArrayStart:
+                    return ParseArrayValue();
+
                 // unsupported value
                 default:
                     return new CXValue.Invalid();
             }
         }
+    }
+
+    /// <summary>
+    ///     Parses an array value.
+    /// </summary>
+    /// <returns>
+    ///     A <see cref="CXValue"/> representing the array that was parsed.
+    /// </returns>
+    internal CXValue ParseArrayValue()
+    {
+        // check for incremental node
+        if (TryEatASTNode<CXValue.Array>(out var node)) return node;
+        
+        var start = Expect(CXTokenKind.ArrayStart);
+
+        var elements = new List<CXValue.ArrayElement>();
+
+        while (
+            CurrentToken.Kind
+            is not CXTokenKind.ArrayEnd
+            and not CXTokenKind.Invalid
+            and not CXTokenKind.ArrayEnd
+        )
+        {
+            CancellationToken.ThrowIfCancellationRequested();
+
+            var elementValue = ParseValue();
+            
+            if (elementValue.Width is not 0 && CurrentToken.Kind is CXTokenKind.Comma)
+            {
+                elements.Add(new(elementValue, Eat()));
+                continue;
+            }
+            
+            elements.Add(new(elementValue, null));
+            break;
+        }
+
+        return new CXValue.Array(
+            start,
+            new (elements),
+            Expect(CXTokenKind.ArrayEnd)
+        );
     }
 
     /// <summary>

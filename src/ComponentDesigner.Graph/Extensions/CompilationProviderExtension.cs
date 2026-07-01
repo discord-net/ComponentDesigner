@@ -93,6 +93,11 @@ public static class CompilationProviderExtension
             where T : ISourceLocatable
             => compilation.GetTypeSymbol("System.Collections.Generic.IEnumerable`1", source, cancellationToken);
 
+        public Result<ICSharpTypeSymbol> ListOfT<T>(T source, CancellationToken cancellationToken = default)
+            where T : ISourceLocatable
+            => compilation.GetTypeSymbol("System.Collections.Generic.List`1", source, cancellationToken);
+
+        
         public Result<ICSharpTypeSymbol> CXChildrenAttribute<T>(T source, CancellationToken cancellationToken = default)
             where T : ISourceLocatable
             => compilation.GetTypeSymbol("ComponentDesigner.CXChildrenAttribute", source, cancellationToken);

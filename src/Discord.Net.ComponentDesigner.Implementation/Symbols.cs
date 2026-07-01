@@ -8,7 +8,7 @@ internal static class Symbols
     public delegate Result<ICSharpTypeSymbol> Fetch<in T>(T source, CancellationToken cancellationToken = default)
         where T : ISourceLocatable;
     
-    extension(ICSharpTypeSymbol symbol)
+    extension(ICSharpTypeSymbol? symbol)
     {
         public bool Equals(
             Func<CXTextSpan, CancellationToken, Result<ICSharpTypeSymbol>> func,
@@ -24,6 +24,12 @@ internal static class Symbols
 
     extension(ICompilationProvider compilation)
     {
+        public Result<ICSharpTypeSymbol> ChannelType<T>(
+            T source,
+            CancellationToken cancellationToken = default
+        ) where T : ISourceLocatable =>
+            compilation.GetTypeSymbol("Discord.ChannelType", source.TextSpan, cancellationToken);
+        
         public Result<ICSharpTypeSymbol> Color<T>(
             T source,
             CancellationToken cancellationToken = default
@@ -269,6 +275,14 @@ internal static class Symbols
             source,
             cancellationToken
         );
+        
+        public Func<CXTextSpan, CancellationToken, Result<ICSharpTypeSymbol>> ListOf(
+            Func<CXTextSpan, CancellationToken, Result<ICSharpTypeSymbol>> symbol
+        ) => (source, cancellationToken) => compilation.ListOf(
+            symbol,
+            source,
+            cancellationToken
+        );
 
         public Result<ICSharpTypeSymbol> IEnumerableOf<T>(
             Func<T, CancellationToken, Result<ICSharpTypeSymbol>> symbol,
@@ -281,5 +295,18 @@ internal static class Symbols
                     (enumerableSymbol, innerSymbol) =>
                         enumerableSymbol.ConstructGeneric(innerSymbol)
                 );
+        
+        public Result<ICSharpTypeSymbol> ListOf<T>(
+            Func<T, CancellationToken, Result<ICSharpTypeSymbol>> symbol,
+            T source,
+            CancellationToken cancellationToken = default
+        ) where T : ISourceLocatable
+            => compilation.ListOfT(source, cancellationToken)
+                .Combine(
+                    symbol(source, cancellationToken),
+                    (enumerableSymbol, innerSymbol) =>
+                        enumerableSymbol.ConstructGeneric(innerSymbol)
+                );
+        
     }
 }

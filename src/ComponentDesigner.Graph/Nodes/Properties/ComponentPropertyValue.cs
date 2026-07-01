@@ -66,6 +66,8 @@ public abstract record ComponentPropertyValue(
     public bool IsComponent => this is Component;
     public bool IsMany => this is Many;
 
+    public bool IsSpecified => Source is not ComponentPropertyValueSource.Unknown;
+    
     public bool IsOne => !IsMany;
 
     public ComponentPropertyValue? AsSingle
@@ -108,7 +110,7 @@ public abstract record ComponentPropertyValue(
 
         return
             kind.HasFlag(ComponentPropertyValueKind.Many) &&
-            many.Values.All(x => IsSimpleMatch(x, kind));
+            many.Values.All(x => x.Matches(kind));
 
 
         static bool IsSimpleMatch(ComponentPropertyValue value, ComponentPropertyValueKind kind)

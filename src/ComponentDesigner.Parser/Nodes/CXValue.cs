@@ -13,6 +13,71 @@ public abstract class CXValue : CXNode
     public sealed class Invalid : CXValue;
 
     /// <summary>
+    ///     Represents an array of other <see cref="CXValue"/>s.
+    /// </summary>
+    public sealed class Array : CXValue
+    {
+        /// <summary>
+        ///     Gets the opening token of the array.
+        /// </summary>
+        public CXToken OpenBracket { get; }
+        
+        /// <summary>
+        ///     Gets the collection of <see cref="CXValue.ArrayElement"/> within this array.
+        /// </summary>
+        public CXCollection<ArrayElement> Elements { get; }
+        
+        /// <summary>
+        ///     Gets the closing toke of the array.
+        /// </summary>
+        public CXToken CloseBracket { get; }
+
+        /// <summary>
+        ///     Constructs a new <see cref="CXValue.Array"/>.
+        /// </summary>
+        /// <param name="openBracket">The opening token of the array.</param>
+        /// <param name="elements">The elements of the array.</param>
+        /// <param name="closeBracket">The closing token of the array.</param>
+        public Array(
+            CXToken openBracket,
+            CXCollection<ArrayElement> elements,
+            CXToken closeBracket
+        )
+        {
+            OpenBracket = Slot(openBracket);
+            Elements = Slot(elements);
+            CloseBracket = Slot(closeBracket);
+        }
+    }
+    
+    /// <summary>
+    ///     Represents an element within a <see cref="CXValue.Array"/>.
+    /// </summary>
+    public sealed class ArrayElement : CXValue
+    {
+        /// <summary>
+        ///     Gets the underlying value of this element.
+        /// </summary>
+        public CXValue Value { get; }
+        
+        /// <summary>
+        ///     Gets the right-most separator of this element.
+        /// </summary>
+        public CXToken? Separator { get; }
+
+        /// <summary>
+        ///     Constructs a new <see cref="CXValue.ArrayElement"/>.
+        /// </summary>
+        /// <param name="value">The inner value of the element.</param>
+        /// <param name="separator">The right-most separator of the element.</param>
+        public ArrayElement(CXValue value, CXToken? separator)
+        {
+            Value = Slot(value);
+            Separator = Slot(separator);
+        }
+    }
+
+    /// <summary>
     ///     Represents an inline element value, usually found within attributes.
     /// </summary>
     public sealed class Element : CXValue
@@ -21,12 +86,12 @@ public abstract class CXValue : CXNode
         ///     Gets the opening parenthesis token of this <see cref="CXValue.Element"/>.
         /// </summary>
         public CXToken OpenParenthesis { get; }
-        
+
         /// <summary>
         ///     Gets the underlying <see cref="CXElement"/> of this <see cref="CXValue.Element"/>.
         /// </summary>
         public CXElement Value { get; }
-        
+
         /// <summary>
         ///     Gets the closing parenthesis token of this <see cref="CXValue.Element"/>.
         /// </summary>
@@ -60,7 +125,7 @@ public abstract class CXValue : CXNode
         ///     <see cref="CXTokenKind.Interpolation"/> tokens.
         /// </summary>
         public bool HasInterpolations => Tokens.Any(x => x.Kind is CXTokenKind.Interpolation);
-        
+
         /// <summary>
         ///     Gets the tokens contained up this <see cref="CXValue.Multipart"/>.
         /// </summary>
@@ -85,7 +150,7 @@ public abstract class CXValue : CXNode
         ///     Gets the starting token of the string literal.
         /// </summary>
         public CXToken StartToken { get; }
-        
+
         /// <summary>
         ///     Gets the ending token of the string literal.
         /// </summary>
@@ -120,7 +185,7 @@ public abstract class CXValue : CXNode
         ///     Gets the underlying token that represents the interpolation.
         /// </summary>
         public CXToken Token { get; }
-        
+
         /// <summary>
         ///     Gets the index of the interpolation, as defined by <see cref="CXDocument.InterpolationTokens"/>.
         /// </summary>
@@ -147,18 +212,18 @@ public abstract class CXValue : CXNode
         ///     Gets the full value including trivia of this <see cref="CXValue.Scalar"/>.
         /// </summary>
         public string FullValue => Token.ToFullString();
-        
+
         /// <summary>
         ///     Gets the value of this <see cref="CXValue.Scalar"/>.
         /// </summary>
         public string Value => Token.Value;
-        
+
         /// <summary>
         ///     Gets the underlying token that this <see cref="CXValue.Scalar"/> represents.
         /// </summary>
         public CXToken Token { get; }
 
-        
+
         /// <summary>
         ///     Constructs a new <see cref="CXValue.Scalar"/>.
         /// </summary>

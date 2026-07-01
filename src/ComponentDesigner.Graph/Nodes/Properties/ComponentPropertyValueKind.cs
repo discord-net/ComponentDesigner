@@ -33,11 +33,7 @@ public static class ComponentPropertyValueKindExtensions
             ComponentPropertyValueKind.ManyComponents => "One or more Components",
             ComponentPropertyValueKind.SingleSyntaxValue => "Literal or Interpolation",
             ComponentPropertyValueKind.Any => "Any",
-            _ => string.Join(
-                " or ", ((ComponentPropertyValueKind[])Enum.GetValues(typeof(ComponentPropertyValueKind)))
-                .Where(x => kind.HasFlag(x))
-                .Select(x => x.ReadableName)
-            )
+            _ => kind.ToString()
         };
     }
 }
