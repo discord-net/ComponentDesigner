@@ -15,17 +15,35 @@
         <DefineConstants>CODEANALYSIS</DefineConstants>
         <ExtraConstants>CODEANALYSIS</ExtraConstants>
 
+        <!-- Transitive package deps (e.g. OptimizedPriorityQueue) are not copy-local by default for non-exe projects -->
+        <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+
+        <!-- Make GetTargetPath also report our dependency assemblies, so any project referencing us with
+             OutputItemType="Analyzer" gets them registered as Analyzer items too (otherwise Roslyn only
+             loads this project's own dll and fails with FileNotFoundException for ComponentDesigner.*) -->
+        <GetTargetPathDependsOn>$(GetTargetPathDependsOn);IncludeGeneratorDependencyTargetPaths</GetTargetPathDependsOn>
     </PropertyGroup>
 
     <ItemGroup>
         <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false"/>
-        <None 
-                Include="$(OutputPath)\Discord.Net.ComponentDesigner.Parser.dll" 
-                Pack="true"
-                PackagePath="analyzers/dotnet/cs"
-                Visible="false"
-        />
+        <None Include="$(OutputPath)\ComponentDesigner.Core.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false"/>
+        <None Include="$(OutputPath)\ComponentDesigner.Parser.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false"/>
+        <None Include="$(OutputPath)\ComponentDesigner.Graph.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false"/>
+        <None Include="$(OutputPath)\ComponentDesigner.CSharp.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false"/>
+        <None Include="$(OutputPath)\Discord.Net.ComponentDesigner.Implementation.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false"/>
+        <None Include="$(OutputPath)\PriorityQueue.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false"/>
     </ItemGroup>
+
+    <Target Name="IncludeGeneratorDependencyTargetPaths">
+        <ItemGroup>
+            <TargetPathWithTargetPlatformMoniker Include="$(TargetDir)ComponentDesigner.Core.dll" IncludeRuntimeDependency="false" />
+            <TargetPathWithTargetPlatformMoniker Include="$(TargetDir)ComponentDesigner.Parser.dll" IncludeRuntimeDependency="false" />
+            <TargetPathWithTargetPlatformMoniker Include="$(TargetDir)ComponentDesigner.Graph.dll" IncludeRuntimeDependency="false" />
+            <TargetPathWithTargetPlatformMoniker Include="$(TargetDir)ComponentDesigner.CSharp.dll" IncludeRuntimeDependency="false" />
+            <TargetPathWithTargetPlatformMoniker Include="$(TargetDir)Discord.Net.ComponentDesigner.Implementation.dll" IncludeRuntimeDependency="false" />
+            <TargetPathWithTargetPlatformMoniker Include="$(TargetDir)PriorityQueue.dll" IncludeRuntimeDependency="false" />
+        </ItemGroup>
+    </Target>
 
     <ItemGroup>
         <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="4.14.0">
@@ -36,8 +54,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\ComponentDesigner.CSharp\ComponentDesigner.CSharp.csproj" />
-        <ProjectReference Include="..\ComponentDesigner.Graph\ComponentDesigner.Graph.csproj" />
+        <ProjectReference Include="..\ComponentDesigner.CSharp\ComponentDesigner.CSharp.csproj" PrivateAssets="all" />
+        <ProjectReference Include="..\ComponentDesigner.Graph\ComponentDesigner.Graph.csproj" PrivateAssets="all" />
         <ProjectReference Include="..\ComponentDesigner.Parser\ComponentDesigner.Parser.csproj" PrivateAssets="all" />
         <ProjectReference Include="..\Discord.Net.ComponentDesigner.Implementation\Discord.Net.ComponentDesigner.Implementation.csproj" />
     </ItemGroup>

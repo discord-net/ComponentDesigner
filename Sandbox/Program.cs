@@ -3,7 +3,9 @@
 var components = cx.message(
     """
     <container>
-        Hello World!
+        <text>
+            Hello World!
+        </text>
     </container>
     """
 );
